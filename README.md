@@ -47,6 +47,7 @@ python setup.py install
 Open the Python interpreter and connect nRF5 device to PC:
 ```
 import API
+
 api = API.API('NRF52')
 api.open()
 api.enum_smu_snr()
@@ -56,6 +57,25 @@ api.write_u32(ADDRESS, DATA, IS_FLASH)
 api.disconnect_from_emu()
 api.close()
 ```
+
+To work with multiple nRF5 devices at once:
+```
+import MultiAPI as API
+
+api = API.API('NRF52')
+api.open()
+
+api2 = API.API('NRF52')
+api2.open()
+
+api3 = API.API('NRF51')
+api3.open()
+
+api.close()
+api2.close()
+api3.close()
+```
+Note: MultiAPI has the same interface as API, it just allows you to create multiple instances of API.
 
 ## Contributing
 Contributing is encouraged along with the following coding standards.
