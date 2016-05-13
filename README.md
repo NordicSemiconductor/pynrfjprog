@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/mjdietzx/pynrfjprog.svg?branch=master)](https://travis-ci.org/mjdietzx/pynrfjprog)
+[![Build Status](https://travis-ci.org/NordicSemiconductor/pynrfjprog.svg?branch=master)](https://travis-ci.org/NordicSemiconductor/pynrfjprog)
 [![PyPI](https://img.shields.io/pypi/l/Django.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 # pynrfjprog
