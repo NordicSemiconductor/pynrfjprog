@@ -5,7 +5,7 @@
 Python wrapper around the nrfjprog dynamic link library (DLL). Use of this API allows developers to program/debug nRF5 devices from the interpreter, write simple scripts for a more efficient development work flow, or write automated test frameworks. It can also be used to create applications in Python (i.e. command-line tools).
 
 ## Use-cases
-*  Maximizing development efficiency: i.e. a script to perform various operations everytime an application is built and run (could be hooked into a Makefile or automated build system etc...).
+*  Maximizing development efficiency: i.e. a script to perform various operations every time an application is built and run (could be hooked into a Makefile or automated build system etc...).
 *  Automated testing: [Testing Production Programming tools on nRF5 using pynrfjprog](https://github.com/NordicSemiconductor/nrf52-production-programming/blob/master/tests/example_test_script.py).
 *  PC Tools: [nrfjprog.exe implemented via pynrfjprog and argparse](https://github.com/NordicSemiconductor/nrfjprog.git).
 
@@ -29,15 +29,14 @@ pynrfjprog\
   pynrfjprog\
     __init__.py # Package marker to make pynrfjprog a module. Also defines the version number.
     API.py # Wrapper around the nrfjprog DLL.
-    MultiAPI.py # Allow multiple devices (up to 128) to be programmed simultaneiously.
+    MultiAPI.py # Allow multiple devices (up to 128) to be programmed simultaneously.
     JLink.py # Finds the JLinkARM DLL required by pynrfjprog.
     Hex.py # DEPRECATED. Use [intelhex](https://pypi.python.org/pypi/IntelHex) instead.
       win_dll\ # nrfjprog libraries.
       osx_dylib\
       linux_64bit_so\
       linux_32bit_so\
-      examples\ # Simple examples to demonstrate pynrfjprog's use.
-      docs\ # Automatically generated documentation.
+      docs\ # Header files of the nrfjprog DLL to provide in-depth documentation of the functions API.py wraps.
 ```
 
 ## Getting started
