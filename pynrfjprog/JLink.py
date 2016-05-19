@@ -24,6 +24,8 @@ def find_latest_dll():
 
     elif sys.platform.lower().startswith('linux'):
         # Adding .dummy to filenames in linux (.so.x.x.x.dummy) because python compare strings will then work properly with the version number compare.
+        if not os.path.isdir(_DEFAULT_SEGGER_ROOT_PATH):
+            return "" 
         jlink_so_files = sorted([f + ".dummy" for f in os.listdir(_DEFAULT_SEGGER_ROOT_PATH) if fnmatch.fnmatch(f, 'libjlinkarm.so*')])
         return os.path.join(_DEFAULT_SEGGER_ROOT_PATH, jlink_so_files[-1][:-len(".dummy")])
 
