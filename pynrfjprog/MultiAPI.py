@@ -11,6 +11,51 @@ try:
 except Exception:
     import API
 
+# WORKAROUND!
+# When bundling the script to an .exe, multiprogramming.Process
+# won't work properly (when accessing a queue from the parent
+# process, we get IllegalHandle or Access Denied).
+# This workaround is directly copied from here:
+
+#   https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing
+#
+import os
+import sys
+
+try:
+    # Python 3.4+
+    if sys.platform.startswith('win'):
+        import multiprocessing.popen_spawn_win32 as forking
+    else:
+        import multiprocessing.popen_fork as forking
+except ImportError:
+    import multiprocessing.forking as forking
+
+if sys.platform.startswith('win'):
+    # First define a modified version of Popen.
+    class _Popen(forking.Popen):
+        def __init__(self, *args, **kw):
+            if hasattr(sys, 'frozen'):
+                # We have to set original _MEIPASS2 value from sys._MEIPASS
+                # to get --onefile mode working.
+                os.putenv('_MEIPASS2', sys._MEIPASS)
+            try:
+                super(_Popen, self).__init__(*args, **kw)
+            finally:
+                if hasattr(sys, 'frozen'):
+                    # On some platforms (e.g. AIX) 'os.unsetenv()' is not
+                    # available. In those cases we cannot delete the variable
+                    # but only set it to the empty string. The bootloader
+                    # can handle this case.
+                    if hasattr(os, 'unsetenv'):
+                        os.unsetenv('_MEIPASS2')
+                    else:
+                        os.putenv('_MEIPASS2', '')
+
+    # Second override 'Popen' class with our modified version.
+    forking.Popen = _Popen
+    # print('\t\tworkaround complete')
+# END WORKAROUND
 
 """
 Deprecated: Do not use, use log parameter in MultiAPI constructor instead.

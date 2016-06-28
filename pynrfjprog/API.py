@@ -222,6 +222,13 @@ class API(object):
             nrfjprog_dll_folder = 'osx_dylib'
             nrfjprog_dll_name = 'libnrfjprogdll.dylib'
 
+        # Try to load the library using only its name.
+        try:
+            self._lib = ctypes.cdll.LoadLibrary(nrfjprog_dll_name)
+            return;
+        except Exception as e:
+            pass
+
         nrfjprog_dll_path = os.path.join(os.path.abspath(this_dir), nrfjprog_dll_folder, nrfjprog_dll_name)
 
         if not os.path.exists(nrfjprog_dll_path):
