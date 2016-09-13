@@ -54,7 +54,7 @@ import API
 
 api = API.API('NRF52')
 api.open()
-api.enum_smu_snr()
+api.enum_emu_snr()
 api.connect_to_emu_without_snr()
 api.erase_all()
 api.write_u32(ADDRESS, DATA, IS_FLASH)
