@@ -23,6 +23,19 @@ nrfjprogdll_err_t NRFJPROG_dll_version(uint32_t * major, uint32_t * minor, char 
 
 
 /**
+ * @brief   Checks if the JLinkARM DLL is open.
+ *
+ * @details Checks if the NRFJPROG_open_dll() function has been called since the last call to NRFJPROG_close_dll() or since the loading of this dll.
+ *
+ * @param   opened                              Pointer of the location to store the result.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The opened parameter is NULL.
+ */
+nrfjprogdll_err_t NRFJPROG_is_dll_open(bool * opened);
+
+
+/**
  * @brief   Opens the JLinkARM DLL and sets the log callback. Prepares the dll for work with an nRF5x device.
  *
  * @details For further details, see the device family header file.
@@ -68,6 +81,22 @@ nrfjprogdll_err_t NRFJPROG_connect_to_emu_with_snr(uint32_t serial_number, uint3
  * @details For further details, see the device family header file.
  */
 nrfjprogdll_err_t NRFJPROG_connect_to_emu_without_snr(uint32_t clock_speed_in_khz);
+
+
+/**
+ * @brief   Reads the serial number of the emulator connected to.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_read_connected_emu_snr(uint32_t * serial_number);
+
+
+/**
+* @brief   Reads the firmware identification string of the emulator connected to.
+*
+* @details For further detalis. see the device family header file.
+*/
+nrfjprogdll_err_t NRFJPROG_read_connected_emu_fwstr(char * buffer, uint32_t buffer_size);
 
 
 /**
@@ -151,7 +180,7 @@ nrfjprogdll_err_t NRFJPROG_pin_reset(void);
 
 
 /**
- * @brief   Disables BPROT or NVM protection blocks for nRF51 devices.
+ * @brief   Disables BPROT, ACL or NVM protection blocks where appropriate depending on device.
  *
  * @details For further details, see the device family header file.
  */
@@ -255,9 +284,33 @@ nrfjprogdll_err_t NRFJPROG_step(void);
 
 
 /**
- * @brief   Reads the RAM power status.
+ * @brief   Reads the number of RAM sections in the device.
  *
  * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_read_ram_sections_count(uint32_t * ram_sections_count);
+
+
+/**
+ * @brief   Reads the size in bytes of the RAM sections in the device.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_read_ram_sections_size(uint32_t * ram_sections_size, uint32_t ram_sections_size_len);
+
+
+/**
+ * @brief   Reads the RAM sections power status.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_read_ram_sections_power_status(ram_section_power_status_t * ram_sections_power_status, uint32_t ram_sections_power_status_len);
+
+
+/**
+ * @brief   DEPRECATED. Use NRFJPROG_read_ram_sections_power_status, NRFJPROG_read_ram_sections_size or NRFJPROG_read_ram_sections_count instead.
+ *
+ * @details Reads the RAM power status. For further details, see the device family header file.
  */
 nrfjprogdll_err_t NRFJPROG_is_ram_powered(ram_section_power_status_t * ram_sections_power_status, uint32_t ram_sections_power_status_array_size, uint32_t * ram_sections_number, uint32_t * ram_sections_size);
 
@@ -335,6 +388,14 @@ nrfjprogdll_err_t NRFJPROG_write_access_port_register(uint8_t ap_index, uint8_t 
 
 
 /**
+ * @brief   Checks if the RTT is started.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_is_rtt_started(bool * started);
+
+
+/**
  * @brief   Indicates to the dll the location of the RTT control block in the device memory.
  *
  * @details For further details, see the device family header file.
@@ -396,6 +457,64 @@ nrfjprogdll_err_t NRFJPROG_rtt_read_channel_count(uint32_t * down_channel_number
  * @details For further details, see the device family header file.
  */
 nrfjprogdll_err_t NRFJPROG_rtt_read_channel_info(uint32_t channel_index, rtt_direction_t dir, char * channel_name, uint32_t channel_name_len, uint32_t * channel_size);
+
+
+/**
+ * @brief   Checks if the QSPI peripheral is initialized.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_is_qspi_init(bool * initialized);
+
+
+/**
+ * @brief   Initializes the QSPI peripheral.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_init(bool retain_ram, const qspi_init_params_t * init_params);
+
+
+/**
+ * @brief   Uninitializes the QSPI peripheral.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_uninit(void);
+
+
+/**
+ * @brief   Reads from the QSPI-connected external memory.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_read(uint32_t addr, uint8_t * data, uint32_t data_len);
+
+
+/**
+ * @brief   Writes to the QSPI-connected external memory.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_write(uint32_t addr, const uint8_t * data, uint32_t data_len);
+
+
+/**
+ * @brief   Erases the QSPI-connected external memory.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_erase(uint32_t addr, qspi_erase_len_t length);
+
+
+/**
+ * @brief   Sends a custom instruction to the QSPI-connected external memory.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_custom(uint8_t instruction_code, uint8_t instruction_length, const uint8_t * data_in, uint8_t * data_out);
+
+
 
 
 #if defined(__cplusplus)

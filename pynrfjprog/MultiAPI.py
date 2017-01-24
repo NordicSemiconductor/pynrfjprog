@@ -106,6 +106,10 @@ class MultiAPI(object):
         self.CmdQueue.put(_Command('dll_version'))
         return self._wait_for_completion()
 
+    def is_open(self):
+        self.CmdQueue.put(_Command('is_open'))
+        return self._wait_for_completion()
+    
     def open(self):
         self.CmdQueue.put(_Command('open'))
         return self._wait_for_completion()
@@ -130,6 +134,14 @@ class MultiAPI(object):
         self.CmdQueue.put(_Command('connect_to_emu_without_snr', jlink_speed_khz))
         return self._wait_for_completion()
 
+    def read_connected_emu_snr(self):
+        self.CmdQueue.put(_Command('read_connected_emu_snr'))
+        return self._wait_for_completion()
+
+    def read_connected_emu_fwstr(self):
+        self.CmdQueue.put(_Command('read_connected_emu_fwstr'))
+        return self._wait_for_completion()
+    
     def disconnect_from_emu(self):
         self.CmdQueue.put(_Command('disconnect_from_emu'))
         return self._wait_for_completion()
@@ -222,6 +234,18 @@ class MultiAPI(object):
         self.CmdQueue.put(_Command('step'))
         return self._wait_for_completion()
 
+    def read_ram_sections_count(self):
+        self.CmdQueue.put(_Command('read_ram_sections_count'))
+        return self._wait_for_completion()
+
+    def read_ram_sections_size(self):
+        self.CmdQueue.put(_Command('read_ram_sections_size'))
+        return self._wait_for_completion()
+
+    def read_ram_sections_power_status(self):
+        self.CmdQueue.put(_Command('read_ram_sections_power_status'))
+        return self._wait_for_completion()
+
     def is_ram_powered(self):
         self.CmdQueue.put(_Command('is_ram_powered'))
         return self._wait_for_completion()
@@ -270,6 +294,10 @@ class MultiAPI(object):
         self.CmdQueue.put(_Command('rtt_start'))
         return self._wait_for_completion()
 
+    def is_rtt_started(self):
+        self.CmdQueue.put(_Command('is_rtt_started'))
+        return self._wait_for_completion()
+        
     def rtt_is_control_block_found(self):
         self.CmdQueue.put(_Command('rtt_is_control_block_found'))
         return self._wait_for_completion()
@@ -278,12 +306,12 @@ class MultiAPI(object):
         self.CmdQueue.put(_Command('rtt_stop'))
         return self._wait_for_completion()
 
-    def rtt_read(self, channel_index, length):
-        self.CmdQueue.put(_Command('rtt_read', channel_index, length))
+    def rtt_read(self, channel_index, length, encoding='utf-8'):
+        self.CmdQueue.put(_Command('rtt_read', channel_index, length, encoding))
         return self._wait_for_completion()
 
-    def rtt_write(self, channel_index, msg):
-        self.CmdQueue.put(_Command('rtt_write', channel_index, msg))
+    def rtt_write(self, channel_index, msg, encoding='utf-8'):
+        self.CmdQueue.put(_Command('rtt_write', channel_index, msg, encoding))
         return self._wait_for_completion()
 
     def rtt_read_channel_count(self):
@@ -293,7 +321,35 @@ class MultiAPI(object):
     def rtt_read_channel_info(self, channel_index, direction):
         self.CmdQueue.put(_Command('rtt_read_channel_info', channel_index, direction))
         return self._wait_for_completion()
+    
+    def is_qspi_init(self):
+        self.CmdQueue.put(_Command('is_qspi_init'))
+        return self._wait_for_completion()
+        
+    def qspi_init(self, retain_ram=False, init_params=None):
+        self.CmdQueue.put(_Command('qspi_init', retain_ram, init_params))
+        return self._wait_for_completion()
+        
+    def qspi_uninit(self):
+        self.CmdQueue.put(_Command('qspi_uninit'))
+        return self._wait_for_completion()
+        
+    def qspi_read(self, addr, length):
+        self.CmdQueue.put(_Command('qspi_read', addr, length))
+        return self._wait_for_completion()
+     
+    def qspi_write(self, addr, data):
+        self.CmdQueue.put(_Command('qspi_write', addr, data))
+        return self._wait_for_completion()
 
+    def qspi_erase(self, addr, length):
+        self.CmdQueue.put(_Command('qspi_erase', addr, length))
+        return self._wait_for_completion()
+        
+    def qspi_custom(self, code, length, data_in=None, output=False):
+        self.CmdQueue.put(_Command('qspi_custom', code, length, data_in, data_out))
+        return self._wait_for_completion()
+        
     def _wait_for_completion(self):
         ack = self.CmdAckQueue.get()
 
