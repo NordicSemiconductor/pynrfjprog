@@ -50,7 +50,7 @@ python setup.py install
 ```
 Open the Python interpreter and connect nRF5 device to PC:
 ```
-import API
+from pynrfjprog import API
 
 api = API.API('NRF52')
 api.open()
