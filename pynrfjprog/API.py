@@ -33,26 +33,61 @@ class DeviceFamily(enum.IntEnum):
     """
     NRF51              = 0
     NRF52              = 1
+    UNKNOWN            = 99
 
-@enum.unique
 class DeviceVersion(enum.IntEnum):
     """
     Wraps device_version_t values from DllCommonDefinitions.h
 
     """
-    UNKNOWN                   = 0
-    NRF51_XLR1                = 1
-    NRF51_XLR2                = 2
-    NRF51_XLR3                = 3
-    NRF51_L3                  = 4
-    NRF51_XLR3P               = 5
-    NRF51_XLR3LC              = 6
-    NRF52_FP1_ENGA            = 7
-    NRF52_FP1_ENGB            = 8
-    NRF52_FP1                 = 9
-    NRF52_FP2_ENGA            = 10
-    NRF52_FP1_FUTURE          = 11
-    NRF52_FP2_FUTURE          = 12
+    # Desired order for enumerators. Only useful to indicate the enumerators that have preference if the number is the same. Only necessary in py2.7, harmless in 3.x
+    __order__ = 'NRF51xxx_xxAA_REV1' + ' ' + \
+                'NRF51xxx_xxAA_REV2' + ' ' + \
+                'NRF51xxx_xxAA_REV3' + ' ' + \
+                'NRF51xxx_xxAB_REV3' + ' ' + \
+                'NRF51xxx_xxAC_REV3' + ' ' + \
+                'NRF51802_xxAA_REV3' + ' ' + \
+                'NRF51801_xxAB_REV3' + ' ' + \
+                'NRF52832_xxAA_ENGA' + ' ' + \
+                'NRF52832_xxAA_ENGB' + ' ' + \
+                'NRF52832_xxAA_REV1' + ' ' + \
+                'NRF52832_xxAA_FUTURE' + ' ' \
+                'NRF52840_xxAA_ENGA' + ' ' + \
+                'NRF52840_xxAA_FUTURE' + ' '
+
+    UNKNOWN                 = 0
+    
+    NRF51xxx_xxAA_REV1      = 1
+    NRF51xxx_xxAA_REV2      = 2
+    NRF51xxx_xxAA_REV3      = 3
+    NRF51xxx_xxAB_REV3      = 4
+    NRF51xxx_xxAC_REV3      = 5
+    NRF51802_xxAA_REV3      = 6
+    NRF51801_xxAB_REV3      = 17
+    
+    NRF52832_xxAA_ENGA      = 7
+    NRF52832_xxAA_ENGB      = 8
+    NRF52832_xxAA_REV1      = 9
+    NRF52832_xxAB_REV1      = 15
+    NRF52832_xxAA_FUTURE    = 11
+    NRF52832_xxAB_FUTURE    = 16
+    
+    NRF52840_xxAA_ENGA      = 10
+    NRF52840_xxAA_FUTURE    = 12
+    
+    # Deprecated enumerators. Do not use for new code.
+    NRF51_XLR1              = 1  # Deprecated enumerator. Please do not use in new code.
+    NRF51_XLR2              = 2  # Deprecated enumerator. Please do not use in new code.
+    NRF51_XLR3              = 3  # Deprecated enumerator. Please do not use in new code.
+    NRF51_L3                = 4  # Deprecated enumerator. Please do not use in new code.
+    NRF51_XLR3P             = 5  # Deprecated enumerator. Please do not use in new code.
+    NRF51_XLR3LC            = 6  # Deprecated enumerator. Please do not use in new code.
+
+    NRF52_FP1_ENGA          = 7 # Deprecated enumerator. Please do not use in new code.
+    NRF52_FP1_ENGB          = 8 # Deprecated enumerator. Please do not use in new code.
+    NRF52_FP1               = 9  # Deprecated enumerator. Please do not use in new code.
+    NRF52_FP1_FUTURE        = 11 # Deprecated enumerator. Please do not use in new code.
+    NRF52_FP2_ENGA          = 10 # Deprecated enumerator. Please do not use in new code.
 
 @enum.unique
 class NrfjprogdllErr(enum.IntEnum):
@@ -71,6 +106,7 @@ class NrfjprogdllErr(enum.IntEnum):
     LOW_VOLTAGE                                 = -12
     NO_EMULATOR_CONNECTED                       = -13
     NVMC_ERROR                                  = -20
+    RECOVER_FAILED                              = -21
     NOT_AVAILABLE_BECAUSE_PROTECTION            = -90
     NOT_AVAILABLE_BECAUSE_MPU_CONFIG            = -91
     JLINKARM_DLL_NOT_FOUND                      = -100
@@ -538,6 +574,15 @@ class API(object):
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result)
 
+    def disconnect_from_device(self):
+        """
+        Disconnects from the device.
+        
+        """
+        result = self._lib.NRFJPROG_disconnect_from_device()
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+            
     def readback_protect(self, desired_protection_level):
         """
         Protects the device against read or debug.
@@ -955,6 +1000,20 @@ class API(object):
             raise APIError(result)
 
         return DeviceVersion(version.value).name
+        
+    def read_device_family(self):
+        """
+        Reads the family of the device connected to the emulator. Only if API class has been instantiated with UNKNOWN family.
+
+        @return str: Family of the target device.
+        """
+        family = ctypes.c_int()
+
+        result = self._lib.NRFJPROG_read_device_family(ctypes.byref(family))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+        return DeviceFamily(family.value).name
 
     def read_debug_port_register(self, addr):
         """
@@ -964,7 +1023,7 @@ class API(object):
         @return int: Value read.
         """
         if not self._is_u8(addr):
-            raise ValueError('The reg_addr parameter must be an unsigned 8-bit value.')
+            raise ValueError('The addr parameter must be an unsigned 8-bit value.')
 
         addr = ctypes.c_uint8(addr)
         data = ctypes.c_uint32()
@@ -983,7 +1042,7 @@ class API(object):
         @param int data: Value to write.
         """
         if not self._is_u8(addr):
-            raise ValueError('The reg_addr parameter must be an unsigned 8-bit value.')
+            raise ValueError('The addr parameter must be an unsigned 8-bit value.')
 
         if not self._is_u32(data):
             raise ValueError('The data parameter must be an unsigned 32-bit value.')
@@ -1007,7 +1066,7 @@ class API(object):
             raise ValueError('The ap_index parameter must be an unsigned 8-bit value.')
 
         if not self._is_u8(addr):
-            raise ValueError('The reg_addr parameter must be an unsigned 8-bit value.')
+            raise ValueError('The addr parameter must be an unsigned 8-bit value.')
 
         ap_index = ctypes.c_uint8(ap_index)
         addr = ctypes.c_uint8(addr)
@@ -1031,7 +1090,7 @@ class API(object):
             raise ValueError('The ap_index parameter must be an unsigned 8-bit value.')
 
         if not self._is_u8(addr):
-            raise ValueError('The reg_addr parameter must be an unsigned 8-bit value.')
+            raise ValueError('The addr parameter must be an unsigned 8-bit value.')
 
         if not self._is_u32(data):
             raise ValueError('The data parameter must be an unsigned 32-bit value.')
@@ -1349,7 +1408,7 @@ class API(object):
         if not self._is_bool(output):
             raise ValueError('The output parameter must be a boolean value.')
         
-        addr = ctypes.c_uint8(code)
+        code = ctypes.c_uint8(code)
         length = ctypes.c_uint8(length)
         data_in = (ctypes.c_uint8 * 8)(*data_in) if data_in is not None else (ctypes.c_uint8 * 8)(*[0 for i in range(8)])
         data_out = (ctypes.c_uint8 * 8)()

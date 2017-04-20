@@ -132,6 +132,14 @@ nrfjprogdll_err_t NRFJPROG_connect_to_device(void);
 
 
 /**
+ * @brief   Disonnects from the nRF device.
+ *
+ * @details For further details, see the device family header file. 
+*/
+nrfjprogdll_err_t NRFJPROG_disconnect_from_device(void);
+
+
+/**
  * @brief   Protects the device against read or debug.
  *
  * @details For further details, see the device family header file.
@@ -353,6 +361,14 @@ nrfjprogdll_err_t NRFJPROG_write_cpu_register(cpu_registers_t register_name, uin
  * @details For further details, see the device family header file.
  */
 nrfjprogdll_err_t NRFJPROG_read_device_version(device_version_t * version);
+
+
+/**
+ * @brief   Reads the family of the device connected to the emulator. Can only be called if NRFJPROG_open_dll() was called with UNKNOWN_FAMILY as family parameter.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_read_device_family(device_family_t * family);
 
 
 /**

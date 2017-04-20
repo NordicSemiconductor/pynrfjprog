@@ -11,51 +11,6 @@ try:
 except Exception:
     import API
 
-# WORKAROUND!
-# When bundling the script to an .exe, multiprogramming.Process
-# won't work properly (when accessing a queue from the parent
-# process, we get IllegalHandle or Access Denied).
-# This workaround is directly copied from here:
-
-#   https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing
-#
-import os
-import sys
-
-try:
-    # Python 3.4+
-    if sys.platform.startswith('win'):
-        import multiprocessing.popen_spawn_win32 as forking
-    else:
-        import multiprocessing.popen_fork as forking
-except ImportError:
-    import multiprocessing.forking as forking
-
-if sys.platform.startswith('win'):
-    # First define a modified version of Popen.
-    class _Popen(forking.Popen):
-        def __init__(self, *args, **kw):
-            if hasattr(sys, 'frozen'):
-                # We have to set original _MEIPASS2 value from sys._MEIPASS
-                # to get --onefile mode working.
-                os.putenv('_MEIPASS2', sys._MEIPASS)
-            try:
-                super(_Popen, self).__init__(*args, **kw)
-            finally:
-                if hasattr(sys, 'frozen'):
-                    # On some platforms (e.g. AIX) 'os.unsetenv()' is not
-                    # available. In those cases we cannot delete the variable
-                    # but only set it to the empty string. The bootloader
-                    # can handle this case.
-                    if hasattr(os, 'unsetenv'):
-                        os.unsetenv('_MEIPASS2')
-                    else:
-                        os.putenv('_MEIPASS2', '')
-
-    # Second override 'Popen' class with our modified version.
-    forking.Popen = _Popen
-    # print('\t\tworkaround complete')
-# END WORKAROUND
 
 """
 Deprecated: Do not use, use log parameter in MultiAPI constructor instead.
@@ -105,7 +60,7 @@ class MultiAPI(object):
     def dll_version(self):
         self.CmdQueue.put(_Command('dll_version'))
         return self._wait_for_completion()
-
+    
     def is_open(self):
         self.CmdQueue.put(_Command('is_open'))
         return self._wait_for_completion()
@@ -158,6 +113,10 @@ class MultiAPI(object):
         self.CmdQueue.put(_Command('connect_to_device'))
         return self._wait_for_completion()
 
+    def disconnect_from_device(self):
+        self.CmdQueue.put(_Command('disconnect_from_device'))
+        return self._wait_for_completion()
+        
     def readback_protect(self, desired_protection_level):
         self.CmdQueue.put(_Command('readback_protect', desired_protection_level))
         return self._wait_for_completion()
@@ -270,6 +229,10 @@ class MultiAPI(object):
         self.CmdQueue.put(_Command('read_device_version'))
         return self._wait_for_completion()
 
+    def read_device_family(self):
+        self.CmdQueue.put(_Command('read_device_family'))
+        return self._wait_for_completion()
+        
     def read_debug_port_register(self, reg_addr):
         self.CmdQueue.put(_Command('read_debug_port_register', reg_addr))
         return self._wait_for_completion()
@@ -347,7 +310,7 @@ class MultiAPI(object):
         return self._wait_for_completion()
         
     def qspi_custom(self, code, length, data_in=None, output=False):
-        self.CmdQueue.put(_Command('qspi_custom', code, length, data_in, data_out))
+        self.CmdQueue.put(_Command('qspi_custom', code, length, data_in, output))
         return self._wait_for_completion()
         
     def _wait_for_completion(self):

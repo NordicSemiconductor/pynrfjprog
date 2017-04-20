@@ -14,10 +14,9 @@ extern "C" {
 #define JLINKARM_SWD_MIN_SPEED_KHZ                      (125UL)
 #define JLINKARM_SWD_DEFAULT_SPEED_KHZ                  (2000UL)
 #define JLINKARM_SWD_MAX_SPEED_KHZ                      (50000UL)
-
-
-/* RAM power status declarations. */
-#define MAX_RAM_BLOCKS      (16)                    /* NRF52 FP1 has 16 ram blocks. */
+    
+/* Deprecated Macro. Use result of NRFJPROG_read_ram_sections_count() function instead. */
+#define MAX_RAM_BLOCKS      (16)
     
 typedef enum {
     RAM_OFF = 0,
@@ -68,33 +67,57 @@ typedef enum {
 
 /* Identified device versions of nRF devices. */
 typedef enum {
-    UNKNOWN             = 0,
+    UNKNOWN                             = 0,
     
     /* nRF51 versions. */
-    NRF51_XLR1          = 1,
-    NRF51_XLR2          = 2,
-    NRF51_XLR3          = 3,
-    NRF51_L3            = 4,
-    NRF51_XLR3P         = 5,
-    NRF51_XLR3LC        = 6,
+    /* See http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.nrf51/dita/nrf51/pdflinks/nrf51_comp_matrix.html */
+    NRF51xxx_xxAA_REV1                  = 1, 
+    NRF51xxx_xxAA_REV2                  = 2, 
+    
+    NRF51xxx_xxAA_REV3                  = 3, 
+    NRF51xxx_xxAB_REV3                  = 4, 
+    NRF51xxx_xxAC_REV3                  = 5, 
+
+    NRF51802_xxAA_REV3                  = 6, 
+    NRF51801_xxAB_REV3                  = 17,
+
+    /* Deprecated NRF51 enumerators. */
+    NRF51_XLR1                          = 1,  /* Please do not use in new code. Kept for backwards compatibility. */
+    NRF51_XLR2                          = 2,  /* Please do not use in new code. Kept for backwards compatibility. */ 
+    NRF51_XLR3                          = 3,  /* Please do not use in new code. Kept for backwards compatibility. */ 
+    NRF51_L3                            = 4,  /* Please do not use in new code. Kept for backwards compatibility. */ 
+    NRF51_XLR3P                         = 5,  /* Please do not use in new code. Kept for backwards compatibility. */ 
+    NRF51_XLR3LC                        = 6,  /* Please do not use in new code. Kept for backwards compatibility. */ 
     
     /* nRF52832 versions. */
-    NRF52_FP1_ENGA      = 7,
-    NRF52_FP1_ENGB      = 8,
-    NRF52_FP1           = 9,
-    
-    /* nRF52840 versions. */
-    NRF52_FP2_ENGA      = 10,
+    /* See http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.nrf52/dita/nrf52/compatibility_matrix/nrf52832_comp_matrix.html */
+    NRF52832_xxAA_ENGA                  = 7,
+    NRF52832_xxAA_ENGB                  = 8,
+    NRF52832_xxAA_REV1                  = 9, 
+    NRF52832_xxAB_REV1                  = 15,
 
-    /* Unknown future devices of all existing devices from nRF52 family. */
-    NRF52_FP1_FUTURE    = 11,
-    NRF52_FP2_FUTURE    = 12
+    NRF52832_xxAA_FUTURE                = 11,
+    NRF52832_xxAB_FUTURE                = 16,   
+
+    /* nRF52840 versions. */
+    /* See http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.nrf52/dita/nrf52/compatibility_matrix/nrf52840_comp_matrix.html */
+    NRF52840_xxAA_ENGA                  = 10,
+    NRF52840_xxAA_FUTURE                = 12,
+
+    /* Deprecated nRF52 enumerators. */
+    NRF52_FP1_ENGA                      = 7,  /* Please do not use in new code. Kept for backwards compatibility. */
+    NRF52_FP1_ENGB                      = 8,  /* Please do not use in new code. Kept for backwards compatibility. */
+    NRF52_FP1                           = 9,  /* Please do not use in new code. Kept for backwards compatibility. */
+    NRF52_FP1_FUTURE                    = 11, /* Please do not use in new code. Kept for backwards compatibility. */
+    NRF52_FP2_ENGA                      = 10, /* Please do not use in new code. Kept for backwards compatibility. */
+
 } device_version_t;
 
 /* Identified types of nRF devices */
 typedef enum {
     NRF51_FAMILY,
-    NRF52_FAMILY
+    NRF52_FAMILY,
+    UNKNOWN_FAMILY = 99
 } device_family_t;
 
 /* Possible rtt channel directions */
@@ -194,7 +217,7 @@ typedef enum
     INVALID_DEVICE_FOR_OPERATION                = -4,
     WRONG_FAMILY_FOR_DEVICE                     = -5,
     
-    /* Connexion issues. */
+    /* Connection issues. */
     EMULATOR_NOT_CONNECTED                      = -10,
     CANNOT_CONNECT                              = -11,
     LOW_VOLTAGE                                 = -12,
@@ -202,6 +225,7 @@ typedef enum
 
     /* Device issues. */
     NVMC_ERROR                                  = -20,
+    RECOVER_FAILED                              = -21,
 
     /* Operation not available. */
     NOT_AVAILABLE_BECAUSE_PROTECTION            = -90,
