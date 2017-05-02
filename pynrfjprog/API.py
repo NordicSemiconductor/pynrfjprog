@@ -1244,7 +1244,7 @@ class API(object):
 
         @param int channel_index: RTT channel to request info.
         @param int, str, or RTTChannelDirection(IntEnum) direction: Direction of the channel to request info.
-        @return str: Channel name.
+        @return (str, int): Tuple containing the channel name and the size of channel buffer.
         """
         if not self._is_u32(channel_index):
             raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
