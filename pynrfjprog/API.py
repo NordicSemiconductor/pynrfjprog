@@ -41,19 +41,24 @@ class DeviceVersion(enum.IntEnum):
 
     """
     # Desired order for enumerators. Only useful to indicate the enumerators that have preference if the number is the same. Only necessary in py2.7, harmless in 3.x
-    __order__ = 'NRF51xxx_xxAA_REV1' + ' ' + \
-                'NRF51xxx_xxAA_REV2' + ' ' + \
-                'NRF51xxx_xxAA_REV3' + ' ' + \
-                'NRF51xxx_xxAB_REV3' + ' ' + \
-                'NRF51xxx_xxAC_REV3' + ' ' + \
-                'NRF51802_xxAA_REV3' + ' ' + \
-                'NRF51801_xxAB_REV3' + ' ' + \
-                'NRF52832_xxAA_ENGA' + ' ' + \
-                'NRF52832_xxAA_ENGB' + ' ' + \
-                'NRF52832_xxAA_REV1' + ' ' + \
-                'NRF52832_xxAA_FUTURE' + ' ' \
-                'NRF52840_xxAA_ENGA' + ' ' + \
-                'NRF52840_xxAA_FUTURE' + ' '
+    __order__ = 'UNKNOWN'              + ' ' + \
+                'NRF51xxx_xxAA_REV1'   + ' ' + \
+                'NRF51xxx_xxAA_REV2'   + ' ' + \
+                'NRF51xxx_xxAA_REV3'   + ' ' + \
+                'NRF51xxx_xxAB_REV3'   + ' ' + \
+                'NRF51xxx_xxAC_REV3'   + ' ' + \
+                'NRF51802_xxAA_REV3'   + ' ' + \
+                'NRF51801_xxAB_REV3'   + ' ' + \
+                'NRF52832_xxAA_ENGA'   + ' ' + \
+                'NRF52832_xxAA_ENGB'   + ' ' + \
+                'NRF52832_xxAA_REV1'   + ' ' + \
+                'NRF52832_xxAB_REV1'   + ' ' + \
+                'NRF52832_xxAA_FUTURE' + ' ' + \
+                'NRF52832_xxAB_FUTURE' + ' ' + \
+                'NRF52840_xxAA_ENGA'   + ' ' + \
+                'NRF52840_xxAA_FUTURE' + ' ' + \
+                'NRF52810_xxAA_REV1'   + ' ' + \
+                'NRF52810_xxAA_FUTURE'
 
     UNKNOWN                 = 0
     
@@ -74,6 +79,9 @@ class DeviceVersion(enum.IntEnum):
     
     NRF52840_xxAA_ENGA      = 10
     NRF52840_xxAA_FUTURE    = 12
+
+    NRF52810_xxAA_REV1      = 13
+    NRF52810_xxAA_FUTURE    = 14
     
     # Deprecated enumerators. Do not use for new code.
     NRF51_XLR1              = 1  # Deprecated enumerator. Please do not use in new code.
@@ -83,8 +91,8 @@ class DeviceVersion(enum.IntEnum):
     NRF51_XLR3P             = 5  # Deprecated enumerator. Please do not use in new code.
     NRF51_XLR3LC            = 6  # Deprecated enumerator. Please do not use in new code.
 
-    NRF52_FP1_ENGA          = 7 # Deprecated enumerator. Please do not use in new code.
-    NRF52_FP1_ENGB          = 8 # Deprecated enumerator. Please do not use in new code.
+    NRF52_FP1_ENGA          = 7  # Deprecated enumerator. Please do not use in new code.
+    NRF52_FP1_ENGB          = 8  # Deprecated enumerator. Please do not use in new code.
     NRF52_FP1               = 9  # Deprecated enumerator. Please do not use in new code.
     NRF52_FP1_FUTURE        = 11 # Deprecated enumerator. Please do not use in new code.
     NRF52_FP2_ENGA          = 10 # Deprecated enumerator. Please do not use in new code.
@@ -226,13 +234,21 @@ class QSPILevelIO(enum.IntEnum):
     """
     LEVEL_HIGH = 1
     LEVEL_LOW = 0
-    
+
+@enum.unique
+class QSPIPPSize(enum.IntEnum):
+    """
+    Wraps qspi_page_program_size_t values from DllCommonDefinitions.h
+    """
+    PAGE256 = 0
+    PAGE512 = 1
+
 class QSPIInitParams(object):
     """
     Configuration class for qspi_init() function.
 
     """
-    def __init__(self, read_mode=QSPIReadMode.READ4IO, write_mode=QSPIWriteMode.PP4IO, address_mode=QSPIAddressMode.BIT24, frequency=QSPIFrequency.M16, spi_mode=QSPISpiMode.MODE0, sck_delay=0x80, custom_instruction_io2_level=QSPILevelIO.LEVEL_LOW, custom_instruction_io3_level=QSPILevelIO.LEVEL_HIGH, CSN_pin=17, CSN_port=0, SCK_pin=19, SCK_port=0, DIO0_pin=20, DIO0_port=0, DIO1_pin=21, DIO1_port=0, DIO2_pin=22, DIO2_port=0, DIO3_pin=23, DIO3_port=0, WIP_index=0):
+    def __init__(self, read_mode=QSPIReadMode.READ4IO, write_mode=QSPIWriteMode.PP4IO, address_mode=QSPIAddressMode.BIT24, frequency=QSPIFrequency.M16, spi_mode=QSPISpiMode.MODE0, sck_delay=0x80, custom_instruction_io2_level=QSPILevelIO.LEVEL_LOW, custom_instruction_io3_level=QSPILevelIO.LEVEL_HIGH, CSN_pin=17, CSN_port=0, SCK_pin=19, SCK_port=0, DIO0_pin=20, DIO0_port=0, DIO1_pin=21, DIO1_port=0, DIO2_pin=22, DIO2_port=0, DIO3_pin=23, DIO3_port=0, WIP_index=0, pp_size=QSPIPPSize.PAGE256):
         self.read_mode = read_mode
         self.write_mode = write_mode
         self.address_mode = address_mode
@@ -254,6 +270,7 @@ class QSPIInitParams(object):
         self.DIO3_pin = DIO3_pin
         self.DIO3_port = DIO3_port
         self.WIP_index = WIP_index
+        self.pp_size = pp_size
     
 @enum.unique
 class CpuRegister(enum.IntEnum):
@@ -318,7 +335,7 @@ class API(object):
 
         @param enum, str or int device_family: The series of device pynrfjprog will interact with.
         @param (optional) str jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use.
-        @param (optional) callable object log_str_cb: If present, the log_str_cb will be called to receive log and error information. The log_str_cb object should be callable, expect to receive a string as the only parameter and do not need to return anything.
+        @param (optional) callable object log_str_cb: If present, the log_str_cb will be called to receive log and error information. The log_str_cb object should be callable, expect to receive a string as the only parameter and does not need to return anything.
         @param (optional) bool log: If present and true, will enable logging to sys.stderr with the default log string appended to the beginning of each debug output line.
         @param (optional) str log_str: If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
         @param (optional) str log_file_path: If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
@@ -1290,7 +1307,7 @@ class API(object):
         @param (optional) QSPIInitParams init_params: Configuration for the QSPI operations.
         """
         class _CtypesQSPIInitParams(ctypes.Structure):
-            _fields_ = [("read_mode", ctypes.c_int), ("write_mode", ctypes.c_int), ("address_mode", ctypes.c_int), ("frequency", ctypes.c_int), ("spi_mode", ctypes.c_int), ("sck_delay", ctypes.c_uint32), ("custom_instruction_io2_level", ctypes.c_int), ("custom_instruction_io3_level", ctypes.c_int), ("CSN_pin", ctypes.c_uint32), ("CSN_port", ctypes.c_uint32), ("SCK_pin", ctypes.c_uint32), ("SCK_port", ctypes.c_uint32), ("DIO0_pin", ctypes.c_uint32), ("DIO0_port", ctypes.c_uint32), ("DIO1_pin", ctypes.c_uint32), ("DIO1_port", ctypes.c_uint32), ("DIO2_pin", ctypes.c_uint32), ("DIO2_port", ctypes.c_uint32), ("DIO3_pin", ctypes.c_uint32), ("DIO3_port", ctypes.c_uint32), ("WIP_index", ctypes.c_uint32)]
+            _fields_ = [("read_mode", ctypes.c_int), ("write_mode", ctypes.c_int), ("address_mode", ctypes.c_int), ("frequency", ctypes.c_int), ("spi_mode", ctypes.c_int), ("sck_delay", ctypes.c_uint32), ("custom_instruction_io2_level", ctypes.c_int), ("custom_instruction_io3_level", ctypes.c_int), ("CSN_pin", ctypes.c_uint32), ("CSN_port", ctypes.c_uint32), ("SCK_pin", ctypes.c_uint32), ("SCK_port", ctypes.c_uint32), ("DIO0_pin", ctypes.c_uint32), ("DIO0_port", ctypes.c_uint32), ("DIO1_pin", ctypes.c_uint32), ("DIO1_port", ctypes.c_uint32), ("DIO2_pin", ctypes.c_uint32), ("DIO2_port", ctypes.c_uint32), ("DIO3_pin", ctypes.c_uint32), ("DIO3_port", ctypes.c_uint32), ("WIP_index", ctypes.c_uint32), ("pp_size", ctypes.c_int)]
         
         if not self._is_bool(retain_ram):
             raise ValueError('The retain_ram parameter must be a boolean value.')
@@ -1302,7 +1319,7 @@ class API(object):
             init_params = QSPIInitParams()
         
         retain_ram = ctypes.c_bool(retain_ram)
-        qspi_init_params = _CtypesQSPIInitParams(init_params.read_mode, init_params.write_mode, init_params.address_mode, init_params.frequency, init_params.spi_mode, init_params.sck_delay, init_params.custom_instruction_io2_level, init_params.custom_instruction_io3_level, init_params.CSN_pin, init_params.CSN_port, init_params.SCK_pin, init_params.SCK_port, init_params.DIO0_pin, init_params.DIO0_port, init_params.DIO1_pin, init_params.DIO1_port, init_params.DIO2_pin, init_params.DIO2_port, init_params.DIO3_pin, init_params.DIO3_port, init_params.WIP_index)
+        qspi_init_params = _CtypesQSPIInitParams(init_params.read_mode, init_params.write_mode, init_params.address_mode, init_params.frequency, init_params.spi_mode, init_params.sck_delay, init_params.custom_instruction_io2_level, init_params.custom_instruction_io3_level, init_params.CSN_pin, init_params.CSN_port, init_params.SCK_pin, init_params.SCK_port, init_params.DIO0_pin, init_params.DIO0_port, init_params.DIO1_pin, init_params.DIO1_port, init_params.DIO2_pin, init_params.DIO2_port, init_params.DIO3_pin, init_params.DIO3_port, init_params.WIP_index, init_params.pp_size)
         
         result = self._lib.NRFJPROG_qspi_init(retain_ram, ctypes.byref(qspi_init_params))
         if result != NrfjprogdllErr.SUCCESS:
@@ -1441,7 +1458,7 @@ class API(object):
             if log_file is sys.stderr or log_file is sys.stdout:
                 self._log_file = log_file
             else:
-                self._log_file = open(log_file, 'w')
+                self._log_file = open(log_file, 'w', 1)
 
             return ctypes.CFUNCTYPE(None, ctypes.c_char_p)(lambda x: print(log_str + '{}'.format(x.strip()), file=self._log_file)) if sys.version_info[0] == 2 else ctypes.CFUNCTYPE(None, ctypes.c_char_p)(lambda x: print(log_str + '{}'.format(x.strip().decode('utf-8')), file=self._log_file))
 

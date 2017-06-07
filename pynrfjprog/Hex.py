@@ -30,7 +30,7 @@ class Hex(object):
         self._segment_list = []
         self._high_address = 0
 
-        with open(filename) as file:
+        with open(filename, 'r', 1) as file:
             
             high_address_changed = False
             for line in file:

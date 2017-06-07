@@ -925,7 +925,7 @@ nrfjprogdll_err_t NRFJPROG_read_ram_sections_power_status(ram_section_power_stat
  * @brief   DEPRECATED. Please use NRFJPROG_read_ram_sections_power_status(), NRFJPROG_read_ram_sections_size() or NRFJPROG_read_ram_sections_count() functions instead.
  *
  * @details This function is DEPRECATED and replaced by NRFJPROG_read_ram_sections_power_status(), NRFJPROG_read_ram_sections_count() and NRFJPROG_read_ram_sections_size() functions.
- *          The function is functional for all versions of nRF52832 devices, but should not be used as it will be removed in a future major release of the DLL.
+ *          The function is functional for all versions of nRF52832 and nRF52810 devices, but should not be used as it will be removed in a future major release of the DLL.
  *
  *          Reads the RAM power status. Will read the status of the RAM sections and return if they are either on or off.
  *          Parameter ram_sections_number is used by the dll to indicate how many of the ram_sections_power_status are
@@ -1077,7 +1077,7 @@ nrfjprogdll_err_t NRFJPROG_write_cpu_register(cpu_registers_t register_name, uin
  * @brief   Reads the version of the device connected to the emulator.
  *
  * @details Reads the version of the device connected to the emulator. If the device is not an NRF52 device version parameter will be set to UNKNOWN and WRONG_FAMILY_FOR_DEVICE error returned.
- *          If the device in use is a newer revision of a known NRF52 device, but this revision is not known at compile time of this dll, NRF52_FPx_FUTURE will be returned instead.
+ *          If the device in use is a newer revision of a known NRF52 device, but this revision is not known at compile time of this dll, the appropriate device _FUTURE will be returned instead.
  *          See DllCommonDefinitions.h header file for the possible values of x. Consider updating to a newer version of tools.
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
@@ -1450,8 +1450,7 @@ nrfjprogdll_err_t NRFJPROG_is_qspi_init(bool * initialized);
  * @details Initializes the QSPI peripheral, configuring the QSPI peripheral according to init_params. If retain_ram is true, the device RAM used for QSPI operations will be read and stored.
  *          The stored contents will be restored after the execution of NRFJPROG_qspi_uninit() function. NRFJPROG_qspi_init() function does not initialize the external flash memory device in
  *          any way. If the external flash device requires special configuration for the QSPI configuration given by init_params, it is up to the user to do so with the help of NRFJPROG_qspi_custom()
- *          function. Note that for certain external flash memory devices some operation modes are not available, so use the available options with care. NRFJPROG_qspi_init() function currently 
- *          supports a limited range of configurations. The only supported memory device at the moment is the MX25R6435F used in the nRF52840 DK. It will be extended in the future on request.
+ *          function. Note that for certain external flash memory devices some operation modes are not available, so use the available options with care. 
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
  * @pre     Before the execution of this function, the QSPI must not be initialized. To uninitialize the QSPI, see NRFJPROG_qspi_uninit() function.
@@ -1577,7 +1576,7 @@ nrfjprogdll_err_t NRFJPROG_qspi_write(uint32_t addr, const uint8_t * data, uint3
  *
  * @details Erases length bytes from addr address of the external QSPI-connected memory. The given addr must be aligned to the desired erase length. Please note that some erase operations
  *          take a long time with certain external flash devices, so this operation might take minutes, specially with a full erase. Note that for certain external flash memory devices some
- *          erase lengths are not supported, so use the available options with care.
+ *          erase lengths are not supported, please consult your datasheet and use the available options with care.
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
  * @pre     Before the execution of this function, the QSPI must be initialized. To initialize the QSPI, see NRFJPROG_qspi_init() function.

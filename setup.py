@@ -45,7 +45,8 @@ setup(
 
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5'
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6'
     ],
     
     keywords = 'nrfjprog pynrfjprog',
@@ -53,14 +54,13 @@ setup(
     install_requires = requirements,
      
     packages = find_packages(),
-    package_data = { 
+    package_data = {
                 'pynrfjprog.win_32bit_dll': ['*.dll'],
                 'pynrfjprog.win_64bit_dll': ['*.dll'],
                 'pynrfjprog.linux_64bit_so': ['*.so'],
                 'pynrfjprog.linux_32bit_so': ['*.so'],
                 'pynrfjprog.osx_dylib': ['*.dylib'],
-                'pynrfjprog.docs': ['*.h'],
+                'pynrfjprog.docs': ['*.h', 'nrfjprog_release_notes.txt'],
                 'pynrfjprog.examples': ['*.hex']
     }
-    
-    )
+)

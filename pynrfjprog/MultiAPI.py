@@ -3,8 +3,12 @@ MultiAPI module.
 
 """
 
+from __future__ import print_function
+
 import inspect
+import traceback
 import multiprocessing
+import sys
 
 try:
     from . import API
@@ -19,20 +23,27 @@ DEBUG_OUTPUT = False
 
 
 class _Command(object):
-    def __init__(self, cmd, *args):
+    def __init__(self, cmd, *args, **kwargs):
         self.cmd = cmd
         self.args = args
+        self.kwargs = kwargs
 
 
 class _CommandAck(object):
-    def __init__(self, exception=None, result=None):
+    def __init__(self, exception=None, result=None, stacktrace=""):
         self.exception = exception
+        self.stacktrace = stacktrace
         self.result = result
 
 
 class MultiAPI(object):
     """
-    Main class of the module. Instance the class several times to get access to nrfjprog.dll functions, including FICR modifying functions, in Python for several devices simultaneously.
+    Main class of the module. Instance the class several times to get access to nrfjprog.dll functions, in Python for several devices simultaneously.
+
+    Class interface mirrors API.API. Any object call MultiAPI.MultiAPI.method() is intercepted by the __getattr__ method.
+    If the called method is a member of the regular API, the _execute method is called with the object name and parameters.
+    The _execute method passes the method name and parameters to the _runner thread via a multiprocessing Queue.
+    The _runner thread attempts to execute the passed method. Exceptions and return values are passed back to the main thread.
 
     Note: A copy of nrfjprog.dll must be found in the working directory.
     """
@@ -41,11 +52,11 @@ class MultiAPI(object):
         """
         Constructor. Initializes multiprocessing queues, creates a subprocess for the API instance and runs it.
 
-        @param enum, string or int device_family: The series of device pynrfjprog will interact with.
-        @param (optional) string jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use.
-        @param (optional) bool log: If present and true, will enable logging to sys.stderr with the default log string appended to the beginning of each debug output line.
-        @param (optional) string log_str: If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
-        @param (optional) string log_file_path: If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
+        @param enum string or int device_family:    The series of device pynrfjprog will interact with.
+        @param optional string jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use.
+        @param optional bool log:                  If present and true, will enable logging to sys.stderr with the default log string appended to the beginning of each debug output line.
+        @param optional string log_str:            If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
+        @param optional string log_file_path:      If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
         """
         self.CmdQueue = multiprocessing.Queue()
         self.CmdAckQueue = multiprocessing.Queue()
@@ -57,274 +68,44 @@ class MultiAPI(object):
         self.runner.daemon = True
         self.runner.start()
 
-    def dll_version(self):
-        self.CmdQueue.put(_Command('dll_version'))
-        return self._wait_for_completion()
-    
-    def is_open(self):
-        self.CmdQueue.put(_Command('is_open'))
-        return self._wait_for_completion()
-    
-    def open(self):
-        self.CmdQueue.put(_Command('open'))
-        return self._wait_for_completion()
+    def __getattr__(self, name):
+        if hasattr(API.API, name):
+            return lambda *args, **kwargs: self._execute(name, *args, **kwargs)
+        else:
+            raise AttributeError
 
-    def close(self):
-        self.CmdQueue.put(_Command('close'))
-        return self._wait_for_completion()
+    def _execute(self, func_name, *args, **kwargs):
+        """Passes method and argument to _runner for execution.
+        Calls API.API.func_name(*args, **kwargs) in a separate thread.
+        Passes the method to be called to the runner, and awaits a return message.
+        Reraises any exceptions that occurred during execution.
+        Returns the return value of the executed method.
 
-    def enum_emu_snr(self):
-        self.CmdQueue.put(_Command('enum_emu_snr'))
-        return self._wait_for_completion()
+        @param func_name:  Name of API method member to call.
+        @param args:       Arguments of func_name.
+        @param kwargs:     Named arguments of func_name.
+        @returns:          Return value of API.API.func_name(*args, **kwargs)
+        """
+        self.CmdQueue.put(_Command(func_name, *args, **kwargs))
 
-    def is_connected_to_emu(self):
-        self.CmdQueue.put(_Command('is_connected_to_emu'))
-        return self._wait_for_completion()
-
-    def connect_to_emu_with_snr(self, serial_number, jlink_speed_khz=API.API._DEFAULT_JLINK_SPEED_KHZ):
-        self.CmdQueue.put(_Command('connect_to_emu_with_snr', serial_number, jlink_speed_khz))
-        return self._wait_for_completion()
-
-    def connect_to_emu_without_snr(self, jlink_speed_khz=API.API._DEFAULT_JLINK_SPEED_KHZ):
-        self.CmdQueue.put(_Command('connect_to_emu_without_snr', jlink_speed_khz))
-        return self._wait_for_completion()
-
-    def read_connected_emu_snr(self):
-        self.CmdQueue.put(_Command('read_connected_emu_snr'))
-        return self._wait_for_completion()
-
-    def read_connected_emu_fwstr(self):
-        self.CmdQueue.put(_Command('read_connected_emu_fwstr'))
-        return self._wait_for_completion()
-    
-    def disconnect_from_emu(self):
-        self.CmdQueue.put(_Command('disconnect_from_emu'))
-        return self._wait_for_completion()
-
-    def recover(self):
-        self.CmdQueue.put(_Command('recover'))
-        return self._wait_for_completion()
-
-    def is_connected_to_device(self):
-        self.CmdQueue.put(_Command('is_connected_to_device'))
-        return self._wait_for_completion()
-
-    def connect_to_device(self):
-        self.CmdQueue.put(_Command('connect_to_device'))
-        return self._wait_for_completion()
-
-    def disconnect_from_device(self):
-        self.CmdQueue.put(_Command('disconnect_from_device'))
-        return self._wait_for_completion()
-        
-    def readback_protect(self, desired_protection_level):
-        self.CmdQueue.put(_Command('readback_protect', desired_protection_level))
-        return self._wait_for_completion()
-
-    def readback_status(self):
-        self.CmdQueue.put(_Command('readback_status'))
-        return self._wait_for_completion()
-
-    def read_region_0_size_and_source(self):
-        self.CmdQueue.put(_Command('read_region_0_size_and_source'))
-        return self._wait_for_completion()
-
-    def debug_reset(self):
-        self.CmdQueue.put(_Command('debug_reset'))
-        return self._wait_for_completion()
-
-    def sys_reset(self):
-        self.CmdQueue.put(_Command('sys_reset'))
-        return self._wait_for_completion()
-
-    def pin_reset(self):
-        self.CmdQueue.put(_Command('pin_reset'))
-        return self._wait_for_completion()
-
-    def disable_bprot(self):
-        self.CmdQueue.put(_Command('disable_bprot'))
-        return self._wait_for_completion()
-
-    def erase_all(self):
-        self.CmdQueue.put(_Command('erase_all'))
-        return self._wait_for_completion()
-
-    def erase_page(self, addr):
-        self.CmdQueue.put(_Command('erase_page', addr))
-        return self._wait_for_completion()
-
-    def erase_uicr(self):
-        self.CmdQueue.put(_Command('erase_uicr'))
-        return self._wait_for_completion()
-
-    def write_u32(self, addr, data, control):
-        self.CmdQueue.put(_Command('write_u32', addr, data, control))
-        return self._wait_for_completion()
-
-    def read_u32(self, addr):
-        self.CmdQueue.put(_Command('read_u32', addr))
-        return self._wait_for_completion()
-
-    def write(self, addr, data, control):
-        self.CmdQueue.put(_Command('write', addr, data, control))
-        return self._wait_for_completion()
-
-    def read(self, addr, length):
-        self.CmdQueue.put(_Command('read', addr, length))
-        return self._wait_for_completion()
-
-    def is_halted(self):
-        self.CmdQueue.put(_Command('is_halted'))
-        return self._wait_for_completion()
-
-    def halt(self):
-        self.CmdQueue.put(_Command('halt'))
-        return self._wait_for_completion()
-
-    def run(self, pc, sp):
-        self.CmdQueue.put(_Command('run', pc, sp))
-        return self._wait_for_completion()
-
-    def go(self):
-        self.CmdQueue.put(_Command('go'))
-        return self._wait_for_completion()
-
-    def step(self):
-        self.CmdQueue.put(_Command('step'))
-        return self._wait_for_completion()
-
-    def read_ram_sections_count(self):
-        self.CmdQueue.put(_Command('read_ram_sections_count'))
-        return self._wait_for_completion()
-
-    def read_ram_sections_size(self):
-        self.CmdQueue.put(_Command('read_ram_sections_size'))
-        return self._wait_for_completion()
-
-    def read_ram_sections_power_status(self):
-        self.CmdQueue.put(_Command('read_ram_sections_power_status'))
-        return self._wait_for_completion()
-
-    def is_ram_powered(self):
-        self.CmdQueue.put(_Command('is_ram_powered'))
-        return self._wait_for_completion()
-
-    def power_ram_all(self):
-        self.CmdQueue.put(_Command('power_ram_all'))
-        return self._wait_for_completion()
-
-    def unpower_ram_section(self, section_index):
-        self.CmdQueue.put(_Command('unpower_ram_section', section_index))
-        return self._wait_for_completion()
-
-    def read_cpu_register(self, register_name):
-        self.CmdQueue.put(_Command('read_cpu_register', register_name))
-        return self._wait_for_completion()
-
-    def write_cpu_register(self, register_name, value):
-        self.CmdQueue.put(_Command('write_cpu_register', register_name, value))
-        return self._wait_for_completion()
-
-    def read_device_version(self):
-        self.CmdQueue.put(_Command('read_device_version'))
-        return self._wait_for_completion()
-
-    def read_device_family(self):
-        self.CmdQueue.put(_Command('read_device_family'))
-        return self._wait_for_completion()
-        
-    def read_debug_port_register(self, reg_addr):
-        self.CmdQueue.put(_Command('read_debug_port_register', reg_addr))
-        return self._wait_for_completion()
-
-    def write_debug_port_register(self, reg_addr, data):
-        self.CmdQueue.put(_Command('write_debug_port_register', reg_addr, data))
-        return self._wait_for_completion()
-
-    def read_access_port_register(self, ap_index, reg_addr):
-        self.CmdQueue.put(_Command('read_access_port_register', ap_index, reg_addr))
-        return self._wait_for_completion()
-
-    def write_access_port_register(self, ap_index, reg_addr, data):
-        self.CmdQueue.put(_Command('write_access_port_register', ap_index, reg_addr, data))
-        return self._wait_for_completion()
-
-    def rtt_set_control_block_address(self, address):
-        self.CmdQueue.put(_Command('rtt_set_control_block_address', address))
-        return self._wait_for_completion()
-
-    def rtt_start(self):
-        self.CmdQueue.put(_Command('rtt_start'))
-        return self._wait_for_completion()
-
-    def is_rtt_started(self):
-        self.CmdQueue.put(_Command('is_rtt_started'))
-        return self._wait_for_completion()
-        
-    def rtt_is_control_block_found(self):
-        self.CmdQueue.put(_Command('rtt_is_control_block_found'))
-        return self._wait_for_completion()
-
-    def rtt_stop(self):
-        self.CmdQueue.put(_Command('rtt_stop'))
-        return self._wait_for_completion()
-
-    def rtt_read(self, channel_index, length, encoding='utf-8'):
-        self.CmdQueue.put(_Command('rtt_read', channel_index, length, encoding))
-        return self._wait_for_completion()
-
-    def rtt_write(self, channel_index, msg, encoding='utf-8'):
-        self.CmdQueue.put(_Command('rtt_write', channel_index, msg, encoding))
-        return self._wait_for_completion()
-
-    def rtt_read_channel_count(self):
-        self.CmdQueue.put(_Command('rtt_read_channel_count'))
-        return self._wait_for_completion()
-
-    def rtt_read_channel_info(self, channel_index, direction):
-        self.CmdQueue.put(_Command('rtt_read_channel_info', channel_index, direction))
-        return self._wait_for_completion()
-    
-    def is_qspi_init(self):
-        self.CmdQueue.put(_Command('is_qspi_init'))
-        return self._wait_for_completion()
-        
-    def qspi_init(self, retain_ram=False, init_params=None):
-        self.CmdQueue.put(_Command('qspi_init', retain_ram, init_params))
-        return self._wait_for_completion()
-        
-    def qspi_uninit(self):
-        self.CmdQueue.put(_Command('qspi_uninit'))
-        return self._wait_for_completion()
-        
-    def qspi_read(self, addr, length):
-        self.CmdQueue.put(_Command('qspi_read', addr, length))
-        return self._wait_for_completion()
-     
-    def qspi_write(self, addr, data):
-        self.CmdQueue.put(_Command('qspi_write', addr, data))
-        return self._wait_for_completion()
-
-    def qspi_erase(self, addr, length):
-        self.CmdQueue.put(_Command('qspi_erase', addr, length))
-        return self._wait_for_completion()
-        
-    def qspi_custom(self, code, length, data_in=None, output=False):
-        self.CmdQueue.put(_Command('qspi_custom', code, length, data_in, output))
-        return self._wait_for_completion()
-        
-    def _wait_for_completion(self):
         ack = self.CmdAckQueue.get()
 
         if ack.exception is not None:
+            print(ack.stacktrace)
             raise ack.exception
         if ack.result is not None:
             return ack.result
 
     def _runner(self, device_family, jlink_arm_dll_path, log, log_str, log_file):
-        """
-        Function that runs in a subprocess and executes the commands.
+        """Runs methods in separate thread.
+        Attempts to call any method received from _execute through CmdQueue as a member of API.API class.
+        Return values and exceptions are passed back through the CmdAckQueue to _execute.
 
+        @param device_family:        Family of target device.
+        @param jlink_arm_dll_path:   Path to target jlinkarm DLL.
+        @param log:                  Whether or not API should log.
+        @param log_str:              Prepend string to log output.
+        @param log_file:             Target file for log output.
         """
         api = self._api_setup(device_family, jlink_arm_dll_path, log, log_str, log_file)
         api_functions = dict(inspect.getmembers(api, inspect.ismethod))
@@ -332,17 +113,14 @@ class MultiAPI(object):
         while True:
             cmd = self.CmdQueue.get()
             try:
-                res = api_functions[cmd.cmd](*cmd.args)
+                res = api_functions[cmd.cmd](*cmd.args, **cmd.kwargs)
             except Exception as e:
-                self.CmdAckQueue.put(_CommandAck(exception=e))
+                self.CmdAckQueue.put(_CommandAck(exception=e, stacktrace=traceback.format_exc()))
             else:
                 self.CmdAckQueue.put(_CommandAck(result=res))
 
     def _api_setup(self, device_family, jlink_arm_dll_path, log, log_str, log_file):
-        """
-        Method to instance the class API from the API module.
-
-        """
+        """Instantiates a new API.API object. Called in the _runner thread."""
         return API.API(device_family, jlink_arm_dll_path, log=log, log_str=log_str, log_file_path=log_file)
 
     def __enter__(self):
