@@ -10,10 +10,6 @@
 extern "C" {
 #endif
 
-/* Expected log function prototype for logging operations. */
-typedef void msg_callback(const char * msg_str);
-
-
 /**
  * @brief   Returns the JLinkARM.dll version.
  *

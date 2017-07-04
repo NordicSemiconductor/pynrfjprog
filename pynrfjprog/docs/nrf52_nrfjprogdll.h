@@ -699,7 +699,7 @@ nrfjprogdll_err_t NRFJPROG_write(uint32_t addr, const uint8_t * data, uint32_t d
  * @retval  INVALID_PARAMETER                   The data parameter is null.
  *                                              The data_len parameter is 0.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
- *                                              The address to write is in unpowered RAM.
+ *                                              The address to read is in unpowered RAM.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  * @retval  WRONG_FAMILY_FOR_DEVICE             The device connected is not an NRF52.
@@ -1604,9 +1604,9 @@ nrfjprogdll_err_t NRFJPROG_qspi_erase(uint32_t addr, qspi_erase_len_t length);
 /**
  * @brief   Sends a custom instruction to the external QSPI-connected memory.
  *
- * @details Sends the custom instruction with instruction_code code and instruction_length length to the external QSPI-connected memory. Up to 8 bytes can be sent to the external memory through 
- *          the use of data_in parameter. If data_in parameter is NULL, 0x00 will be sent as data in the custom instruction. Up to 8 bytes of data received from the external memory can be 
- *          obtained by the use of data_out parameter. The data_out parameter can be NULL.
+ * @details Sends the custom instruction with instruction_code code and instruction_length length to the external QSPI-connected memory.
+ *          If data_in parameter is NULL, 0x00 will be sent as data in the custom instruction. The data_out parameter can be NULL.
+ *          If more than 8 bytes of data is sent, it will start a long frame qspi operation. 
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
  * @pre     Before the execution of this function, the QSPI must be initialized. To initialize the QSPI, see NRFJPROG_qspi_init() function.
@@ -1617,19 +1617,19 @@ nrfjprogdll_err_t NRFJPROG_qspi_erase(uint32_t addr, qspi_erase_len_t length);
  *
  * @param   instruction_code                    Instruction code of the custom instruction.
  * @param   instruction_length                  Length of the custom instruction.
- * @param   data_in                             Pointer to 8 bytes of data to send in the custom instruction. Can be NULL if no data is desired to be sent, where 0x00 will be used if needed. If given, 8 bytes will be read.
- * @param   data_out                            Pointer to 8 bytes of data to write the data received during the custom instruction. Can be NULL if no data is desired. If given, 8 bytes will be written.
+ * @param   data_in                             Pointer to data to send in the custom instruction. Can be NULL if no data is desired to be sent, where 0x00 will be used if needed.
+ * @param   data_out                            Pointer to data to write the data received during the custom instruction. Can be NULL if no data is desired.
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
  *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              There is no connection between the emulator and the device.
  *                                              The NRFJPROG_qspi_init() function has not been called.
+ * @retval  INVALID_DEVICE_FOR_OPERATION        The instruction_length parameter is larger than 9 for a device that does not support long frame operations.
  * @retval  INVALID_PARAMETER                   The instruction_length parameter is equal to 0.
- *                                              The instruction_length parameter is greater than 9.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
  */
-nrfjprogdll_err_t NRFJPROG_qspi_custom(uint8_t instruction_code, uint8_t instruction_length, const uint8_t * data_in, uint8_t * data_out);
+nrfjprogdll_err_t NRFJPROG_qspi_custom(uint8_t instruction_code, uint32_t instruction_length, const uint8_t * data_in, uint8_t * data_out);
 
 #if defined(__cplusplus)
 }

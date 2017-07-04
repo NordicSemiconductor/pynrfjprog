@@ -1,3 +1,21 @@
+Release 9.6.0
+Changelog
+---------------------------------------
+- (nrfjprog.exe) Added support for nRF52840_xxAA_Rev1 device.
+
+- (highleveldll) Initial release of highlevelnrfjprog.dll. Use with care. As an initial release, interface changes may occur.
+
+- (nrfjprog.dll) Added support for nRF52840_xxAA_Rev1 device.
+- (nrfjprog.dll) Added support for long frames in NRFJPROG_qspi_custom() function.
+- (nrfjprog.dll) Change data type of parameter instruction_length from uint8_t to uint32_t in NRFJPROG_qspi_custom() function.
+- (nrfjprog.dll) Fixed bug in NRFJPROG_recover() function. If NRFJPROG_recover() function is used after a write to UICR.RBPCONF
+                 to enable protection without a reset to activate the protection, the first call to NRFJPROG_recover function will fail.
+
+- (pynrfjrpog)   Added support for nRF52840_xxAA_Rev1 device.
+- (pynrfjprog)   Added support for long frames in API.qspi_custom() function.
+- (pynrfjprog)   Adapted API.qspi_custom() function to the change of parameter type in DLL NRFJPROG_qspi_custom() function.
+
+
 Release 9.5.0
 Changelog
 ---------------------------------------

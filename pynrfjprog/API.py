@@ -56,6 +56,7 @@ class DeviceVersion(enum.IntEnum):
                 'NRF52832_xxAA_FUTURE' + ' ' + \
                 'NRF52832_xxAB_FUTURE' + ' ' + \
                 'NRF52840_xxAA_ENGA'   + ' ' + \
+                'NRF52840_xxAA_REV1'   + ' ' + \
                 'NRF52840_xxAA_FUTURE' + ' ' + \
                 'NRF52810_xxAA_REV1'   + ' ' + \
                 'NRF52810_xxAA_FUTURE'
@@ -78,6 +79,7 @@ class DeviceVersion(enum.IntEnum):
     NRF52832_xxAB_FUTURE    = 16
     
     NRF52840_xxAA_ENGA      = 10
+    NRF52840_xxAA_REV1      = 18
     NRF52840_xxAA_FUTURE    = 12
 
     NRF52810_xxAA_REV1      = 13
@@ -1317,7 +1319,7 @@ class API(object):
         
         if init_params is None:
             init_params = QSPIInitParams()
-        
+
         retain_ram = ctypes.c_bool(retain_ram)
         qspi_init_params = _CtypesQSPIInitParams(init_params.read_mode, init_params.write_mode, init_params.address_mode, init_params.frequency, init_params.spi_mode, init_params.sck_delay, init_params.custom_instruction_io2_level, init_params.custom_instruction_io3_level, init_params.CSN_pin, init_params.CSN_port, init_params.SCK_pin, init_params.SCK_port, init_params.DIO0_pin, init_params.DIO0_port, init_params.DIO1_pin, init_params.DIO1_port, init_params.DIO2_pin, init_params.DIO2_port, init_params.DIO3_pin, init_params.DIO3_port, init_params.WIP_index, init_params.pp_size)
         
@@ -1416,8 +1418,8 @@ class API(object):
         if not self._is_u8(code):
             raise ValueError('The code parameter must be an unsigned 8-bit value.')
             
-        if not self._is_u8(length):
-            raise ValueError('The length parameter must be an unsigned 8-bit value.')
+        if not self._is_u32(length):
+            raise ValueError('The length parameter must be an unsigned 32-bit value.')
         
         if not self._is_valid_buf(data_in) and data_in is not None:
             raise ValueError('The data_in parameter must be a sequence type with at least one item.')
@@ -1426,11 +1428,11 @@ class API(object):
             raise ValueError('The output parameter must be a boolean value.')
         
         code = ctypes.c_uint8(code)
-        length = ctypes.c_uint8(length)
-        data_in = (ctypes.c_uint8 * 8)(*data_in) if data_in is not None else (ctypes.c_uint8 * 8)(*[0 for i in range(8)])
-        data_out = (ctypes.c_uint8 * 8)()
+        length = ctypes.c_uint32(length)
+        data_in = (ctypes.c_uint8 * (length.value - 1))(*data_in) if data_in is not None else None
+        data_out = (ctypes.c_uint8 * (length.value - 1))() if output else None
         
-        result = self._lib.NRFJPROG_qspi_custom(code, length, ctypes.byref(data_in), ctypes.byref(data_out))
+        result = self._lib.NRFJPROG_qspi_custom(code, length, ctypes.byref(data_in) if data_in is not None else None, ctypes.byref(data_out) if data_out is not None else None)
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result)
             

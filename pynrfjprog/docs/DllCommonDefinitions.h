@@ -102,6 +102,7 @@ typedef enum {
     /* nRF52840 versions. */
     /* See http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.nrf52/dita/nrf52/compatibility_matrix/nrf52840_comp_matrix.html */
     NRF52840_xxAA_ENGA                  = 10,
+    NRF52840_xxAA_REV1                  = 18,
     NRF52840_xxAA_FUTURE                = 12,
     
     /* nRF52810 versions. */
@@ -250,12 +251,19 @@ typedef enum
     /* nrfjprog sub DLL errors. */
     NRFJPROG_SUB_DLL_NOT_FOUND                  = -150,
     NRFJPROG_SUB_DLL_COULD_NOT_BE_OPENED        = -151,
-    
+    NRFJPROG_SUB_DLL_COULD_NOT_LOAD_FUNCTIONS   = -152,
+
+    /* High Level DLL */
+    VERIFY_ERROR                                = -160,
+    RAM_IS_OFF_ERROR                            = -161,
+        
     /* Not implemented. */
     NOT_IMPLEMENTED_ERROR                       = -255,
 
 } nrfjprogdll_err_t;
 
+/* Expected log function prototype for logging operations. */
+typedef void msg_callback(const char * msg_str);
 
 #if defined(__cplusplus)
 }
