@@ -52,8 +52,10 @@ class DeviceVersion(enum.IntEnum):
                 'NRF52832_xxAA_ENGA'   + ' ' + \
                 'NRF52832_xxAA_ENGB'   + ' ' + \
                 'NRF52832_xxAA_REV1'   + ' ' + \
-                'NRF52832_xxAB_REV1'   + ' ' + \
+                'NRF52832_xxAA_REV2'   + ' ' + \
                 'NRF52832_xxAA_FUTURE' + ' ' + \
+                'NRF52832_xxAB_REV1'   + ' ' + \
+                'NRF52832_xxAB_REV2'   + ' ' + \
                 'NRF52832_xxAB_FUTURE' + ' ' + \
                 'NRF52840_xxAA_ENGA'   + ' ' + \
                 'NRF52840_xxAA_REV1'   + ' ' + \
@@ -74,8 +76,11 @@ class DeviceVersion(enum.IntEnum):
     NRF52832_xxAA_ENGA      = 7
     NRF52832_xxAA_ENGB      = 8
     NRF52832_xxAA_REV1      = 9
-    NRF52832_xxAB_REV1      = 15
+    NRF52832_xxAA_REV2      = 19
     NRF52832_xxAA_FUTURE    = 11
+    
+    NRF52832_xxAB_REV1      = 15
+    NRF52832_xxAB_REV2      = 20
     NRF52832_xxAB_FUTURE    = 16
     
     NRF52840_xxAA_ENGA      = 10
@@ -336,7 +341,7 @@ class API(object):
         Constructor.
 
         @param enum, str or int device_family: The series of device pynrfjprog will interact with.
-        @param (optional) str jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use.
+        @param (optional) str jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use. Must be provided if your environment is not standard or your SEGGER installation path is not the default path. See JLink.py for details.
         @param (optional) callable object log_str_cb: If present, the log_str_cb will be called to receive log and error information. The log_str_cb object should be callable, expect to receive a string as the only parameter and does not need to return anything.
         @param (optional) bool log: If present and true, will enable logging to sys.stderr with the default log string appended to the beginning of each debug output line.
         @param (optional) str log_str: If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
@@ -355,7 +360,7 @@ class API(object):
         if jlink_arm_dll_path is None:
             jlink_arm_dll_path = JLink.find_latest_dll()
             if jlink_arm_dll_path is None:
-                raise RuntimeError('Could not locate a JLinkARM.dll in the default SEGGER installation path.')
+                raise RuntimeError("Could not locate a JLinkARM.dll in the default SEGGER installation path. Please provide the absolute path of the SEGGER JLINKARM.dll to use by the use of parameter 'jlink_arm_dll_path'. See API.py API.__init__() function for details.")
         else:
             if not isinstance(jlink_arm_dll_path, str):
                 raise ValueError('Parameter jlink_arm_dll_path must be a string.')
@@ -670,7 +675,7 @@ class API(object):
 
     def pin_reset(self):
         """
-        Executes a pin reset.
+        Executes a pin reset. If your device has a configurable pin reset, in order for the function execution to have the desired effect the pin reset must be enabled in UICR.PSELRESET[] registers.
 
         """
         result = self._lib.NRFJPROG_pin_reset()
@@ -697,9 +702,9 @@ class API(object):
 
     def erase_page(self, addr):
         """
-        Erases a page of code flash.
+        Erases a page of code flash which contains address addr.
 
-        @param int addr: Start address of the page in code flash to erase.
+        @param int addr: Address in the page of code flash to erase.
         """
         if not self._is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
@@ -1460,7 +1465,8 @@ class API(object):
             if log_file is sys.stderr or log_file is sys.stdout:
                 self._log_file = log_file
             else:
-                self._log_file = open(log_file, 'w', 1)
+                self._log_file = open(log_file, 'a', 1)
+                print('-----------------------------------------------------------------------', file=self._log_file)
 
             return ctypes.CFUNCTYPE(None, ctypes.c_char_p)(lambda x: print(log_str + '{}'.format(x.strip()), file=self._log_file)) if sys.version_info[0] == 2 else ctypes.CFUNCTYPE(None, ctypes.c_char_p)(lambda x: print(log_str + '{}'.format(x.strip().decode('utf-8')), file=self._log_file))
 

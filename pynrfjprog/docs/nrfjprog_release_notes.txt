@@ -1,3 +1,44 @@
+Release 9.7.0
+Changelog
+---------------------------------------
+- (WindowsRelease) Fixed issue where /q quiet flag was not propagated to Segger J-Link installer.
+
+- (Segger DLL)   Updated Segger JLinkARM installer to JLink_Windows_V620b.exe
+
+- (nrfjprog.exe) Added --ini option.
+- (nrfjprog.exe) Fixed bug in --sectorerase option. Under certain circumstances some sectors were not erased.
+- (nrfjprog.exe) Fixed bug in --qspisectorerase option. Under certain circumstances some sectors were not erased.
+- (nrfjprog.exe) Fixed bug in memory management. Under certain circumstances the program could crash when memory allocation failed.
+- (nrfjprog.exe) Fixed bug in jlinkarm dll detection on Linux and OS X. If segger install folder existed, but was empty, wrong output code could be returned. 
+- (nrfjprog.exe) Added support for nRF52832_xxAA_Rev2 and nRF52832_xxAB_Rev2 devices.
+- (nrfjprog.exe) Corrected help for --erasepage option.
+- (nrfjprog.exe) Fixed bug in --qspiini and --qspicustominit options. It could not be combined with --readqspi option.
+- (nrfjprog.exe) Removed possible error return code NrfjprogIniQspiIniFileMissingError.
+- (nrfjprog.exe) Removed the possibility to define the QSPI settings file in the nrfjprog.ini file. Option --qspiini should be used instead.
+
+- (highleveldll) Fixed bug in memory management. Under certain circumstances the program could crash when memory allocation failed.
+- (highleveldll) Fixed bug in jlinkarm dll detection on Linux and OS X. In some cases, dll path was mistakenly treated as non-valid.
+- (highleveldll) Fixed bug in jlinkarm dll detection on Linux and OS X. If segger install folder existed, but was empty, wrong output code could be returned. 
+- (highleveldll) Deprecated NRFJPROG_get_snr() function. Functionality replaced by NRFJPROG_get_jlink_info().
+- (highleveldll) Deprecated NRFJPROG_get_jlinkarm_version() function. Functionality replaced by NRFJPROG_get_jlink_info().
+- (highleveldll) Added NRFJPROG_get_library_info() function. Allows readout of jlinkarm version and path to library file.
+- (highleveldll) Added NRFJPROG_get_probe_info() function. Allows readout of debug probe serial number, firmware version and requested clockspeed.
+
+- (nrfjprog.dll) Fixed bug in NRFJPROG_qspi_custom() function. Under certain circumstances, more data was read from or written to the input pointer parameters.
+- (nrfjprog.dll) Fixed bug in memory management. Under certain circumstances the program could crash when memory allocation failed.
+- (nrfjprog.dll) Added support for nRF52832_xxAA_Rev2 and nRF52832_xxAB_Rev2 devices.
+- (nrfjprog.dll) Corrected documentation for NRFJPROG_erase_page() function.
+
+- (pynrfjrpog)   Fixed bug in importing examples module. Bug introduced in version 9.5.0.
+- (pynrfjprog)   Added support for nRF52832_xxAA_Rev2 and nRF52832_xxAB_Rev2 devices.
+- (pynrfjprog)   Improved automatic location of SEGGER JLinkARM dll.
+- (pynrfjprog)   Improved help for API.pin_reset() function.
+- (pynrfjprog)   Corrected help for API.erase_page() function.
+- (pynrfjprog)   Changed logging file management. Log files now are opened with append instead of truncate.
+- (pynrfjprog)   Fixed bug where MultiAPI AttributeError message was missing information about the missing attribute. Introduced in 9.5.0.
+- (pynrfjprog)   Added is_alive() and terminate() functions to multiAPI interface. Allows user to stop background MultiAPI threads and processes immediately.
+
+
 Release 9.6.0
 Changelog
 ---------------------------------------

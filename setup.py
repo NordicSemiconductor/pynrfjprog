@@ -14,7 +14,7 @@ elif py3:
 
 setup(
     
-    name ='pynrfjprog',
+    name = 'pynrfjprog',
         
     version = pynrfjprog.__version__,
     
@@ -22,7 +22,7 @@ setup(
     long_description = 'A simple Python interface for the nrfjprog.dll, libnrfjprogdll.so and libnrfjprogdll.dylib. Since the dll, so and dylib are 32-bit applications, this package can only be used with 32-bit Python 2.7.x or 3.4.x or later',
     
     url = 'http://www.nordicsemi.com/',
-        
+
     author = 'Nordic Semiconductor ASA',
     
     license = 'BSD',

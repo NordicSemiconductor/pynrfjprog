@@ -52,27 +52,53 @@ class MultiAPI(object):
         """
         Constructor. Initializes multiprocessing queues, creates a subprocess for the API instance and runs it.
 
-        @param enum string or int device_family:    The series of device pynrfjprog will interact with.
-        @param optional string jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use.
+        @param enum string or int device_family:   The series of device pynrfjprog will interact with.
+        @param optional string jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use. Must be provided if your environment is not standard or your SEGGER installation path is not the default path. See JLink.py for details.
         @param optional bool log:                  If present and true, will enable logging to sys.stderr with the default log string appended to the beginning of each debug output line.
         @param optional string log_str:            If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
         @param optional string log_file_path:      If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
         """
-        self.CmdQueue = multiprocessing.Queue()
-        self.CmdAckQueue = multiprocessing.Queue()
+        self._CmdQueue = multiprocessing.Queue()
+        self._CmdAckQueue = multiprocessing.Queue()
 
         if DEBUG_OUTPUT:
             log = True
 
-        self.runner = multiprocessing.Process(target=self._runner, args=(device_family, jlink_arm_dll_path, log, log_str, log_file_path))
-        self.runner.daemon = True
-        self.runner.start()
+        self._runner_process = multiprocessing.Process(target=self._runner, args=(device_family, jlink_arm_dll_path, log, log_str, log_file_path))
+        self._runner_process.daemon = True
+        self._runner_process.start()
+
+        self._terminated = False
 
     def __getattr__(self, name):
         if hasattr(API.API, name):
             return lambda *args, **kwargs: self._execute(name, *args, **kwargs)
         else:
-            raise AttributeError
+            raise AttributeError("'MultiAPI' object has no attribute '{}'".format(name))
+
+    def is_alive(self):
+        """Checks if MultiAPI is still alive.
+        As long as instance is alive, it is able to execute API commands.
+        MultiAPI is alive from instantiation until terminate() is called.
+        """
+        return not self._terminated
+
+    def terminate(self):
+        """Terminates all background processes and threads.
+        Calls process.terminate() on all running background processes.
+        Closes all multiprocessing queues to stop background threads.
+        After terminate() any public member function except is_alive() and terminate() will fail.
+        """
+        if self.is_alive():
+            self._runner_process.terminate()
+            self._CmdQueue.close()
+            self._CmdAckQueue.close()
+
+            self._runner_process.join()
+            self._CmdAckQueue.join_thread()
+            self._CmdQueue.join_thread()
+
+            self._terminated = True
 
     def _execute(self, func_name, *args, **kwargs):
         """Passes method and argument to _runner for execution.
@@ -86,9 +112,13 @@ class MultiAPI(object):
         @param kwargs:     Named arguments of func_name.
         @returns:          Return value of API.API.func_name(*args, **kwargs)
         """
-        self.CmdQueue.put(_Command(func_name, *args, **kwargs))
 
-        ack = self.CmdAckQueue.get()
+        if not self.is_alive():
+            raise API.APIError("Runner process terminated, API is unavailable.")
+
+        self._CmdQueue.put(_Command(func_name, *args, **kwargs))
+
+        ack = self._CmdAckQueue.get()
 
         if ack.exception is not None:
             print(ack.stacktrace)
@@ -98,8 +128,8 @@ class MultiAPI(object):
 
     def _runner(self, device_family, jlink_arm_dll_path, log, log_str, log_file):
         """Runs methods in separate thread.
-        Attempts to call any method received from _execute through CmdQueue as a member of API.API class.
-        Return values and exceptions are passed back through the CmdAckQueue to _execute.
+        Attempts to call any method received from _execute through _CmdQueue as a member of API.API class.
+        Return values and exceptions are passed back through the _CmdAckQueue to _execute.
 
         @param device_family:        Family of target device.
         @param jlink_arm_dll_path:   Path to target jlinkarm DLL.
@@ -111,13 +141,13 @@ class MultiAPI(object):
         api_functions = dict(inspect.getmembers(api, inspect.ismethod))
 
         while True:
-            cmd = self.CmdQueue.get()
+            cmd = self._CmdQueue.get()
             try:
                 res = api_functions[cmd.cmd](*cmd.args, **cmd.kwargs)
             except Exception as e:
-                self.CmdAckQueue.put(_CommandAck(exception=e, stacktrace=traceback.format_exc()))
+                self._CmdAckQueue.put(_CommandAck(exception=e, stacktrace=traceback.format_exc()))
             else:
-                self.CmdAckQueue.put(_CommandAck(result=res))
+                self._CmdAckQueue.put(_CommandAck(result=res))
 
     def _api_setup(self, device_family, jlink_arm_dll_path, log, log_str, log_file):
         """Instantiates a new API.API object. Called in the _runner thread."""
@@ -129,9 +159,5 @@ class MultiAPI(object):
 
     def __exit__(self, type, value, traceback):
         self.close()
-        self.runner.terminate()
+        self.terminate()
 
-    def __del__(self):
-        if self.runner.is_alive():
-            self.close()
-            self.runner.terminate()

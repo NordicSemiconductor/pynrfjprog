@@ -1,18 +1,17 @@
 #ifndef highlevelnrfjprogdll_FUNC_H
 #define highlevelnrfjprogdll_FUNC_H
 
-/* Used to eliminate warnings from windows. Will make no harm in Linux or Mac. */
-#define _CRT_SECURE_NO_WARNINGS
-
-
 #include <stdint.h>
 
 #include "DllCommonDefinitions.h"
 
 
 #define major_version (9) 
-#define minor_version (6) 
+#define minor_version (7) 
 #define micro_version (0) 
+
+#define FIRMWARE_STRING_LENGTH (256)
+#define NRFJPROG_MAX_PATH      (260) /* Mirrors Windows max_path value. */
 
 
 #if defined(__cplusplus)
@@ -50,10 +49,10 @@ typedef enum {
 } verify_action_t;
 
 typedef struct {
-    verify_action_t verify;         /* Select post-program Verify action. */
+    verify_action_t verify;           /* Select post-program Verify action. */
     erase_action_t chip_erase_mode;   /* Select pre-program erase mode for internal flash memories. */
     erase_action_t qspi_erase_mode;   /* Select pre-program erase mode for external QSPI memories. */
-    reset_action_t reset;           /* Select post-program Reset action. */
+    reset_action_t reset;             /* Select post-program Reset action. */
 } program_options_t;
 
 typedef struct {
@@ -93,6 +92,20 @@ typedef struct {
     uint32_t            pin_reset_pin;
 
 } device_info_t;
+
+typedef struct {
+    uint32_t serial_number;                              /* Debug probe serial number. */
+    uint32_t clockspeed_khz;                             /* Requested SWD frequency in kHz. Actual frequency may differ because of device limitations.  */
+    char     firmware_string[FIRMWARE_STRING_LENGTH];    /* Firmware version of debug probe. */
+} probe_info_t;
+
+typedef struct {
+    uint32_t version_major;                              /* Major version of interface library. */
+    uint32_t version_minor;                              /* Minor version of interface library. */
+    char     version_revision;                           /* Revision of interface library. */
+
+    char     file_path[NRFJPROG_MAX_PATH];               /* Path to interface library binary. */
+} library_info_t;
 
 
 /**
@@ -271,9 +284,10 @@ nrfjprogdll_err_t NRFJPROG_probe_uninit(Probe_handle_t * debug_probe);
  */
 nrfjprogdll_err_t NRFJPROG_probe_setup_qspi(Probe_handle_t debug_probe, uint32_t memory_size, qspi_init_params_t qspi_init_params);
 
-
 /**
-* @brief   Reads back the serial number of the USB J-LINK emulator used to initialize the provided debug_probe handle.
+* @brief   Function deprecated in favor of NRFJPROG_get_probe_info(). Will be removed in a future version.
+* 
+* @details Reads back the serial number of the USB J-LINK emulator used to initialize the provided debug_probe handle.
 *
 * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
 
@@ -288,7 +302,9 @@ nrfjprogdll_err_t NRFJPROG_get_snr(Probe_handle_t debug_probe, uint32_t * serial
 
 
 /**
- * @brief   Reads back the version of the JLINKARM DLL to be used with the provided debug_probe handle.
+ * @brief   Function deprecated in favor of NRFJPROG_get_library_info(). Will be removed in a future version.
+ * 
+ * @details Reads back the version of the JLINKARM DLL to be used with the provided debug_probe handle.
  *
  * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
  * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
@@ -313,70 +329,114 @@ nrfjprogdll_err_t NRFJPROG_get_jlinkarm_version(Probe_handle_t debug_probe, uint
 
 
 /**
-* @brief   Reads information from the device connected to the provided debug_probe handle.
-*
-* @details Reads information from the device connected to the initialized probe.
-*          
-* @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
-*
-* @param   debug_probe                         Probe handle.
-* @param   device_info                         Pointer to where the device's info should be stored.
-*
-* @retval  SUCCESS
-* @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
-*                                              The device_info parameter is null.
-* @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The target device is readback protected.
-* @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
-* @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
-* @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
-*                                              A required function could not be loaded from the DLL.
-* @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @brief   Reads out information about the provided debug probe.
+ * 
+ * @details Reads out the version and file path of the detected interface library of the provided debug probe into the provided library_info struct.
+ *
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ 
+ * @param   debug_probe                         Probe handle.
+ * @param   library_info                        Pointer to library_info_t struct.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
+ *                                              The library_info parameter is null.
+ * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
+ *                                              A required function could not be loaded from the DLL.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_get_library_info(Probe_handle_t debug_probe, library_info_t * library_info);
+
+
+/**
+ * @brief   Reads out information about the provided debug probe.
+ * 
+ * @details Reads out the version string, serial number, and the programming speed of the provided debug probe into the probe_info struct.
+ *
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+
+ * @param   debug_probe                         Probe handle.
+ * @param   probe_info                          Pointer to probe_info_t struct.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
+ *                                              The probe_info parameter is null.
+ * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
+ *                                              A required function could not be loaded from the DLL.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_get_probe_info(Probe_handle_t debug_probe, probe_info_t * probe_info);
+
+
+/**
+ * @brief   Reads information from the device connected to the provided debug_probe handle.
+ *
+ * @details Reads information from the device connected to the initialized probe.
+ *          
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   device_info                         Pointer to where the device's info should be stored.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
+ *                                              The device_info parameter is null.
+ * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The target device is readback protected.
+ * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
+ *                                              A required function could not be loaded from the DLL.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
  */
 nrfjprogdll_err_t NRFJPROG_get_device_info(Probe_handle_t debug_probe, device_info_t * device_info);
 
 
 /**
-* @brief   Reads readback protection level from the device connected to the provided debug_probe handle.
-*
-* @details Reads readback protection level from the device connected to the initialized probe.
-*          
-* @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
-*
-* @param   debug_probe                         Probe handle.
-* @param   protection                         Pointer to where the device's readback protection level should be stored.
-*
-* @retval  SUCCESS
-* @retval  INVALID_PARAMETER                   The dll is not open.
-*                                              The debug_probe parameter is null.
-*                                              The protection parameter is null.
-* @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
-* @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
-* @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
-*                                              A required function could not be loaded from the DLL.
-* @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @brief   Reads readback protection level from the device connected to the provided debug_probe handle.
+ *
+ * @details Reads readback protection level from the device connected to the initialized probe.
+ *          
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   protection                         Pointer to where the device's readback protection level should be stored.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The dll is not open.
+ *                                              The debug_probe parameter is null.
+ *                                              The protection parameter is null.
+ * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
+ *                                              A required function could not be loaded from the DLL.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
  */
 nrfjprogdll_err_t NRFJPROG_get_readback_protection(Probe_handle_t debug_probe, readback_protection_status_t * protection);
 
 
 /**
-* @brief   Enable readback protection in the device connected to the provided debug_probe handle.
-*
-* @details Protects the device connected to the initialized probe at the specified readback protection level.
-*          
-* @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
-*
-* @param   debug_probe                         Probe handle.
-* @param   device_info                         Pointer to where the device's info should be stored.
-*
-* @retval  SUCCESS
-* @retval  INVALID_PARAMETER                   The dll is not open.
-*                                              The debug_probe parameter is null.
-*                                              The protection_level parameter is not a valid protection level for this device.
-* @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
-* @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
-* @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
-*                                              A required function could not be loaded from the DLL.
-* @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @brief   Enable readback protection in the device connected to the provided debug_probe handle.
+ *
+ * @details Protects the device connected to the initialized probe at the specified readback protection level.
+ *          
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   device_info                         Pointer to where the device's info should be stored.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The dll is not open.
+ *                                              The debug_probe parameter is null.
+ *                                              The protection_level parameter is not a valid protection level for this device.
+ * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
+ *                                              A required function could not be loaded from the DLL.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
  */
 nrfjprogdll_err_t NRFJPROG_readback_protect(Probe_handle_t debug_probe, readback_protection_status_t protection_level);
 

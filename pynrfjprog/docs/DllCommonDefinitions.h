@@ -94,9 +94,11 @@ typedef enum {
     NRF52832_xxAA_ENGA                  = 7,
     NRF52832_xxAA_ENGB                  = 8,
     NRF52832_xxAA_REV1                  = 9, 
-    NRF52832_xxAB_REV1                  = 15,
-
+    NRF52832_xxAA_REV2                  = 19,
     NRF52832_xxAA_FUTURE                = 11,
+    
+    NRF52832_xxAB_REV1                  = 15,
+    NRF52832_xxAB_REV2                  = 20,
     NRF52832_xxAB_FUTURE                = 16,   
 
     /* nRF52840 versions. */

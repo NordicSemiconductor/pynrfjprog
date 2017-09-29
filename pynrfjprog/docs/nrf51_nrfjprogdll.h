@@ -521,7 +521,7 @@ nrfjprogdll_err_t NRFJPROG_erase_all(void);
 /**
  * @brief   Erases a page of code flash.
  *
- * @details Erases a page of code flash beginning at the addr. Only available if the page addr is not configured in
+ * @details Erases a page of code flash containing the addr. Only available if the page addr is not configured in
  *          region 0, see NRFJPROG_read_region_0_size_and_source() function.  Note that NRFJPROG_erase_page() will not
  *          disable NVM protection blocks if enabled while in debug interface mode. See NRFJPROG_disable_bprot() funtion
  *          to disable NVM protection blocks while in debug interface mode.

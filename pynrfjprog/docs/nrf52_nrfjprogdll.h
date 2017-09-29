@@ -525,7 +525,7 @@ nrfjprogdll_err_t NRFJPROG_erase_all(void);
 /**
  * @brief   Erases a page of code flash.
  *
- * @details Erases a page of code flash beginning at the addr. Note that NRFJPROG_erase_page() will not disable BPROT if enabled while in debug
+ * @details Erases a page of code flash containing the addr. Note that NRFJPROG_erase_page() will not disable BPROT if enabled while in debug
  *          interface mode. See NRFJPROG_disable_bprot() funtion to disable BPROT while in debug interface mode.
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
@@ -1606,7 +1606,7 @@ nrfjprogdll_err_t NRFJPROG_qspi_erase(uint32_t addr, qspi_erase_len_t length);
  *
  * @details Sends the custom instruction with instruction_code code and instruction_length length to the external QSPI-connected memory.
  *          If data_in parameter is NULL, 0x00 will be sent as data in the custom instruction. The data_out parameter can be NULL.
- *          If more than 8 bytes of data is sent, it will start a long frame qspi operation. 
+ *          If more than 8 bytes of data is sent, it will start a long frame qspi operation if available in the device. 
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
  * @pre     Before the execution of this function, the QSPI must be initialized. To initialize the QSPI, see NRFJPROG_qspi_init() function.
@@ -1625,6 +1625,7 @@ nrfjprogdll_err_t NRFJPROG_qspi_erase(uint32_t addr, qspi_erase_len_t length);
  *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              There is no connection between the emulator and the device.
  *                                              The NRFJPROG_qspi_init() function has not been called.
+ * @retval  OUT_OF_MEMORY                       Memory could not be allocated for the operation.
  * @retval  INVALID_DEVICE_FOR_OPERATION        The instruction_length parameter is larger than 9 for a device that does not support long frame operations.
  * @retval  INVALID_PARAMETER                   The instruction_length parameter is equal to 0.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.

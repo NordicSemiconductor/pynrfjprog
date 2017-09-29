@@ -1,6 +1,9 @@
 """
-This module defines one function that returns the absolute path to the JLinkARM.dll (if it exists).
+This module provides some utility functions to locate a SEGGER JLINK dll to be used with API or MultiAPI objects. 
 
+These functions expect a standard OS installation and a default installation path for the SEGGER shared library. If these 
+conditions are not met the absolute path of the SEGGER JLinkARM shared library must be provided when instantiating an
+API or MultiAPI object.
 """
 
 import fnmatch
@@ -9,7 +12,7 @@ import sys
 
 
 if sys.platform.lower().startswith('win'):
-    _DEFAULT_SEGGER_ROOT_PATH = r'C:\Program Files (x86)\SEGGER' if 'PROGRAMFILES(X86)' in os.environ else r'C:\Program Files\SEGGER'
+    _DEFAULT_SEGGER_ROOT_PATH = os.path.join(os.environ['PROGRAMFILES(X86)'], 'SEGGER') if 'PROGRAMFILES(X86)' in os.environ else os.path.join(os.environ['PROGRAMFILES'], 'SEGGER')
 elif sys.platform.lower().startswith('linux'):
     _DEFAULT_SEGGER_ROOT_PATH = r'/opt/SEGGER/JLink'
 elif sys.platform.lower().startswith('dar'):
@@ -37,3 +40,4 @@ def find_latest_dll():
     elif sys.platform.lower().startswith('dar'):
         jlink_dylib_files = sorted([f for f in os.listdir(_DEFAULT_SEGGER_ROOT_PATH) if fnmatch.fnmatch(f, 'libjlinkarm.*dylib')])
         return os.path.join(_DEFAULT_SEGGER_ROOT_PATH, jlink_dylib_files[-1])
+    
