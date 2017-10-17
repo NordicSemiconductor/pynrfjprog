@@ -1,3 +1,9 @@
+Release 9.7.1
+Changelog
+---------------------------------------
+- (highleveldll) Fixed bug in jlinkarm dll detection on Linux and OS X. Some cases were not covered by 9.7.0 update.
+
+
 Release 9.7.0
 Changelog
 ---------------------------------------
