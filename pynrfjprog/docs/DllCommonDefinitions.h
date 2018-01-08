@@ -104,6 +104,7 @@ typedef enum {
     /* nRF52840 versions. */
     /* See http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.nrf52/dita/nrf52/compatibility_matrix/nrf52840_comp_matrix.html */
     NRF52840_xxAA_ENGA                  = 10,
+    NRF52840_xxAA_ENGB                  = 21,
     NRF52840_xxAA_REV1                  = 18,
     NRF52840_xxAA_FUTURE                = 12,
     

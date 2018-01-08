@@ -58,6 +58,7 @@ class DeviceVersion(enum.IntEnum):
                 'NRF52832_xxAB_REV2'   + ' ' + \
                 'NRF52832_xxAB_FUTURE' + ' ' + \
                 'NRF52840_xxAA_ENGA'   + ' ' + \
+                'NRF52840_xxAA_ENGB'   + ' ' + \
                 'NRF52840_xxAA_REV1'   + ' ' + \
                 'NRF52840_xxAA_FUTURE' + ' ' + \
                 'NRF52810_xxAA_REV1'   + ' ' + \
@@ -84,6 +85,7 @@ class DeviceVersion(enum.IntEnum):
     NRF52832_xxAB_FUTURE    = 16
     
     NRF52840_xxAA_ENGA      = 10
+    NRF52840_xxAA_ENGB      = 21
     NRF52840_xxAA_REV1      = 18
     NRF52840_xxAA_FUTURE    = 12
 

@@ -1,3 +1,15 @@
+Release 9.7.2
+Changelog
+--------------------------------------
+- (Segger DLL)   Updated Segger JLinkARM installer to JLink_Windows_V620i.exe
+
+- (nrfjprog.exe) Added support for NRF52840_xxAA_ENGB.
+
+- (nrfjprog.dll) Added support for NRF52840_xxAA_ENGB.
+
+- (pynrfjprog)   Added support for NRF52840_xxAA_ENGB.
+
+
 Release 9.7.1
 Changelog
 ---------------------------------------
