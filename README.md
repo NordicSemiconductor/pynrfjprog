@@ -6,7 +6,7 @@ Python wrapper around the nrfjprog dynamic link library (DLL). Use of this API a
 
 ## Use-cases
 *  Maximizing development efficiency: i.e. a script to perform various operations every time an application is built and run (could be hooked into a Makefile or automated build system etc...).
-*  Automated testing: [Testing Production Programming tools on nRF5 using pynrfjprog](https://github.com/NordicSemiconductor/nrf52-production-programming/blob/master/tests/example_test_script.py).
+*  Automated testing: [Testing Production Programming tools on nRF5 using pynrfjprog](https://github.com/NordicPlayground/nrf52-production-programming/blob/master/tests/example_test_script.py).
 *  PC Tools: [nrfjprog.exe implemented via pynrfjprog and argparse](https://github.com/NordicSemiconductor/nrfjprog.git).
 
 ## Dependencies
