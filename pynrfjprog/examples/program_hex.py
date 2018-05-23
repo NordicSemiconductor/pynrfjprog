@@ -27,13 +27,39 @@ import os
 # Import pynrfjprog API module and HEX parser module
 from pynrfjprog import API, Hex
 
-def run():
+def find_blinky_hex(device_family, device_version):
+    """ Find the appropriate hex file to program """
+
+    module_dir, module_file = os.path.split(__file__)
+    hex_file_path = os.path.join(os.path.abspath(module_dir), device_family.lower() + "_dk_blinky.hex")
+
+    if os.path.exists(hex_file_path):
+        return hex_file_path
+
+    device_version_short = device_version.split('_')[0]
+    hex_file_path = os.path.join(os.path.abspath(module_dir), device_version_short.lower() + "_dk_blinky.hex")
+
+    if os.path.exists(hex_file_path):
+        return hex_file_path
+
+    return None
+
+
+def run(snr=None):
+    """
+    Run example script.
+
+    @param (optional) int snr: Specify serial number of DK to run example on.
+    """
     print('# Hex file programming example using pynrfjprog started...')
     
     # Detect the device family of your device. Initialize an API object with UNKNOWN family and read the device's family. This step is performed so this example can be run in all devices without customer input.
     print('# Opening API with device family UNKNOWN, reading the device family.')
     with API.API(API.DeviceFamily.UNKNOWN) as api:            # Using with construction so there is no need to open or close the API class.
-        api.connect_to_emu_without_snr()
+        if snr is not None:
+            api.connect_to_emu_with_snr(snr)
+        else:
+            api.connect_to_emu_without_snr()
         device_family = api.read_device_family()
     
     # Initialize an API object with the target family. This will load nrfjprog.dll with the proper target family.
@@ -41,15 +67,23 @@ def run():
     
     # Open the loaded DLL and connect to an emulator probe. If several are connected a pop up will appear.
     api.open()
-    api.connect_to_emu_without_snr()
-    
-    # Erase all the flash of the device.    
+    if snr is not None:
+        api.connect_to_emu_with_snr(snr)
+    else:
+        api.connect_to_emu_without_snr()
+
+    device_version = api.read_device_version()
+
+    hex_file_path = find_blinky_hex(device_family, device_version)
+
+    if hex_file_path is None:
+        api.close()
+        raise Exception("Could not find example binary for device " + device_version.lower() + ".\n" +
+                        "This example may not support your device yet.")
+
+    # Erase all the flash of the device.
     print('# Erasing all flash in the microcontroller.')
     api.erase_all()
-
-    # Find the appropriate hex file to program
-    module_dir, module_file = os.path.split(__file__)
-    hex_file_path = os.path.join(os.path.abspath(module_dir), 'nrf51_dk_blinky.hex') if device_family is API.DeviceFamily.NRF51 else os.path.join(os.path.abspath(module_dir), 'nrf52_dk_blinky.hex')
     
     # Parse the hex file with the help of the HEX module
     print('# Parsing hex file into segments.')

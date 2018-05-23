@@ -26,13 +26,22 @@ from __future__ import print_function
 # Import pynrfjprog API module
 from pynrfjprog import API
 
-def run():
+
+def run(snr=None):
+    """
+    Run example script.
+
+    @param (optional) int snr: Specify serial number of DK to run example on.
+    """
     print('# Memory read and write example using pynrfjprog started...')
     
     # Detect the device family of your device. Initialize an API object with UNKNOWN family and read the device's family. This step is performed so this example can be run in all devices without customer input.
     print('# Opening API with device family UNKNOWN, reading the device family.')
     with API.API(API.DeviceFamily.UNKNOWN) as api:            # Using with construction so there is no need to open or close the API class.
-        api.connect_to_emu_without_snr()
+        if snr is not None:
+            api.connect_to_emu_with_snr(snr)
+        else:
+            api.connect_to_emu_without_snr()
         device_family = api.read_device_family()
     
     # Initialize an API object with the target family. This will load nrfjprog.dll with the proper target family.
@@ -40,7 +49,10 @@ def run():
     
     # Open the loaded DLL and connect to an emulator probe. If several are connected a pop up will appear.
     api.open()
-    api.connect_to_emu_without_snr()
+    if snr is not None:
+        api.connect_to_emu_with_snr(snr)
+    else:
+        api.connect_to_emu_without_snr()
     
     # Erase all the flash of the device.
     print('# Erasing all flash in the microcontroller.')

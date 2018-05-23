@@ -8,7 +8,7 @@
 
 #define major_version (9) 
 #define minor_version (7) 
-#define micro_version (2) 
+#define micro_version (3) 
 
 #define FIRMWARE_STRING_LENGTH (256)
 #define NRFJPROG_MAX_PATH      (260) /* Mirrors Windows max_path value. */

@@ -1,3 +1,28 @@
+Release 9.7.3
+Changelog
+--------------------------------------
+- (Segger DLL)   Updated Segger JLinkARM installer to JLink_Windows_V622g.exe
+
+- (nrfjprog.exe) nrfjprog failed to read .hex files encoded in UTF-8 with BOM. Fixed.
+- (nrfjprog.exe) Under certain circumstances nRF52 devices would not exit debug mode, leading to higher than normal power consumption.
+- (nrfjprog.exe) nrfjprog failed with NoReadPermissionError when programing read-only hex files on windows. Fixed.
+- (nrfjprog.exe) Windows version could fail to automatically find a valid JLinkArm DLL if the Segger software pack was downgraded. Now finds the most recent valid installation.
+- (nrfjprog.exe) Fixed issue where --fast verify option could fail to verify hex files with data blocks that didn't start at a section boundary.
+- (nrfjprog.exe) Fixed bug in the use of QSPI peripheral for nRF52840 device. If the QSPI peripheral was used, the peripheral was not disabled properly and the device was left with higher current consumption.
+
+- (highleveldll) highleveldll failed to read .hex files encoded in UTF-8 with BOM. Fixed.
+- (highleveldll) Under certain circumstances nRF52 devices would not exit debug mode after an operation, leading to higher than normal power consumption.
+- (highleveldll) Windows version could fail to automatically find a valid JLinkArm DLL if the Segger software pack was downgraded. Now finds the most recent valid installation.
+- (highleveldll) Fixed bug in the use of QSPI peripheral for nRF52840 device. If the QSPI peripheral was used, the peripheral was not disabled properly and the device was left with higher current consumption.
+
+- (nrfjprog.dll) Fixed bug in NRFJPROG_qspi_uninit(). QSPI peripheral was not properly uninitialized.
+- (nrfjprog.dll) Fixed bug in NRFJPROG_close_dll(). nRF52 devices would not always exit debug mode completely, leading to higher than normal power consumption.
+- (nrfjprog.dll) Increased amount of information present in the logging output.
+- (nrfjprog.dll) Added log message that explains why an nRF52832_xxAA is selected when connecting to any device in the nRF52 family.
+
+- (pynrfjprog)   Example code can now be run with an optional argument to specify serial number.
+- (pynrfjprog)   Example program_hex.py now checks for a supported device family when searching for example binary.
+
 Release 9.7.2
 Changelog
 --------------------------------------
