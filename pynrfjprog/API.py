@@ -64,6 +64,28 @@ class DeviceVersion(enum.IntEnum):
                 'NRF52810_xxAA_REV1'   + ' ' + \
                 'NRF52810_xxAA_FUTURE'
 
+    def same_mcu_as(self, other):
+        """
+        Compares whether or not two DeviceVersions are of the same MCU (i.e. the "short" device version ID)
+        e.g. NRF52840_xxAA_REV1 and NRF52840_xxAA_FUTURE are of the same MCU
+        NOTE: comparing two UNKNOWN versions will return True by design!
+        :param other: other DeviceVersion to compare
+        :return: True if both self and other are of the same MCU
+        """
+        return self.mcu() == other.mcu()
+
+    def mcu(self):
+        """
+        Returns MCU name (i.e. the "short" device version ID)
+        :return: MCU name
+        """
+        result, *_ = self.name.split('_', maxsplit=1)
+        return result
+
+    # Aliases, because MCU model name tends to be referred as "short" version ID
+    same_short_as = same_mcu_as
+    short = mcu
+
     UNKNOWN                 = 0
     
     NRF51xxx_xxAA_REV1      = 1
