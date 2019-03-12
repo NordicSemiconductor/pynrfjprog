@@ -6,6 +6,7 @@ MultiAPI module.
 from __future__ import print_function
 
 import inspect
+import threading
 import traceback
 import multiprocessing
 import sys
@@ -69,6 +70,7 @@ class MultiAPI(object):
         self._runner_process.start()
 
         self._terminated = False
+        self._exec_lock = threading.Lock()
 
     def __getattr__(self, name):
         if hasattr(API.API, name):
@@ -116,9 +118,9 @@ class MultiAPI(object):
         if not self.is_alive():
             raise API.APIError("Runner process terminated, API is unavailable.")
 
-        self._CmdQueue.put(_Command(func_name, *args, **kwargs))
-
-        ack = self._CmdAckQueue.get()
+        with self._exec_lock:
+            self._CmdQueue.put(_Command(func_name, *args, **kwargs))
+            ack = self._CmdAckQueue.get()
 
         if ack.exception is not None:
             print(ack.stacktrace)
@@ -160,4 +162,3 @@ class MultiAPI(object):
     def __exit__(self, type, value, traceback):
         self.close()
         self.terminate()
-
