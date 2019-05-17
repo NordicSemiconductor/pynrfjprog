@@ -59,7 +59,7 @@ class MultiAPI(object):
         @param optional string log_str:            If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
         @param optional string log_file_path:      If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
         """
-        self._CmdQueue = multiprocessing.Queue()
+        self._CmdQueue = multiprocessing.Queue(maxsize=1)
         self._CmdAckQueue = multiprocessing.Queue()
 
         if DEBUG_OUTPUT:
@@ -70,7 +70,6 @@ class MultiAPI(object):
         self._runner_process.start()
 
         self._terminated = False
-        self._exec_lock = threading.Lock()
 
     def __getattr__(self, name):
         if hasattr(API.API, name):
@@ -118,9 +117,8 @@ class MultiAPI(object):
         if not self.is_alive():
             raise API.APIError("Runner process terminated, API is unavailable.")
 
-        with self._exec_lock:
-            self._CmdQueue.put(_Command(func_name, *args, **kwargs))
-            ack = self._CmdAckQueue.get()
+        self._CmdQueue.put(_Command(func_name, *args, **kwargs), timeout=5)
+        ack = self._CmdAckQueue.get()
 
         if ack.exception is not None:
             print(ack.stacktrace)
