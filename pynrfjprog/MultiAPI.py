@@ -10,6 +10,7 @@ import threading
 import traceback
 import multiprocessing
 import sys
+from contextlib import contextmanager
 
 try:
     from . import API
@@ -37,6 +38,14 @@ class _CommandAck(object):
         self.result = result
 
 
+@contextmanager
+def acquire_with_timeout(lock, timeout):
+    result = lock.acquire(timeout=timeout)
+    yield result
+    if result:
+        lock.release()
+
+
 class MultiAPI(object):
     """
     Main class of the module. Instance the class several times to get access to nrfjprog.dll functions, in Python for several devices simultaneously.
@@ -59,7 +68,7 @@ class MultiAPI(object):
         @param optional string log_str:            If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
         @param optional string log_file_path:      If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
         """
-        self._CmdQueue = multiprocessing.Queue(maxsize=1)
+        self._CmdQueue = multiprocessing.Queue()
         self._CmdAckQueue = multiprocessing.Queue()
 
         if DEBUG_OUTPUT:
@@ -70,6 +79,7 @@ class MultiAPI(object):
         self._runner_process.start()
 
         self._terminated = False
+        self._exec_lock = threading.Lock()
 
     def __getattr__(self, name):
         if hasattr(API.API, name):
@@ -117,8 +127,12 @@ class MultiAPI(object):
         if not self.is_alive():
             raise API.APIError("Runner process terminated, API is unavailable.")
 
-        self._CmdQueue.put(_Command(func_name, *args, **kwargs), timeout=5)
-        ack = self._CmdAckQueue.get()
+        with acquire_with_timeout(self._exec_lock, 10) as acquired:
+            if acquired:
+                self._CmdQueue.put(_Command(func_name, *args, **kwargs))
+                ack = self._CmdAckQueue.get()
+            else:
+                raise TimeoutError("CmdQueue is full and was not cleared in 10 seconds!")
 
         if ack.exception is not None:
             print(ack.stacktrace)
