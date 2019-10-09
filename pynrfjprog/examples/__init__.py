@@ -4,12 +4,16 @@
     examples.python_help.run() """
 
 try:
+    from . import python_help
     from . import program_hex
     from . import memory_read_write
-    from . import python_help
+    from . import highlevel_program_hex
+    from . import highlevel_memory_read_write
 
 except Exception:
+    import python_help
     import program_hex
     import memory_read_write
-    import python_help
+    import highlevel_program_hex
+    import highlevel_memory_read_write
 

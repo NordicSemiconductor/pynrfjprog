@@ -1,2 +1,0 @@
-# Dylib for OSX.
-

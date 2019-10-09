@@ -1,3 +1,235 @@
+Release 10.4.0
+Changelog
+--------------------------------------
+- (ALL)          Update bundled Segger installers and tar balls to v6.50b.
+
+- (nrfjprog.exe) Fixed newlines in commandline help text
+- (nrfjprog.exe) In devices with SPU, if a page was set as NonSecure, erasepage and sectorerase failed silently. Fixed.
+- (nrfjprog.exe) Remove option --licenses. See the "nRF Command Line Tools" documentation at https://www.nordicsemi.com/ for a comprehensive list of open source licenses in use.
+- (nrfjprog.exe) In devices with Trustzone, if AIRCR.SYSRESETREQS was set and the core was running NonSecure code, operations that required a call to disable_bprot could fail silently. Fixed.
+- (nrfjprog.exe) In special circumstances if family was not supplied, family detection could fail for nRF9160. Fixed.
+
+- (highleveldll) Add function NRFJPROG_probe_set_coprocessor(Probe_handle_t debug_probe, coprocessor_t coprocessor)
+
+- (nrfjprog.dll) In devices with SPU, if a page was set as NonSecure, erasepage and sectorerase failed silently. Fixed.
+- (nrfjprog.dll) In special circumstances family detection in unknown dll could fail for nRF9160. Fixed.
+- (nrfjprog.dll) Change in behavior, in some families NRFJPROG_pin_reset reset the coprocessor selection to CP_APPLICATION.
+- (nrfjprog.dll) Change in behavior, connect_to_device previously could fail with NOT_AVAILABLE_BECAUSE_COPROCESSOR_DISABLED. Now enables coprocessor if neccessary.
+- (nrfjprog.dll) In devices with Trustzone sys_reset failed silently after attempting a pin reset if AIRCR.SYSRESETREQS was set and the core was running NonSecure code. Fixed.
+
+- (pynrfjprog) In devices with SPU, if a page was set as NonSecure, erase_page and sectorerase failed silently. Fixed.
+- (pynrfjprog) Fixed issue where functions in HighLevel.py did not accept pathlib objects
+- (pynrfjprog) Added HighLevel.MCUBootDFUProbe.
+
+- (highleveldll) Added function NRFJPROG_mcuboot_dfu_init that initializes communication to a Zephyr-MCUBoot target via serial port.
+
+- (dfudll) Added MCUBoot support for Zephyr targets over serial port communication.
+- (dfudll) Added NRFDFU_connect_to_mcuboot_target() function that initializes a session for an MCUBoot target.
+
+Release 10.3.0
+Changelog
+--------------------------------------
+- (highleveldll) When programming using page erase or page and UICR erase and early flash pages were protected by block protection mechanisms, block protection was not disabled before erasing.
+
+- (nrfjprog.exe) When programming using --sectorerase or --sectoranduicrerase and early flash pages were protected by block protection mechanisms, block protection was not disabled before erasing.
+
+- (nrfjprogdll) NRFJPROG_erase_page() now returns UNAVAILABLE_BECAUSE_BPROT if block protection is enabled for the page to erase.
+- (nrfjprogdll) Added nrfjprogdll_err_t enum UNAVAILABLE_BECAUSE_BPROT for when an operation is expected to fail due to block protection mechanisms.
+- (nrfjprogdll) Removed undocumented sys_reset side effect of erase_page function in nRF91 dll. Introduced in 10.2.1.
+
+- (pynrfjprog)  erase_page() now returns UNAVAILABLE_BECAUSE_BPROT if block protection is enabled for the page to erase.
+- (pynrfjprog)  Added NrfjprogdllErr enum UNAVAILABLE_BECAUSE_BPROT for when an operation is expected to fail due to block protection mechanisms.
+
+Release 10.2.1
+Changelog
+--------------------------------------
+- (nrfjprog.exe) Bug where in some circumstances page erase would not erase pages, fixed
+
+- (nrfjprogdll) Bug where in some circumstances page erase would not erase pages, fixed
+
+Release 10.2.0
+Changelog
+--------------------------------------
+- (nrfjprogdll) Added function NRFJPROG_read_device_info()
+- (nrfjprogdll) Added function NRFJPROG_is_coprocessor_enabled()
+- (nrfjprogdll) Added function NRFJPROG_enable_coprocessor()
+- (nrfjprogdll) Added function NRFJPROG_disable_coprocessor()
+- (nrfjprogdll) Added function NRFJPROG_select_coprocessor()
+- (nrfjprogdll) Added function NRFJPROG_is_bprot_enabled()
+
+- (dfudll) Updated ipc_dfu bootloader.
+
+- (highleveldll) Fixed issue where if BPROT, ACL, SPU or other similar mechanisms were used to protect memory, program might silently fail.
+- (highleveldll) Fixed issue where debug probe connections would generate temporary folders in the users current working directory instead of temporary folders. Introduced in 10.1.0.
+
+- (nrfjprog.exe) Fixed issue where if BPROT, ACL, SPU or other similar mechanisms were used to protect memory, program might silently fail.
+- (nrfjprog.exe) Change in behavior: If UICR->APPROTECT is non-zero, but AP protection is not yet active, --eraseall, --erasepage, and --program
+                    may fail with UnavailableOperationBecauseProtectionError if memory block protection mechanisms like SPU flash regions, ACL, or BPROT need to be disabled.
+
+- (pynrfjprog) Added LowLevel.CoProcessor enumerator.
+- (pynrfjprog) Added function LowLevel.is_coprocessor_enabled()
+- (pynrfjprog) Added function LowLevel.enable_coprocessor()
+- (pynrfjprog) Added function LowLevel.disable_coprocessor()
+- (pynrfjprog) Added function LowLevel.select_coprocessor()
+- (pynrfjprog) Added function LowLevel.is_bprot_enabled()
+- (pynrfjprog) Fixed issue where HighLevel.go() was not implemented correctly. It has been replaced with the function run(sp, pc) to correctly mirror the DLL functionality.
+- (pynrfjprog) Segger J-Link install folder on Windows changed with v6.46, update detection scheme in JLink.py.
+                    Now assumes newest J-Link version is installed in folder "_DEFAULT_SEGGER_ROOT_PATH\JLink" before continuing to folders that match "_DEFAULT_SEGGER_ROOT_PATH\JLink_v*".
+
+Release 10.1.2
+Changelog
+--------------------------------------
+- (pynrfjprog) Fix issue where pynrfjprog didn't bundle required file LICENSE.txt, introduced in 10.0.0
+
+Release 10.1.1
+Changelog
+--------------------------------------
+- (dfudll) Updated ipc_dfu bootloader.
+
+Release 10.1.0
+Changelog
+--------------------------------------
+- (LinuxRelease) Released Zip files used to have long internal folder structures. Fixed.
+
+- (OSXRelease) Released Zip files used to have long internal folder structures. Fixed.
+
+- (highleveldll) Added support for IPC DFU opperations.
+- (highleveldll) Change in behaviour, NRFJPROG_dll_open() no longer takes in prog_cb parameter.
+- (highleveldll) Change in behaviour, NRFJPROG_probe_init() requires prog_cb parameter.
+- (highleveldll) New function added: NRFJPORG_dfu_init().
+
+- (nrfjprog.dll) For some devices in the nRF91 family, nrfjprog was unable to detect the family automatically. Fixed.
+
+- (nrfjprog.exe) For some devices in the nRF91 family, nrfjprog was unable to detect the family automatically. Fixed.
+
+- (dfudll) Initial release of dfudll.
+
+- (pynrfjprog) Added support for IPC DFU operations.
+- (pynrfjprog) Modify HighLevel class structure. All interactions with Probe now goes through Probe interface child classes IPCDFUProbe and DebugProbe.
+
+Release 10.0.0
+Changelog
+--------------------------------------
+- (LinuxRelease) Initial release of Linux .deb package.
+- (LinuxRelease) Bundle license file in zip, tar.gz, and .deb deliveries.
+- (LinuxRelease) Update bundled Segger installers and tar balls to v6.44e.
+
+- (OSXRelease) Initial release of OS X .dmg and .pkg packages.
+- (OSXRelease) Bundle license file in tar, .dmg, and .pkg deliveries.
+- (OSXRelease) Update bundled Segger installer to v6.44e.
+
+- (WindowsRelease) Install license file in installation folder.
+- (WindowsRelease) Update bundled Segger installer to v6.44e.
+- (WindowsRelease) Only run Segger J-Link installer package if a newer version is not installed.
+
+- (Known bug) Introduced previously, but identified in 10.0.0. In highly parallelized workloads (ie. many processes/threads calling nrfjprog library functions), NRFJPROG_close_dll() may cause a segfault or access violation in third party libraries.
+- (Known bug) New functions HighLevel.probe_reset() and LowLevel.reset_connected_emu() may fail with segmentation faults on OSX.
+
+- (nrfjprog.exe) Added support for nRF9160_xxAA_REV1
+- (nrfjprog.exe) Added support for nRF52840_xxAA_REV2
+- (nrfjprog.exe) Added support for nRF52811_xxAA_REV1
+- (nrfjprog.exe) Added support for nRF52810_xxAA_REV2
+- (nrfjprog.exe) Change license to Nordic 5-Clause. See attached license file for new license agreement.
+- (nrfjprog.exe) Add license heading to nrfjprog.h header file.
+- (nrfjprog.exe) Change in behavior: On windows, J-Link probe fw updates are now performed automatically and silently. This matches unix client behavior.
+- (nrfjprog.exe) Change in behavior: nrfjprog always executes qspi custom initialization methods when present in the loaded QSPI ini file. Read QspiDefault.ini for more details.
+- (nrfjprog.exe) Deprecated command --qspicustominit, this flag now does nothing.
+
+- (nrfjprog.dll) Added support for nRF9160_xxAA_REV1
+- (nrfjprog.dll) Added support for nRF52840_xxAA_REV2
+- (nrfjprog.dll) Added support for nRF52811_xxAA_REV1
+- (nrfjprog.dll) Added support for nRF52810_xxAA_REV2
+- (nrfjprog.dll) Fixed missing possible OUT_OF_MEMORY return value in functions NRFJPROG_qspi_custom() and NRFJPROG_qspi_erase() for nRF52 devices.
+- (nrfjprog.dll) Fixed memory allocation error in NRFJPROG_write() function. New OUT_OF_MEMORY return value in NRFJPROG_write() function documented. Issue introduced in version 9.8.0.
+- (nrfjprog.dll) Fixed issue in nRF52 series where a race condition could occur in NRFJPROG_readback_protect() when NRFJPROG_debug_reset() was called.
+- (nrfjprog.dll) Change in behavior: In NRFJPROG_debug_reset(), a CTRL-AP reset is now always performed. Previously, a system reset was attempted if the debug probe was connected to the device.
+- (nrfjprog.dll) Add license heading to all header files.
+- (nrfjprog.dll) Change license to Nordic 5-Clause. See attached license file for new license agreement.
+- (nrfjprog.dll) In nRF91, improve support for use cases where secure debugging is not available.
+- (nrfjprog.dll) In nRF91, improve support for use cases where peripheral security mapping is modified.
+- (nrfjprog.dll) In nRF52_recover(), always perform a CTRL-AP eraseall if a CTRL-AP is present in the device.
+- (nrfjprog.dll) In nRF52, nRF53, nRF91, don't switch interface type when performing a pin reset.
+- (nrfjprog.dll) In nRF52, don't assume a device isn't protected if we're already connected.
+- (nrfjprog.dll) Fixed an issue where certain usage scenarios could cause a J-Link race condition that resulted in a lock-up in the DLL logger mechanism.
+- (nrfjprog.dll) Add new function NRFJPROG_reset_connected_emu(), which resets the currently connected debug probe. Must be called after NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr().
+- (nrfjprog.dll) Change in behavior: On windows, J-Link probe fw updates are now performed automatically and silently. This matches unix client behavior.
+- (nrfjprog.dll) Remove device type enums NRF51_XLR1, NRF51_XLR2, NRF51_XLR3, NRF51_L3, NRF51_XLR3P, NRF51_XLR3LC, NRF52_FP1_ENGA, NRF52_FP1_ENGB,
+                    NRF52_FP1, NRF52_FP1_FUTURE, NRF52_FP2_ENGA, NRF52_FP2_FUTURE, replaced by other names in version 9.4.0.
+
+- (highleveldll) Add new function NRFJPROG_probe_reset(probe_handle), which resets the debug probe.
+- (highleveldll) Add new function NRFJPROG_probe_replace_fw(probe_handle), which replaces the fw on debug probe.
+- (highleveldll) Change in behavior: On windows, J-Link probe fw updates are now performed automatically and silently. This matches unix client behavior.
+- (highleveldll) Change in behavior: nRFJProg and Segger sub-libraries are now copied to a temporary folder before loading.
+                    - This allows a single instance of the highleveldll to be used with multiple probes concurrently without spawning a new process.
+- (highleveldll) Change in behavior: An active debugger connection is kept for each probe instance from probe_init() to probe_uninit().
+                    - This may cause conflicts if other J-Link connections are attempted in parallel to the same probe.
+                    - This reduces the runtime of all functions that take a probe handle.
+- (highleveldll) Change in behavior: Two probe handles pointing to the same debug probe can no longer be created.
+- (highleveldll) dll_open() and probe_initialize() may now fail with the error FILE_OPERATION_FAILED if generating temporary library files failed.
+- (highleveldll) Added support for nRF9160_xxAA_REV1
+- (highleveldll) Added support for nRF52840_xxAA_REV2
+- (highleveldll) Added support for nRF52811_xxAA_REV1
+- (highleveldll) Added support for nRF52810_xxAA_REV2
+- (highleveldll) Add license heading to all header files.
+- (highleveldll) Change license to Nordic 5-Clause. See attached license file for new license agreement.
+- (highleveldll) Fixed an issue where certain usage scenarios could cause a J-Link race condition that resulted in a lock-up in the DLL logger mechanism.
+- (highleveldll) Remove device type enums NRF51_XLR1, NRF51_XLR2, NRF51_XLR3, NRF51_L3, NRF51_XLR3P, NRF51_XLR3LC, NRF52_FP1_ENGA, NRF52_FP1_ENGB,
+                    NRF52_FP1, NRF52_FP1_FUTURE, NRF52_FP2_ENGA, NRF52_FP2_FUTURE, replaced by other names in version 9.4.0.
+
+- (pynrfjprog)   Added support for nRF9160_xxAA_REV1
+- (pynrfjprog)   Added support for nRF52840_xxAA_REV2
+- (pynrfjprog)   Added support for nRF52811_xxAA_REV1
+- (pynrfjprog)   Added support for nRF52810_xxAA_REV2
+- (pynrfjprog)   Add function reset_connected_emu, which resets the currently connected debug probe.
+- (pynrfjprog)   Add function replace_connected_emu_fw, which replaces the firmware on the currently connected debug probe.
+- (pynrfjprog)   Change in behavior: On windows, J-Link probe fw updates are now performed automatically and silently. This matches unix client behavior.
+- (pynrfjprog)   Remove device type enums NRF51_XLR1, NRF51_XLR2, NRF51_XLR3, NRF51_L3, NRF51_XLR3P, NRF51_XLR3LC, NRF52_FP1_ENGA, NRF52_FP1_ENGB,
+                    NRF52_FP1, NRF52_FP1_FUTURE, NRF52_FP2_ENGA, NRF52_FP2_FUTURE, deprecated and replaced by other names in version 9.4.0.
+- (pynrfjprog)   In MultiAPI, use forkservers to spawn new threads when available.
+- (pynrfjprog)   Improve MultiAPI performance by using pipes instead of queues to communicate with the child process.
+- (pynrfjprog)   Note: The following changes require no modification of scripts already using pynrfjprog.
+- (pynrfjprog)   Renamed API.py to LowLevel.py.
+- (pynrfjprog)   Added HighLevel.py module, a python API for the nrfjprog.exe-like highlevelnrfjprog library.
+- (pynrfjprog)   Moved enumerators and objects common to HighLevel.py and LowLevel.py to shared module Parameters.py.
+- (pynrfjprog)   Moved APIError class to module APIError.py.
+- (pynrfjprog)   Added dummy module API.py that maintains compatibility with previous module interface.
+- (pynrfjprog)   Added imports in LowLevel.py to preserve old naming of objects moved to Parameters.py and APIError.py.
+- (pynrfjprog)   Change license to Nordic 5-Clause. See attached license file or pip wheel license details for new license agreement.
+- (pynrfjprog)   Fixed an issue where certain usage scenarios could cause a J-Link race condition that resulted in a lock-up in the DLL logger mechanism.
+- (pynrfjprog)   Bundle LICENSE file with release.
+
+Release 9.8.0
+Changelog
+--------------------------------------
+- (WindowsRelease) Released 64-bit Windows installer for nRF5x-Command-Line-Tools.
+- (WindowsRelease) Bundled Visual C redistributable installer v14.15.26706.0 with nRF5x-Command-Line-Tools.
+- (WindowsRelease) Renamed dll header file nrf52_nrfjprogdll.h to jlinkarm_nrf52_nrfjprogdll.h
+- (WindowsRelease) Renamed dll header file nrf51_nrfjprogdll.h to jlinkarm_nrf51_nrfjprogdll.h
+- (WindowsRelease) Renamed dll header file unknown_nrfjprogdll.h to jlinkarm_unknown_nrfjprogdll.h
+
+- (nrfjprog.exe) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3. 
+- (nrfjprog.exe) Fixed logging mechanism. Extended logging was disabled after certain operations. Introduced in 9.7.3.
+- (nrfjprog.exe) Added timestamps to the logging printouts.
+- (nrfjprog.exe) Updated compiler for windows platforms. Will no longer work on Windows versions predating Windows 7.
+- (nrfjprog.exe) Fixed a memory leak that occurred when searching for the J-Link DLL on windows. Introduced in 9.5.0.
+- (nrfjprog.exe) Modified --program option to be able to flash hex files with address-unaligned records.
+
+- (nrfjprog.dll) Fixed header file for NRFJPROG_qspi_custom() function for NRF52 devices. Parameter instruction_length was reported as a uint8_t when it was a uint32_t parameter.
+- (nrfjprog.dll) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3. 
+- (nrfjprog.dll) Fixed logging mechanism. Extended logging was disabled after certain operations. Introduced in 9.7.3.
+- (nrfjprog.dll) Updated compiler for windows platforms. Will no longer work on Windows versions predating Windows 7.
+- (nrfjprog.dll) Modified NRFJPROG_write() function. Now unaligned addresses can be passed as location for the write.
+
+- (highleveldll) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3. 
+- (highleveldll) Fixed logging mechanism. Extended logging was disabled after certain operations. Introduced in 9.7.3.
+- (highleveldll) Added timestamp to the logging printouts.
+- (highleveldll) Updated compiler for windows platforms. Will no longer work on Windows versions predating Windows 7.
+- (highleveldll) Fixed a memory leak that occurred when searching for the J-Link DLL on windows. Introduced in 9.6.0.
+- (highleveldll) Updated header for NRFJPROG_write() to reflect changes in dll.
+
+- (pynrfjprog)   Moved loadable library files (.dll-s, .so-s, .dylib-s) from OS-specific folders into common folders lib_x86 and lib_x64 depending on architecture.
+- (pynrfjprog)   Added timestamp to the logging printouts.
+
 Release 9.7.3
 Changelog
 --------------------------------------

@@ -11,15 +11,14 @@ import multiprocessing
 import sys
 
 try:
-    from . import API
+    from . import LowLevel
+    from . import APIError
 except Exception:
-    import API
+    import LowLevel
+    import APIError
 
-
-"""
-Deprecated: Do not use, use log parameter in MultiAPI constructor instead.
-"""
-DEBUG_OUTPUT = False
+# For backwards compatibility
+API = LowLevel
 
 
 class _Command(object):
@@ -58,13 +57,31 @@ class MultiAPI(object):
         @param optional string log_str:            If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
         @param optional string log_file_path:      If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
         """
-        self._CmdQueue = multiprocessing.Queue()
-        self._CmdAckQueue = multiprocessing.Queue()
 
-        if DEBUG_OUTPUT:
-            log = True
+        if hasattr(multiprocessing, "get_all_start_methods"):
+            start_methods = multiprocessing.get_all_start_methods()
+            if "forkserver" in start_methods:
+                mp_context = multiprocessing.get_context('forkserver')
+                fork_no_exec = False
 
-        self._runner_process = multiprocessing.Process(target=self._runner, args=(device_family, jlink_arm_dll_path, log, log_str, log_file_path))
+            elif "spawn" in start_methods:
+                mp_context = multiprocessing.get_context('spawn')
+                fork_no_exec = False
+            else:
+                mp_context = multiprocessing.get_context('fork')
+                fork_no_exec = True
+        else:
+            mp_context = multiprocessing
+            fork_no_exec = not sys.platform.lower().startswith('win')
+
+        # If we're using fork without exec, and the requested API is already instantiated, fail.
+        if LowLevel.API.is_instantiated() and fork_no_exec:
+            raise APIError.APIError(APIError.NrfjprogdllErr.PYTHON_ALREADY_INSTANTIATED_ERROR, "LowLevel.API is already instantiated in this thread.")
+
+        self._CmdPipeRunner, self._CmdPipeHost = mp_context.Pipe()
+        self._CmdAckPipeHost,  self._CmdAckPipeRunner = mp_context.Pipe()
+
+        self._runner_process = mp_context.Process(target=self._runner, args=(device_family, jlink_arm_dll_path, log, log_str, log_file_path))
         self._runner_process.daemon = True
         self._runner_process.start()
 
@@ -74,7 +91,7 @@ class MultiAPI(object):
         if hasattr(API.API, name):
             return lambda *args, **kwargs: self._execute(name, *args, **kwargs)
         else:
-            raise AttributeError("'MultiAPI' object has no attribute '{}'".format(name))
+            raise AttributeError("'MultiAPI' or 'LowLevel' object has no attribute '{}'".format(name))
 
     def is_alive(self):
         """Checks if MultiAPI is still alive.
@@ -82,6 +99,20 @@ class MultiAPI(object):
         MultiAPI is alive from instantiation until terminate() is called.
         """
         return not self._terminated
+
+    @staticmethod
+    def fork_no_exec():
+        if hasattr(multiprocessing, "get_all_start_methods"):
+            start_methods = multiprocessing.get_all_start_methods()
+            if "forkserver" in start_methods:
+                return False
+
+            elif "spawn" in start_methods:
+                return False
+            else:
+                return True
+        else:
+            return not sys.platform.lower().startswith('win')
 
     def terminate(self):
         """Terminates all background processes and threads.
@@ -91,12 +122,12 @@ class MultiAPI(object):
         """
         if self.is_alive():
             self._runner_process.terminate()
-            self._CmdQueue.close()
-            self._CmdAckQueue.close()
+            self._CmdPipeRunner.close()
+            self._CmdPipeHost.close()
+            self._CmdAckPipeRunner.close()
+            self._CmdAckPipeHost.close()
 
             self._runner_process.join()
-            self._CmdAckQueue.join_thread()
-            self._CmdQueue.join_thread()
 
             self._terminated = True
 
@@ -114,11 +145,11 @@ class MultiAPI(object):
         """
 
         if not self.is_alive():
-            raise API.APIError("Runner process terminated, API is unavailable.")
+            raise APIError.APIError(APIError.NrfjprogdllErr.INVALID_OPERATION.value, "Runner process terminated, API is unavailable.")
 
-        self._CmdQueue.put(_Command(func_name, *args, **kwargs))
+        self._CmdPipeHost.send(_Command(func_name, *args, **kwargs))
 
-        ack = self._CmdAckQueue.get()
+        ack = self._CmdAckPipeHost.recv()
 
         if ack.exception is not None:
             print(ack.stacktrace)
@@ -128,7 +159,7 @@ class MultiAPI(object):
 
     def _runner(self, device_family, jlink_arm_dll_path, log, log_str, log_file):
         """Runs methods in separate thread.
-        Attempts to call any method received from _execute through _CmdQueue as a member of API.API class.
+        Attempts to call any method received from _execute through _CmdQueue as a member of api class.
         Return values and exceptions are passed back through the _CmdAckQueue to _execute.
 
         @param device_family:        Family of target device.
@@ -137,27 +168,28 @@ class MultiAPI(object):
         @param log_str:              Prepend string to log output.
         @param log_file:             Target file for log output.
         """
-        api = self._api_setup(device_family, jlink_arm_dll_path, log, log_str, log_file)
+        api = LowLevel.API(device_family, jlink_arm_dll_path, log=log, log_str=log_str, log_file_path=log_file)
         api_functions = dict(inspect.getmembers(api, inspect.ismethod))
 
         while True:
-            cmd = self._CmdQueue.get()
+            cmd = self._CmdPipeRunner.recv()
             try:
                 res = api_functions[cmd.cmd](*cmd.args, **cmd.kwargs)
             except Exception as e:
-                self._CmdAckQueue.put(_CommandAck(exception=e, stacktrace=traceback.format_exc()))
+                self._CmdAckPipeRunner.send(_CommandAck(exception=e, stacktrace=traceback.format_exc()))
             else:
-                self._CmdAckQueue.put(_CommandAck(result=res))
+                # Instances of api will be returned by __enter__, and cannot be pickled, they should not be returned.
+                if isinstance(res, type(api)):
+                    res = None
 
-    def _api_setup(self, device_family, jlink_arm_dll_path, log, log_str, log_file):
-        """Instantiates a new API.API object. Called in the _runner thread."""
-        return API.API(device_family, jlink_arm_dll_path, log=log, log_str=log_str, log_file_path=log_file)
+                self._CmdAckPipeRunner.send(_CommandAck(result=res))
 
     def __enter__(self):
-        self.open()
+        self._execute("__enter__")
         return self
 
     def __exit__(self, type, value, traceback):
-        self.close()
+        # Run sub-exit. We can't pickle tracebacks, so it is not passed.
+        self._execute("__exit__", None, None, None)
         self.terminate()
 
