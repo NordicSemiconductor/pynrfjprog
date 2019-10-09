@@ -1,6 +1,6 @@
 ![PyPI](https://img.shields.io/static/v1?label=license&message=Nordic%205-Clause%20License&color=brightgreen)
-![PyPI](https://img.shields.io/static/v1?label=platform&message=win-64%20%7C%20win-32%20%7C%20linux-64%20%7C%20linux-32%20%7C%20osx&color=lightgrey)
-![PyPI](https://img.shields.io/static/v1?label=python&message=python-2.7%20%7C%203.4%20%7C%203.5%20%7C%203.6%20%7C%203.7&color=blue) ![PyPI](https://img.shields.io/pypi/v/pynrfjprog)
+![PyPI](https://img.shields.io/static/v1?label=platform&message=windows%20%7C%20linux%20%7C%20osx&color=lightgrey)
+![PyPI](https://img.shields.io/static/v1?label=python&message=python-2.7%20%7C%20>=3.4&color=blue) ![PyPI](https://img.shields.io/pypi/v/pynrfjprog)
 
 # pynrfjprog
 Python wrapper around the nrfjprog dynamic link libraries (DLL). Use of this API allows developers to program/debug nRF SOC and SIP devices from the interpreter, write simple scripts for a more efficient development work flow, or write automated test frameworks. It can also be used to create applications in Python (i.e. command-line tools).
