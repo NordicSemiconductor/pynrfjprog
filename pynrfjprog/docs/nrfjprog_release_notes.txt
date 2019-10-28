@@ -1,3 +1,12 @@
+Release 10.4.1
+Changelog
+--------------------------------------
+- (nrfjprog.exe) In some cases when nrfjprog was called through an indirection (ie. PATH or symlink), it could not find its local resources. Fixed.
+
+- (dfudll) For Linux and OSX, file had changed name. Fixed.
+
+- (OSXRelease) Installing fails for nrf command line tools on OSX. Fixed
+
 Release 10.4.0
 Changelog
 --------------------------------------
