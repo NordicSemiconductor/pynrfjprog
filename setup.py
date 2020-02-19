@@ -14,7 +14,7 @@ elif py3:
 
 setup(
     
-    name = 'pynrfjprog',
+    name = 'pynrfjprog-silvair',
         
     version = pynrfjprog.__version__,
     
