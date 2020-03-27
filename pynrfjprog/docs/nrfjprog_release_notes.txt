@@ -1,3 +1,78 @@
+Release 10.7.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v6.62b.
+
+- (WindowsRelease) Included .lib files for all dlls.
+
+- (OSXRelease) Fixed issue where OSX release contained a tar ball with the same name as the parent tar ball.
+
+- (nrfjprog.exe) Added support for nRF52820_xxAA_REV2
+
+- (nrfjprog.dll) Fix issue where nRF9160 targets could be identified as nRF9160_FUTURE.
+- (nrfjprog.dll) Fix issue where nRF52 targets were not halted during page erase.
+- (nrfjprog.dll) nRFJProg now updates the debug probe fw without user interaction again (changed in 10.6.0). Note that this may lead to issues with J-Link Dll versions v6.60 to v6.60f.
+- (nrfjprog.dll) Added support for nRF52820_xxAA_REV2
+- (nrfjprog.dll) NRFJPROG_connect_to_emu_with_snr() will fail with WRONG_FAMILY_FOR_DEVICE if the target device debug port IDR does not match the one expected by the dll.
+- (nrfjprog.dll) NRFJPROG_connect_to_emu_without_snr() will fail with WRONG_FAMILY_FOR_DEVICE if the target device debug port IDR does not match the one expected by the dll.
+
+- (pynrfjprog)   Added support for nRF52820_xxAA_REV2
+
+- (highleveldll) Added support for nRF52820_xxAA_REV2
+
+Release 10.6.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v6.60e.
+
+- (nrfjprog.dll) Fixed issue where NRFJPROG_open_dll did not properly update internal state when it failed, leading to segmentation faults in subsequent NRFJPROG_close_dll calls.
+- (nrfjprog.dll) Known issue: nRFJProg previously updated the debug probe fw without user interaction. Due to an issue with J-Link, a popup will now appear on connection if a fw update is available.
+
+- (dfudll) Added support for modem firmware upgrade for nRF91 over serial port communication.
+- (dfudll) Added NRFDFU_connect_to_modemdfu_target() function that initializes a session for a nRF91 modem DFU target.
+
+- (pynrfjprog) Added HighLevel.ModemUARTDFUProbe.
+- (pynrfjprog) Added example for doing nRF91 modem firmware upgrade over serial port using HighLevel.ModemUARTDFUProbe.
+- (pynrfjprog) Fixed issue where passing argument log_str in LowLevel.API caused an exception on first log.
+- (pynrfjprog) Bug where pynrfjprog could not be called from inside a folder containing utf characters, fixed.
+
+- (highleveldll) Added function NRFJPROG_modemdfu_dfu_serial_init that initializes communication to a nRF91 modem DFU target via serial port.
+- (highleveldll) Added file "nrf9160_pca20035_firmware_upgrade_app_0.1.0.hex" for use with nRF91 modem DFU functionality.
+
+- (nrfjprog.exe) Bug where nrfjprog could not be called from inside a folder containing utf characters, fixed.
+- (nrfjprog.exe) Fixed issue where nrfjprog exe caused segmentation faults if an unsupported JLink Dll was loaded.
+- (nrfjprog.exe) Updated error message for error code NrfjprogOutdatedError to better describe the possible causes of the error.
+- (nrfjprog.exe) Documented "--log" flag.
+- (nrfjprog.exe) Added argument option for "--log" to set log file location.
+- (nrfjprog.exe) Added return values LogParentDirDoesNotExistWarning (-110) LogWritePermissionWarning(-111).
+- (nrfjprog.exe) Deprecated return value NoLogWarning (-102).
+
+
+Release 10.5.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v6.54c.
+
+- (dfudll) Fixed UART RX buffer processing that caused crash
+
+- (nrfjprog.exe) Added support for nRF5340_xxAA_ENGA
+
+- (nrfjprog.dll) Added support for nRF5340_xxAA_ENGA
+
+- (pynrfjprog)   Added support for nRF5340_xxAA_ENGA
+
+- (highleveldll) Added support for nRF5340_xxAA_ENGA
+
+- (highleveldll) Add function NRFJPROG_is_rtt_started(Probe_handle_t handle, bool * started)
+- (highleveldll) Add function NRFJPROG_rtt_set_control_block_address(Probe_handle_t handle, uint32_t address)
+- (highleveldll) Add function NRFJPROG_rtt_start(Probe_handle_t handle)
+- (highleveldll) Add function NRFJPROG_rtt_is_control_block_found(Probe_handle_t handle, bool * is_control_block_found)
+- (highleveldll) Add function NRFJPROG_rtt_stop(Probe_handle_t handle)
+- (highleveldll) Add function NRFJPROG_rtt_read(Probe_handle_t handle, uint32_t up_channel_index, char * data, uint32_t data_len, uint32_t * data_read)
+- (highleveldll) Add function NRFJPROG_rtt_write(Probe_handle_t handle, uint32_t down_channel_index, const char * data, uint32_t data_len, uint32_t * data_written)
+- (highleveldll) Add function NRFJPROG_rtt_read_channel_count(Probe_handle_t handle, uint32_t * down_channel_number, uint32_t * up_channel_number)
+- (highleveldll) Add function NRFJPROG_rtt_read_channel_info(Probe_handle_t handle, uint32_t channel_index, rtt_direction_t dir, char * channel_name, uint32_t channel_name_len, uint32_t * channel_size)
+
 Release 10.4.1
 Changelog
 --------------------------------------
@@ -216,7 +291,7 @@ Changelog
 - (WindowsRelease) Renamed dll header file nrf51_nrfjprogdll.h to jlinkarm_nrf51_nrfjprogdll.h
 - (WindowsRelease) Renamed dll header file unknown_nrfjprogdll.h to jlinkarm_unknown_nrfjprogdll.h
 
-- (nrfjprog.exe) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3. 
+- (nrfjprog.exe) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3.
 - (nrfjprog.exe) Fixed logging mechanism. Extended logging was disabled after certain operations. Introduced in 9.7.3.
 - (nrfjprog.exe) Added timestamps to the logging printouts.
 - (nrfjprog.exe) Updated compiler for windows platforms. Will no longer work on Windows versions predating Windows 7.
@@ -224,12 +299,12 @@ Changelog
 - (nrfjprog.exe) Modified --program option to be able to flash hex files with address-unaligned records.
 
 - (nrfjprog.dll) Fixed header file for NRFJPROG_qspi_custom() function for NRF52 devices. Parameter instruction_length was reported as a uint8_t when it was a uint32_t parameter.
-- (nrfjprog.dll) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3. 
+- (nrfjprog.dll) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3.
 - (nrfjprog.dll) Fixed logging mechanism. Extended logging was disabled after certain operations. Introduced in 9.7.3.
 - (nrfjprog.dll) Updated compiler for windows platforms. Will no longer work on Windows versions predating Windows 7.
 - (nrfjprog.dll) Modified NRFJPROG_write() function. Now unaligned addresses can be passed as location for the write.
 
-- (highleveldll) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3. 
+- (highleveldll) Fixed a race condition that could occur in the nrfjprog Logger class when asynchronous J-Link threads accessed a log buffer. Introduced in 9.7.3.
 - (highleveldll) Fixed logging mechanism. Extended logging was disabled after certain operations. Introduced in 9.7.3.
 - (highleveldll) Added timestamp to the logging printouts.
 - (highleveldll) Updated compiler for windows platforms. Will no longer work on Windows versions predating Windows 7.
@@ -293,7 +368,7 @@ Changelog
 - (nrfjprog.exe) Fixed bug in --sectorerase option. Under certain circumstances some sectors were not erased.
 - (nrfjprog.exe) Fixed bug in --qspisectorerase option. Under certain circumstances some sectors were not erased.
 - (nrfjprog.exe) Fixed bug in memory management. Under certain circumstances the program could crash when memory allocation failed.
-- (nrfjprog.exe) Fixed bug in jlinkarm dll detection on Linux and OS X. If segger install folder existed, but was empty, wrong output code could be returned. 
+- (nrfjprog.exe) Fixed bug in jlinkarm dll detection on Linux and OS X. If segger install folder existed, but was empty, wrong output code could be returned.
 - (nrfjprog.exe) Added support for nRF52832_xxAA_Rev2 and nRF52832_xxAB_Rev2 devices.
 - (nrfjprog.exe) Corrected help for --erasepage option.
 - (nrfjprog.exe) Fixed bug in --qspiini and --qspicustominit options. It could not be combined with --readqspi option.
@@ -302,7 +377,7 @@ Changelog
 
 - (highleveldll) Fixed bug in memory management. Under certain circumstances the program could crash when memory allocation failed.
 - (highleveldll) Fixed bug in jlinkarm dll detection on Linux and OS X. In some cases, dll path was mistakenly treated as non-valid.
-- (highleveldll) Fixed bug in jlinkarm dll detection on Linux and OS X. If segger install folder existed, but was empty, wrong output code could be returned. 
+- (highleveldll) Fixed bug in jlinkarm dll detection on Linux and OS X. If segger install folder existed, but was empty, wrong output code could be returned.
 - (highleveldll) Deprecated NRFJPROG_get_snr() function. Functionality replaced by NRFJPROG_get_jlink_info().
 - (highleveldll) Deprecated NRFJPROG_get_jlinkarm_version() function. Functionality replaced by NRFJPROG_get_jlink_info().
 - (highleveldll) Added NRFJPROG_get_library_info() function. Allows readout of jlinkarm version and path to library file.
@@ -459,7 +534,7 @@ Changelog
 - (Exe)     Repurposed error UnavailableOperationInFamilyError for operations also unavailable in your device.
 
 - (Dll)     Added support for NRF52_FP2_ENGA device.
-- (Dll)     Fixed minor bug in NRFJPROG_readback_status() function. Values outside the valid range were accepted but the function did nothing. INVALID_PARAMETER error is returned instead. 
+- (Dll)     Fixed minor bug in NRFJPROG_readback_status() function. Values outside the valid range were accepted but the function did nothing. INVALID_PARAMETER error is returned instead.
 - (Dll)     Adapted function NRFJPROG_disable_bprot() for nRF52840 device. BPROT is not available in that device and ACL should be used instead. New return code for NRFJPROG_recover() and NRFJPROG_disable_bprot() functions due to this change.
 - (Dll)     NRFJPROG_read_device_version() function will now update the output parameter to NRF5x_FPx_FUTURE if a newer unknown version of a known device is found. Only applicable for NRF52 devices or later. See DllCommonDefinitions.h for possible values of x.
 - (Dll)     NRFJPROG_read_device_version() function will now update the output parameter version to UNKNOWN if the device is not of the family used. WRONG_FAMILY_FOR_DEVICE return error is still being returned.
@@ -1183,3 +1258,4 @@ differences from the previous release
  - added --uicrwritereg value to write to uicr register (remember only 1's can be changed to 0's)
  - Searching segger installation in HKEY_LOCAL_MACHINE also for buildservers to work properly. Segger will include
             in their next release to add a key to HKEY_LOCAL_MACHINE root
+

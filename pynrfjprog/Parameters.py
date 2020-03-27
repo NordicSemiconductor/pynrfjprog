@@ -18,7 +18,7 @@ def decode_string(string):
     if sys.version_info[0] == 2 or isinstance(string, str):
         return string
     else:
-        return string.decode('utf-8')
+        return string.decode('utf-8',errors='replace')
 
 
 ###################################################################################
@@ -44,6 +44,7 @@ class Logger(object):
             if log_str is None:
                 self.log_str = '[NRFJPROG LOG]:'
             else:
+                self.log_str = log_str
                 self.log = True
 
             if log_stringio is not None:
@@ -102,6 +103,7 @@ class DeviceFamily(enum.IntEnum):
     """
     NRF51              = 0
     NRF52              = 1
+    NRF53              = 53
     NRF91              = 91
     UNKNOWN            = 99
 
@@ -132,6 +134,10 @@ class DeviceVersion(enum.IntEnum):
     NRF52811_xxAA_REV1      = 0x05281100
     NRF52811_xxAA_FUTURE    = 0x052811FF
 
+    NRF52820_xxAA_REV1      = 0x05282000
+    NRF52820_xxAA_REV2      = 0x05282001
+    NRF52820_xxAA_FUTURE    = 0x052820FF
+
     NRF52832_xxAA_ENGA      = 7
     NRF52832_xxAA_ENGB      = 8
     NRF52832_xxAA_REV1      = 9
@@ -151,8 +157,12 @@ class DeviceVersion(enum.IntEnum):
     NRF52840_xxAA_REV2      = 0x05284003
     NRF52840_xxAA_FUTURE    = 12
 
-    NRF9160_xxAA_REV1        = 0x09160000
-    NRF9160_xxAA_FUTURE      = 0x091600FF
+    NRF5340_xxAA_ENGA       = 0x05340000
+    NRF5340_xxAA_REV1       = 0x05340001
+    NRF5340_xxAA_FUTURE     = 0x053400FF
+
+    NRF9160_xxAA_REV1       = 0x09160000
+    NRF9160_xxAA_FUTURE     = 0x091600FF
 
 
 class DeviceName(enum.IntEnum):
@@ -167,9 +177,12 @@ class DeviceName(enum.IntEnum):
     NRF52805 = 0x05280500
     NRF52810 = 0x05281000
     NRF52811 = 0x05281100
+    NRF52820 = 0x05282000
     NRF52832 = 0x05283200
     NRF52833 = 0x05283300
     NRF52840 = 0x05284000
+
+    NRF5340 = 0x05340000
 
     NRF9160 = 0x09160000
 

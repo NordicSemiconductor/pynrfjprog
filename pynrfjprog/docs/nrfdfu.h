@@ -84,6 +84,28 @@ nrfjprogdll_err_t NRFDFU_connect_to_mcuboot_target(connection_handle_t * handle,
                                                    prog_callback * prog_cb);
 
 /**
+ * @brief   Initialize Modem UART DFU connection.
+ *
+ * @details Initializes connection and starts the DFU session with the device.
+ *
+ * @post    After the execution of this function, the initial settings for the DFU will be activated.
+ *
+ * @retval  SUCCESS
+ * @retval  OUT_OF_MEMORY                       Memory could not be allocated for the operation.
+ * @retval  INVALID_PARAMETER                   The handle parameter is NULL.
+ * @retval                                      The serial_port parameter is already initialized.
+ * @retval  SERIAL_PORT_RESOURCE_ERROR          Unable to open serial port.
+ * @retval  TIME_OUT                            The operation timed out.
+ */
+nrfjprogdll_err_t NRFDFU_connect_to_modemdfu_target(connection_handle_t * handle,
+                                                   const char * serial_port,
+                                                   const uint32_t baud_rate,
+                                                   const uint32_t response_timeout,
+                                                   msg_callback_ex * callback,
+                                                   void * param,
+                                                   prog_callback * prog_cb);
+
+/**
 * @brief   Closes the connection to the underlying DLLs.
 *
 * @details Closes the connection to the underlying DLLs.

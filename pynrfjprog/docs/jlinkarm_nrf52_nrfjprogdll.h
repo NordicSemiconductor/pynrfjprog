@@ -254,6 +254,7 @@ nrfjprogdll_err_t NRFJPROG_is_connected_to_emu(bool * is_pc_connected_to_emu);
  * @retval  LOW_VOLTAGE                         Low voltage was detected at the target device.
  * @retval  INVALID_PARAMETER                   The clock_speed_in_khz parameter is not within limits.
  * @retval  EMULATOR_NOT_CONNECTED              The serial_number emulator is not connected to the PC.
+ * @retval  WRONG_FAMILY_FOR_DEVICE             The target debug port IDR does not match the expected value of an nRF52 SoC.
  */
 nrfjprogdll_err_t NRFJPROG_connect_to_emu_with_snr(uint32_t serial_number, uint32_t clock_speed_in_khz);
 
@@ -282,6 +283,7 @@ nrfjprogdll_err_t NRFJPROG_connect_to_emu_with_snr(uint32_t serial_number, uint3
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
  * @retval  LOW_VOLTAGE                         Low voltage was detected at the target device.
  * @retval  INVALID_PARAMETER                   The clock_speed_in_khz parameter is not within limits.
+ * @retval  WRONG_FAMILY_FOR_DEVICE             The target debug port IDR does not match the expected value of an nRF52 SoC.
  */
 nrfjprogdll_err_t NRFJPROG_connect_to_emu_without_snr(uint32_t clock_speed_in_khz);
 

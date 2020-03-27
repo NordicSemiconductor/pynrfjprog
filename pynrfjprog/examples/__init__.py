@@ -9,6 +9,7 @@ try:
     from . import memory_read_write
     from . import highlevel_program_hex
     from . import highlevel_memory_read_write
+    from . import nrf9160_pca20035_modem_upgrade_over_serial
 
 except Exception:
     import python_help
@@ -16,4 +17,5 @@ except Exception:
     import memory_read_write
     import highlevel_program_hex
     import highlevel_memory_read_write
+    import nrf9160_pca20035_modem_upgrade_over_serial
 

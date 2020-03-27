@@ -156,6 +156,11 @@ typedef enum
     NRF52811_xxAA_REV1   = 0x05281100,
     NRF52811_xxAA_FUTURE = 0x052811FF,
 
+    /* nRF52820 versions. */
+    NRF52820_xxAA_REV1   = 0x05282000,
+    NRF52820_xxAA_REV2   = 0x05282001,
+    NRF52820_xxAA_FUTURE = 0x052820FF,
+
     /* nRF52832 versions. */
     /* See
        http://infocenter.nordicsemi.com/topic/com.nordic.infocenter.nrf52/dita/nrf52/compatibility_matrix/nrf52832_comp_matrix.html
@@ -184,6 +189,11 @@ typedef enum
     NRF52840_xxAA_REV2   = 0x05284003,
     NRF52840_xxAA_FUTURE = 12,
 
+    /* nRF53XXX versions */
+    NRF5340_xxAA_ENGA   = 0x05340000,
+    NRF5340_xxAA_REV1   = 0x05340001,
+    NRF5340_xxAA_FUTURE = 0x053400FF,
+
     /* NRF9160 versions. */
     NRF9160_xxAA_REV1   = 0x09160000,
     NRF9160_xxAA_FUTURE = 0x091600FF,
@@ -204,6 +214,9 @@ typedef enum
     NRF52805 = 0x05280500,
     NRF52810 = 0x05281000,
     NRF52811 = 0x05281100,
+
+    NRF52820 = 0x05282000,
+
     NRF52832 = 0x05283200,
     NRF52833 = 0x05283300,
     NRF52840 = 0x05284000,
@@ -243,6 +256,7 @@ typedef enum
 {
     NRF51_FAMILY,
     NRF52_FAMILY,
+    NRF53_FAMILY = 53,
     NRF91_FAMILY   = 91,
     UNKNOWN_FAMILY = 99
 } device_family_t;

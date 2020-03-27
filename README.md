@@ -25,19 +25,31 @@ JLinkARMDLL # A DLL provided by SEGGER that works with SEGGER debuggers. Perform
 
 ## Structure
 ```pynrfjprog
-pynrfjprog\
-  # LICENSE, README.md, setup.py and requirements.txt (used to install this module).
-  pynrfjprog\
-    __init__.py # Package marker to make pynrfjprog a module. Also defines the version number.
-    LowLevel.py # Wrapper around the nrfjprog DLL, previously API.py.
-    HighLevel.py # Wrapper around the nrfjprog highlevel DLL.
-    MultiAPI.py # Allow multiple devices (up to 128) to be programmed simultaneously with a LowLevel API.
-    JLink.py # Finds the JLinkARM DLL required by pynrfjprog.
-    Hex.py # Hex parsing library
-      lib_x64\ # 64-bit nrfjprog libraries.
-      lib_x86\ # 32-bit nrfjprog libraries
-      docs\ # Header files of the nrfjprog DLL to provide in-depth documentation of the functions API.py wraps.
-      examples\ # Example scripts to show off the different APIs.
+pynrfjprog
+  ├── pynrfjprog
+  │     ├──__init__.py    # Package marker to make pynrfjprog a module. Also defines the version number
+  │     ├── API.py        # Legacy name of LowLevel.py. It's kept for backward support
+  │     ├── APIError.py   # Wrapper for the error return codes of the DLL
+  │     ├── Hex.py        # Hex parsing library
+  │     ├── HighLevel.py  # Wrapper for the nrfjprog highlevel DLL
+  │     ├── JLink.py      # Finds the JLinkARM DLL required by pynrfjprog
+  │     ├── LowLevel.py   # Wrapper for the nrfjprog DLL, previously API.py
+  │     ├── MultiAPI.py   # Allow multiple devices (up to 128) to be programmed simultaneously with a LowLevel API
+  │     ├── lib_x64
+  │     │   └── # 64-bit nrfjprog libraries
+  │     ├── lib_x86
+  │     │   └── # 32-bit nrfjprog libraries
+  │     ├── docs
+  │     │   └── # Header files of the nrfjprog DLL to provide in-depth documentation of the functions that are wrapped
+  │     └── examples
+  │         └── # Example scripts to show off the different APIs
+  ├── LICENSE
+  ├── README.md
+  ├── requirements.txt
+  └── setup.py
+  
+  
+    
 ```
 
 ## Getting started

@@ -485,7 +485,7 @@ class MCUBootDFUProbe(Probe):
         :param api:                 The HighLevel.API instance to use as a library backend
         :type api:                  HighLevel.API
         :param serial_port:         Serial port reference of target device
-        :type snr:                  Path object or string
+        :type serial_port:          Path object or string
         :param baud_rate:           Connection baud rate
         :type baud_rate:            32-bit unsigned integer
         :param timeout:             Connection timeout limit in milliseconds
@@ -520,6 +520,47 @@ class MCUBootDFUProbe(Probe):
         """ Override base verify implementation to get correct default action """
         Probe.verify(self, hex_path, verify_action)
 
+class ModemUARTDFUProbe(Probe):
+    """ Specialization of Probe interface for Modem UART DFU via serial port connection. """
+    def __init__(self, api, serial_port, baud_rate=1000000, timeout=30000, log=True):
+        """
+        :param api:                 The HighLevel.API instance to use as a library backend
+        :type api:                  HighLevel.API
+        :param serial_port:         Serial port reference of target device
+        :type serial_port:          Path object or string
+        :param baud_rate:           Connection baud rate
+        :type baud_rate:            32-bit unsigned integer
+        :param timeout:             Connection timeout limit in milliseconds
+        :type timeout:              32-bit unsigned integer
+        :param log:                 If False, info callback and debug callback is not generated, improving performance slightly.
+        :type log:                  Boolean
+        """
+
+        serial_port = str(serial_port)
+        Probe.__init__(self, api, log, serial_port)
+
+        if not self._is_u32(baud_rate):
+            raise TypeError('The baud_rate parameter must fit an unsigned 32-bit value.')
+
+        if not self._is_u32(timeout):
+            raise TypeError('The timeout parameter must fit an unsigned 32-bit value.')
+
+        try:
+            self._handle = ctypes.c_void_p(None)
+            serial_port = serial_port.encode('utf-8')
+            baud_rate = ctypes.c_uint32(baud_rate)
+            timeout = ctypes.c_uint32(timeout)
+
+            result = self._api.lib.NRFJPROG_modemdfu_dfu_serial_init(ctypes.byref(self._handle), self.info_callback, self.debug_callback, serial_port, baud_rate, timeout)
+            if result != NrfjprogdllErr.SUCCESS:
+                raise APIError(result, log=self._logger.error)
+        except (APIError, TypeError):
+            self._handle = None
+            raise
+
+    def verify(self, hex_path, verify_action=VerifyAction.VERIFY_HASH):
+        """ Override base verify implementation to get correct default action """
+        Probe.verify(self, hex_path, verify_action)
 
 class IPCDFUProbe(Probe):
     """ Specialization of Probe interface for IPC DFU via SWD debugger connection. """
@@ -598,3 +639,168 @@ class DebugProbe(Probe):
             except (APIError, TypeError):
                 self.close()
                 raise
+
+    def is_rtt_started(self):
+        """
+        Checks if the RTT is started.
+
+        @return bool: True if started.
+        """
+        started = ctypes.c_bool()
+
+        result = self._api.lib.NRFJPROG_is_rtt_started(self._handle, ctypes.byref(started))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+        return started.value
+
+    def rtt_set_control_block_address(self, addr):
+        """
+        Indicates to the dll the location of the RTT control block in the device memory.
+
+        @param int addr: Address of the RTT Control Block in memory.
+        """
+        if not self._is_u32(addr):
+            raise ValueError('The address parameter must be an unsigned 32-bit value.')
+
+        addr = ctypes.c_uint32(addr)
+
+        result = self._api.lib.NRFJPROG_rtt_set_control_block_address(self._handle, addr)
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+    def rtt_start(self):
+        """
+        Starts RTT.
+
+        """
+        result = self._api.lib.NRFJPROG_rtt_start(self._handle)
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+    def rtt_is_control_block_found(self):
+        """
+        Checks if RTT control block has been found.
+
+        @return boolean: True if found.
+        """
+        is_control_block_found = ctypes.c_bool()
+
+        result = self._api.lib.NRFJPROG_rtt_is_control_block_found(self._handle, ctypes.byref(is_control_block_found))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+        return is_control_block_found.value
+
+    def rtt_stop(self):
+        """
+        Stops RTT.
+
+        """
+        result = self._api.lib.NRFJPROG_rtt_stop(self._handle)
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+    def rtt_read(self, channel_index, length, encoding='utf-8'):
+        """
+        Reads from an RTT channel.
+
+        @param int channel_index: RTT channel to read.
+        @param int length: Number of bytes to read. Note that depending on the encoding parameter, the number of bytes read and the numbers of characters read might differ.
+        @param (optional) str or None encoding: Encoding for the data read in order to build a readable string. Default value 'utf-8'. Note that since Python2 native string is coded in ASCII, only ASCII characters will be properly represented.
+        @return str or bytearray: Data read. Return type depends on encoding optional parameter. If an encoding is given, the return type will be Python version's native string type. If None is given, a bytearray will be returned.
+        """
+        if not self._is_u32(channel_index):
+            raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
+
+        if not self._is_u32(length):
+            raise ValueError('The length parameter must be an unsigned 32-bit value.')
+
+        if encoding is not None and not self._is_valid_encoding(encoding):
+            raise ValueError('The encoding parameter must be either None or a standard encoding in python.')
+
+        channel_index = ctypes.c_uint32(channel_index)
+        length = ctypes.c_uint32(length)
+        data = (ctypes.c_uint8 * length.value)()
+        data_read = ctypes.c_uint32()
+
+        result = self._api.lib.NRFJPROG_rtt_read(self._handle, channel_index, ctypes.byref(data), length, ctypes.byref(data_read))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+        return bytearray(data[0:data_read.value]) if encoding is None else bytearray(data[0:data_read.value]).decode(encoding).encode('utf-8') if sys.version_info[0] == 2 else bytearray(data[0:data_read.value]).decode(encoding)
+
+    def rtt_write(self, channel_index, msg, encoding='utf-8'):
+        """
+        Writes to an RTT channel.
+
+        @param int channel_index: RTT channel to write.
+        @param sequence msg: Data to write. Any type that implements the sequence API (i.e. string, list, bytearray...) is valid as input.
+        @param (optional) str or None encoding: Encoding of the msg to write. Default value 'utf-8'.
+        @return int: Number of bytes written.  Note that if non-'latin-1' characters are used, the number of bytes written depends on the encoding parameter given.
+        """
+        if not self._is_u32(channel_index):
+            raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
+
+        if encoding is not None and not self._is_valid_encoding(encoding):
+            raise ValueError('The encoding parameter must be either None or a standard encoding in python.')
+
+        msg = bytearray(msg.encode(encoding)) if encoding else bytearray(msg)
+        if not self._is_valid_buf(msg):
+            raise ValueError('The msg parameter must be a sequence type with at least one item.')
+
+        channel_index = ctypes.c_uint32(channel_index)
+        length = ctypes.c_uint32(len(msg))
+        data = (ctypes.c_uint8 * length.value)(*msg)
+        data_written = ctypes.c_uint32()
+
+        result = self._api.lib.NRFJPROG_rtt_write(self._handle, channel_index, ctypes.byref(data), length, ctypes.byref(data_written))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+        return data_written.value
+
+    def rtt_read_channel_count(self):
+        """
+        Gets the number of RTT channels.
+
+        @return (int, int): Tuple containing the number of down RTT channels and the number of up RTT channels.
+        """
+        down_channel_number = ctypes.c_uint32()
+        up_channel_number = ctypes.c_uint32()
+
+        result = self._api.lib.NRFJPROG_rtt_read_channel_count(self._handle, ctypes.byref(down_channel_number), ctypes.byref(up_channel_number))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+        return down_channel_number.value, up_channel_number.value
+
+    def rtt_read_channel_info(self, channel_index, direction):
+        """
+        Reads the info from one RTT channel.
+
+        @param int channel_index: RTT channel to request info.
+        @param int, str, or RTTChannelDirection(IntEnum) direction: Direction of the channel to request info.
+        @return (str, int): Tuple containing the channel name and the size of channel buffer.
+        """
+        if not self._is_u32(channel_index):
+            raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
+
+        if not self._is_enum(direction, RTTChannelDirection):
+            raise ValueError('Parameter direction must be of type int, str or RTTChannelDirection enumeration.')
+
+        direction = self._decode_enum(direction, RTTChannelDirection)
+        if direction is None:
+            raise ValueError('Parameter direction must be of type int, str or RTTChannelDirection enumeration.')
+
+        channel_index = ctypes.c_uint32(channel_index)
+        direction = ctypes.c_int(direction.value)
+        name_len = ctypes.c_uint32(32)
+        name = (ctypes.c_uint8 * 32)()
+        size = ctypes.c_uint32()
+
+        result = self._api.lib.NRFJPROG_rtt_read_channel_info(self._handle, channel_index, direction, ctypes.byref(name), name_len, ctypes.byref(size))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+        return ''.join(chr(i) for i in name if i != 0), size.value
