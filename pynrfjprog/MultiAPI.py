@@ -52,7 +52,7 @@ class MultiAPI(object):
         Constructor. Initializes multiprocessing queues, creates a subprocess for the API instance and runs it.
 
         @param enum string or int device_family:   The series of device pynrfjprog will interact with.
-        @param optional string jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use. Must be provided if your environment is not standard or your SEGGER installation path is not the default path. See JLink.py for details.
+        @param optional string jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use. Must be provided if your environment is not standard or your SEGGER installation path is not the default path. See JLink.py for details. Does not support unicode paths.
         @param optional bool log:                  If present and true, will enable logging to sys.stderr with the default log string appended to the beginning of each debug output line.
         @param optional string log_str:            If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
         @param optional string log_file_path:      If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
@@ -163,7 +163,7 @@ class MultiAPI(object):
         Return values and exceptions are passed back through the _CmdAckQueue to _execute.
 
         @param device_family:        Family of target device.
-        @param jlink_arm_dll_path:   Path to target jlinkarm DLL.
+        @param jlink_arm_dll_path:   Path to target jlinkarm DLL. Does not support unicode paths.
         @param log:                  Whether or not API should log.
         @param log_str:              Prepend string to log output.
         @param log_file:             Target file for log output.

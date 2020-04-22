@@ -90,8 +90,11 @@ typedef enum
     R11,
     R12,
     R13,
+    SP = R13,
     R14,
+    LR = R14,
     R15,
+    PC = R15,
     XPSR,
     MSP,
     PSP
@@ -191,7 +194,8 @@ typedef enum
 
     /* nRF53XXX versions */
     NRF5340_xxAA_ENGA   = 0x05340000,
-    NRF5340_xxAA_REV1   = 0x05340001,
+    NRF5340_xxAA_ENGB   = 0x05340001,
+    NRF5340_xxAA_REV1   = 0x05340002,
     NRF5340_xxAA_FUTURE = 0x053400FF,
 
     /* NRF9160 versions. */

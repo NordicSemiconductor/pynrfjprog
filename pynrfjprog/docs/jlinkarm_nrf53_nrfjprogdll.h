@@ -102,7 +102,7 @@ nrfjprogdll_err_t NRFJPROG_is_dll_open(bool * opened);
  *
  * @post    After the execution of this function, the JLINKARM DLL pointers will be loaded and some memory reserved. To unload the pointers and free the memory, see NRFJPROG_close_dll() function.
  *
- * @param   jlink_path                          Path to the JLinkARM DLL.
+ * @param   jlink_path                          Path to the JLinkARM DLL. Does not support unicode paths.
  * @param   cb                                  Callback for reporting informational and error messages.
  * @param   family                              Defines the device family the next commands are going to be called to.
  *
@@ -132,7 +132,7 @@ nrfjprogdll_err_t NRFJPROG_open_dll(const char * jlink_path, msg_callback * cb, 
  *
  * @post    After the execution of this function, the JLINKARM DLL pointers will be loaded and some memory reserved. To unload the pointers and free the memory, see NRFJPROG_close_dll() function.
  *
- * @param   jlink_path                          Path to the JLinkARM DLL.
+ * @param   jlink_path                          Path to the JLinkARM DLL. Does not support unicode paths.
  * @param   family                              Defines the device family the next commands are going to be called to.
  * @param   callback                            Callback for reporting informational and error messages.
  * @param   param                               Pointer passed back as an argument in every call to callback. Can be used to identify the calling dll instance.

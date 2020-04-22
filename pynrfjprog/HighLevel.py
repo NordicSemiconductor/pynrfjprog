@@ -99,7 +99,7 @@ class API(object):
 
     def open(self, jlink_arm_dll_path=None):
         """
-        @param (optional) str jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use.
+        @param (optional) str jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use. Does not support unicode paths.
         """
 
         if jlink_arm_dll_path is not None:
@@ -572,7 +572,7 @@ class IPCDFUProbe(Probe):
         :type snr:                  32 bit uint
         :param coprocessor:         Probe will try to connect to the indicated coprocessor during initialization.
         :type coprocessor:          Parameters.CoProcessor
-        :param jlink_arm_dll_path:  Path to jlinkarm dll to use as backend. If None, an automated search will look for the library, and select the newest one.
+        :param jlink_arm_dll_path:  Path to jlinkarm dll to use as backend. If None, an automated search will look for the library, and select the newest one. Does not support unicode paths.
         :type jlink_arm_dll_path:   String
         :param log:                 If False, info callback and debug callback is not generated, improving performance slightly.
         :type log:                  Boolean
@@ -612,7 +612,7 @@ class DebugProbe(Probe):
         :type snr:                  32 bit uint
         :param coprocessor:         If not None, probe will try to connect to the indicated coprocessor during initialization.
         :type coprocessor:          Parameters.CoProcessor
-        :param jlink_arm_dll_path:  Path to jlinkarm dll to use as backend. If None, an automated search will look for the library, and select the newest one.
+        :param jlink_arm_dll_path:  Path to jlinkarm dll to use as backend. If None, an automated search will look for the library, and select the newest one. Does not support unicode paths.
         :type jlink_arm_dll_path:   String
         :param log:                 If False, info callback and debug callback is not generated, improving performance slightly.
         :type log:                  Boolean

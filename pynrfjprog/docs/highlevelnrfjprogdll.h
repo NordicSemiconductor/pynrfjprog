@@ -45,7 +45,7 @@
 
 
 #define major_version (10) 
-#define minor_version (7) 
+#define minor_version (8) 
 #define micro_version (0) 
 
 #define FIRMWARE_STRING_LENGTH  NRFJPROG_STRING_LENGTH
@@ -271,7 +271,7 @@ nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[], uint3
  * @param   debug_probe                         Pointer to probe handle type.
  * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
  * @param   serial_number                       Serial number of the emulator to connect to.
- * @param   jlink_path                          Path to the JLinkARM DLL to be used with this probe. May be NULL.
+ * @param   jlink_path                          Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
@@ -307,7 +307,7 @@ nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, progress_cal
  * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
  * @param   serial_number                       Serial number of the emulator to connect to.
  * @param   coprocessor                         Coprocessor to target.
- * @param   jlink_path_cstr                     Path to the JLinkARM DLL to be used with this probe. May be NULL.
+ * @param   jlink_path_cstr                     Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
@@ -398,7 +398,7 @@ nrfjprogdll_err_t NRFJPROG_modemdfu_dfu_serial_init(Probe_handle_t * debug_probe
  * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
  * @param   serial_number                       Serial number of the emulator to connect to.
  * @param   coprocessor                         Coprocessor to target.
- * @param   jlink_path_cstr                     Path to the JLinkARM DLL to be used with this probe. May be NULL.
+ * @param   jlink_path_cstr                     Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
  *
  * @retval  SUCCESS
  * @retval  INVALID_PARAMETER                   The debug_probe pointer is NULL.

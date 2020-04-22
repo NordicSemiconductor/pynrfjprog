@@ -45,7 +45,7 @@ class API(object):
         Constructor.
 
         @param enum, str or int device_family: The series of device pynrfjprog will interact with.
-        @param (optional) str jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use. Must be provided if your environment is not standard or your SEGGER installation path is not the default path. See JLink.py for details.
+        @param (optional) str jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use. Must be provided if your environment is not standard or your SEGGER installation path is not the default path. See JLink.py for details. Does not support unicode paths.
         @param (optional) callable object log_str_cb: If present, the log_str_cb will be called to receive log and error information. The log_str_cb object should be callable, expect to receive a string as the only parameter and does not need to return anything.
         @param (optional) bool log: If present and true, will enable logging to sys.stderr with the default log string appended to the beginning of each debug output line.
         @param (optional) str log_str: If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.

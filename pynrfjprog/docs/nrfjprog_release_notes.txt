@@ -1,3 +1,33 @@
+Release 10.8.0
+Changelog
+--------------------------------------
+- (Release) Added SHA1, SHA256, and md5 hashes for all release files
+- (Release) Update bundled Segger installers and tar balls to v6.70d.
+
+- (LinuxRelease) Fixed symlink path in readme text
+- (LinuxRelease) Fixed issue where release contained a tar ball with the same name as the parent tar ball.
+
+- (nrfjprog.exe) Added unicode support for CLI arguments
+- (nrfjprog.exe) Added support for nRF5340_xxAA_ENGB
+- (nrfjprog.exe) Increased readability in logs
+- (nrfjprog.exe) Added --deviceversion CLI argument
+- (nrfjprog.exe) Fixed issue where some versions of nrf9160 would not be recognized when nrfjprog.exe was called without a -f or --family argument.
+
+- (nrfjprog.dll) Added support for nRF5340_xxAA_ENGB
+- (nrfjprog.dll) Increased readability in logs
+- (nrfjprog.dll) Improved the logging on jlink function failure.
+- (nrfjprog.dll) Fixed issue where some versions of nrf9160 were not detected as NRF91 family by unknowndll.
+
+- (pynrfjprog)   Added support for nRF5340_xxAA_ENGB
+- (pynrfjprog)   Increased readability in logs
+- (pynrjfprog)   Add aliases for PC, LR, and SP registers in CpuRegister enumerator.
+
+- (highleveldll) Added support for nRF5340_xxAA_ENGB
+- (highleveldll) Increased readability in logs
+- (highleveldll) Fixed issue where some versions of nrf9160 would not be recognized by probe init functions.
+
+- (DllCommonDefinitions) Add aliases for PC, LR, and SP registers in cpu_registers_t enumerator.
+
 Release 10.7.0
 Changelog
 --------------------------------------

@@ -158,7 +158,8 @@ class DeviceVersion(enum.IntEnum):
     NRF52840_xxAA_FUTURE    = 12
 
     NRF5340_xxAA_ENGA       = 0x05340000
-    NRF5340_xxAA_REV1       = 0x05340001
+    NRF5340_xxAA_ENGB       = 0x05340001
+    NRF5340_xxAA_REV1       = 0x05340002
     NRF5340_xxAA_FUTURE     = 0x053400FF
 
     NRF9160_xxAA_REV1       = 0x09160000
@@ -258,7 +259,6 @@ class ReadbackProtection(enum.IntEnum):
     BOTH                    = 3
 
 
-@enum.unique
 class CpuRegister(enum.IntEnum):
     """
     Wraps cpu_registers_t values from DllCommonDefinitions.h
@@ -278,8 +278,11 @@ class CpuRegister(enum.IntEnum):
     R11                     = 11
     R12                     = 12
     R13                     = 13
+    SP                      = 13
     R14                     = 14
+    LR                      = 14
     R15                     = 15
+    PC                      = 15
     XPSR                    = 16
     MSP                     = 17
     PSP                     = 18
