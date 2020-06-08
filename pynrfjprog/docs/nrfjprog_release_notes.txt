@@ -1,3 +1,35 @@
+Release 10.9.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v6.80a.
+
+- (nrfjprog.exe) Fixed bug where the network core of nrf5340 could be reported as secure protected when it was not.
+- (nrfjprog.exe) Add support for QSPI frequency up to 96MHz in devices that support it.
+- (nrfjprog.exe) Fixed bug where custom instructions with only one argument in QSPI INI file caused a crash
+- (nrfjprog.exe) nRF9160_XXAA: Introduced split between Engineering A (nRF9160_XXAA_rev1) and Revision 1 (nRF9160_XXAA_rev2)
+- (nrfjprog.exe) In special circumstances, pin resets could cause debug power to be enabled. Fixed.
+
+- (nrfjprog.dll) If jlink_path argument to NRFJPROG_open_dll is NULL or nullptr, the dll will attempt to search for a J-Link dll automatically.
+- (nrfjprog.dll) Add support for QSPI frequency up to 96MHz in devices that support it.
+- (nrfjprog.dll) Internal restructuring may cause log message changes.
+- (nrfjprog.dll) QSPI_custom had inconsistent argument types across dlls. Fixed.
+- (nrfjprog.dll) Some QSPI commands could loop forever. They now time out after 15 minutes.
+- (nrfjprog.dll) nRF9160_XXAA: Introduced split between Engineering A (nRF9160_XXAA_rev1) and Revision 1 (nRF9160_XXAA_rev2)
+- (nrfjprog.dll) Fixed bug where the network core of nrf5340 could be reported as secure protected when it was not.
+- (nrfjprog.dll) In special circumstances, pin resets could cause debug power to be enabled. Fixed.
+
+- (pynrfjprog)   nRF9160_XXAA: Introduced split between Engineering A (nRF9160_XXAA_rev1) and Revision 1 (nRF9160_XXAA_rev2)
+- (pynrfjprog)   Fixed bug where the network core of nrf5340 could be reported as secure protected when it was not.
+- (pynrfjprog)   In special circumstances, pin resets could cause debug power to be enabled. Fixed.
+- (pynrfjprog)   Fixed MCUBootProbe serial timing issue that caused the mcuboot process to time out.
+
+- (highleveldll) nRF9160_XXAA: Introduced split between Engineering A (nRF9160_XXAA_rev1) and Revision 1 (nRF9160_XXAA_rev2)
+- (highleveldll) Fixed bug where the network core of nrf5340 could be reported as secure protected when it was not.
+- (highleveldll) In special circumstances, pin resets could cause debug power to be enabled. Fixed.
+- (highleveldll) Fixed MCUBootProbe serial timing issue that caused the mcuboot process to time out.
+
+- (nrfdfu.dll)   Fixed mcuboot serial timing issue that caused the process to time out.
+
 Release 10.8.0
 Changelog
 --------------------------------------

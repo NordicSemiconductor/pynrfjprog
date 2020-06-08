@@ -200,6 +200,7 @@ typedef enum
 
     /* NRF9160 versions. */
     NRF9160_xxAA_REV1   = 0x09160000,
+    NRF9160_xxAA_REV2   = 0x09160001,
     NRF9160_xxAA_FUTURE = 0x091600FF,
 
 } device_version_t;
@@ -312,7 +313,9 @@ typedef enum
     M4  = 7,
     M8  = 3,
     M16 = 1,
-    M32 = 0
+    M32 = 0,
+    M64 = -1,
+    M96 = -2
 } qspi_frequency_t;
 
 /* QSPI SPI mode */

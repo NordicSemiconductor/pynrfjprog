@@ -40,10 +40,18 @@ typedef void * connection_handle_t;
 *
 * @post    After the execution of this function, the initial settings for the DFU will be activated.
 *
+* @param   handle                              Pointer to connection handle to initialize
+* @param   jlink_path_cstr                     Path to a jlink dll to use for the connection, or NULL. If NULL, dll will attempt to find a dll.
+* @param   family                              Family of the target to connect to.
+* @param   snr                                 Serial number of debugger to connect to.
+* @param   swd_frequency                       Clock frequency to use for SWD connection.
+* @param   callback                            Pointer to logger callback function to use, or NULL.
+* @param   param                               Parameter to pass to callback function.
+* @param   prog_cb                             Callback function that will indicate progress through an operation.
+*
 * @retval  SUCCESS
 * @retval  OUT_OF_MEMORY                       Memory could not be alocated for the operation.
 * @retval  INVALID_PARAMETER                   The handle parameter is NULL.
-* @retval                                      The jlink_path_cstr parameter is NULL.
 * @retval                                      The snr parameter is already initialized.
 * @retval  JLINKARM_DLL_NOT_FOUND              JLinkarm dll could not be located.
 * @retval  NRFJPROG_SUB_DLL_NOT_FOUND          Nrfjprog sub-dll could not be located.
@@ -67,6 +75,14 @@ nrfjprogdll_err_t NRFDFU_connect_to_ipc_target(connection_handle_t * handle,
  * @details Initializes connection and starts the DFU session with the device.
  *
  * @post    After the execution of this function, the initial settings for the DFU will be activated.
+*
+* @param   handle                              Pointer to connection handle to initialize
+* @param   serial_port                         Serial port to connect to.
+* @param   baud_rate                           Baud rate of serial connection.
+* @param   response_timeout                    Time in ms before serial port should time out while waiting for a response from target.
+* @param   callback                            Pointer to logger callback function to use, or NULL.
+* @param   param                               Parameter to pass to callback function.
+* @param   prog_cb                             Callback function that will indicate progress through an operation.
  *
  * @retval  SUCCESS
  * @retval  OUT_OF_MEMORY                       Memory could not be allocated for the operation.
@@ -89,6 +105,14 @@ nrfjprogdll_err_t NRFDFU_connect_to_mcuboot_target(connection_handle_t * handle,
  * @details Initializes connection and starts the DFU session with the device.
  *
  * @post    After the execution of this function, the initial settings for the DFU will be activated.
+*
+* @param   handle                              Pointer to connection handle to initialize
+* @param   serial_port                         Serial port to connect to.
+* @param   baud_rate                           Baud rate of serial connection.
+* @param   response_timeout                    Time in ms before serial port should time out while waiting for a response from target.
+* @param   callback                            Pointer to logger callback function to use, or NULL.
+* @param   param                               Parameter to pass to callback function.
+* @param   prog_cb                             Callback function that will indicate progress through an operation.
  *
  * @retval  SUCCESS
  * @retval  OUT_OF_MEMORY                       Memory could not be allocated for the operation.

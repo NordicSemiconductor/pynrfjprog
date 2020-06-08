@@ -60,15 +60,10 @@ class API(object):
         if self._device_family is None:
             raise ValueError('Parameter device_family must be of type int, str or DeviceFamily enumeration.')
 
-        if jlink_arm_dll_path is None:
-            jlink_arm_dll_path = JLink.find_latest_dll()
-            if jlink_arm_dll_path is None:
-                raise RuntimeError("Could not locate a JLinkARM.dll in the default SEGGER installation path. Please provide the absolute path of the SEGGER JLINKARM.dll to use by the use of parameter 'jlink_arm_dll_path'. See LowLevel.py API.__init__() function for details.")
-        else:
-            if not isinstance(jlink_arm_dll_path, str):
-                raise ValueError('Parameter jlink_arm_dll_path must be a string.')
+        if not isinstance(jlink_arm_dll_path, str) and not jlink_arm_dll_path is None:
+            raise ValueError('Parameter jlink_arm_dll_path must be a string.')
 
-        self._jlink_arm_dll_path = os.path.abspath(jlink_arm_dll_path).encode('ascii')
+        self._jlink_arm_dll_path = os.path.abspath(jlink_arm_dll_path).encode('ascii') if jlink_arm_dll_path is not None else None
 
         # Redirect writeable log endpoints to log_stringio
         if hasattr(log_file_path, "write") and log_stringio is None:

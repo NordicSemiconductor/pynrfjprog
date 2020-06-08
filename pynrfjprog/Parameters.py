@@ -163,6 +163,7 @@ class DeviceVersion(enum.IntEnum):
     NRF5340_xxAA_FUTURE     = 0x053400FF
 
     NRF9160_xxAA_REV1       = 0x09160000
+    NRF9160_xxAA_REV2       = 0x09160001
     NRF9160_xxAA_FUTURE     = 0x091600FF
 
 

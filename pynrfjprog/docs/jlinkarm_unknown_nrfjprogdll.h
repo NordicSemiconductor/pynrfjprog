@@ -103,16 +103,15 @@ nrfjprogdll_err_t NRFJPROG_is_dll_open(bool * opened);
  *
  * @post    After the execution of this function, the JLINKARM DLL pointers will be loaded and some memory reserved. To unload the pointers and free the memory, see NRFJPROG_close_dll() function.
  *
- * @param   jlink_path                          Path to the JLinkARM DLL. Does not support unicode paths.
+ * @param   jlink_path                          Path to the JLinkARM DLL. Does not support unicode paths. If NULL or nullptr, nrfjprog will attempt to find the newest installed J-Link Dll.
  * @param   cb                                  Callback for reporting informational and error messages.
  * @param   family                              Defines the device family the next commands are going to be called to.
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has already been called.
- * @retval  INVALID_PARAMETER                   The jlink_path is NULL.
- *                                              The provided device family is not supported by this DLL.
+ * @retval  INVALID_PARAMETER                   The provided device family is not supported by this DLL.
  * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
- * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL, or the automatic search failed.
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  */
@@ -133,17 +132,16 @@ nrfjprogdll_err_t NRFJPROG_open_dll(const char * jlink_path, msg_callback * cb, 
  *
  * @post    After the execution of this function, the JLINKARM DLL pointers will be loaded and some memory reserved. To unload the pointers and free the memory, see NRFJPROG_close_dll() function.
  *
- * @param   jlink_path                          Path to the JLinkARM DLL. Does not support unicode paths.
+ * @param   jlink_path                          Path to the JLinkARM DLL. Does not support unicode paths. If NULL or nullptr, nrfjprog will attempt to find the newest installed J-Link Dll.
  * @param   family                              Defines the device family the next commands are going to be called to.
  * @param   callback                            Callback for reporting informational and error messages.
  * @param   param                               Pointer passed back as an argument in every call to callback. Can be used to identify the calling dll instance.
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has already been called.
- * @retval  INVALID_PARAMETER                   The jlink_path is NULL.
- *                                              The provided device family is not supported by this DLL.
+ * @retval  INVALID_PARAMETER                   The provided device family is not supported by this DLL.
  * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
- * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL, or the automatic search failed.
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  */
@@ -925,7 +923,10 @@ nrfjprogdll_err_t NRFJPROG_qspi_erase(uint32_t addr, qspi_erase_len_t length);
  *
  * @retval  INVALID_OPERATION                   This function cannot be executed without a known family.
  */
-nrfjprogdll_err_t NRFJPROG_qspi_custom(uint8_t instruction_code, uint32_t instruction_length, const uint8_t * data_in, uint8_t * data_out);
+nrfjprogdll_err_t NRFJPROG_qspi_custom(uint8_t instruction_code,
+                                       uint32_t instruction_length,
+                                       const uint8_t * data_in,
+                                       uint8_t * data_out);
 
 
 #if defined(__cplusplus)

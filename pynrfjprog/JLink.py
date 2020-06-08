@@ -1,5 +1,7 @@
 """
-This module provides some utility functions to locate a SEGGER JLINK dll to be used with API or MultiAPI objects. 
+This module provides some utility functions to locate a SEGGER JLINK dll. 
+
+It is no longer used in LowLevel.API or MultiAPI.API, but maintained and tested in case it is still in use with third parties.
 
 These functions expect a standard OS installation and a default installation path for the SEGGER shared library. If these 
 conditions are not met the absolute path of the SEGGER JLinkARM shared library must be provided when instantiating an

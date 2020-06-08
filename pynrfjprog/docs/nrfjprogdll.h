@@ -645,7 +645,10 @@ nrfjprogdll_err_t NRFJPROG_qspi_erase(uint32_t addr, qspi_erase_len_t length);
  *
  * @details For further details, see the device family header file.
  */
-nrfjprogdll_err_t NRFJPROG_qspi_custom(uint8_t instruction_code, uint32_t instruction_length, const uint8_t * data_in, uint8_t * data_out);
+nrfjprogdll_err_t NRFJPROG_qspi_custom(uint8_t instruction_code,
+                                       uint32_t instruction_length,
+                                       const uint8_t * data_in,
+                                       uint8_t * data_out);
 
 
 #if defined(__cplusplus)
