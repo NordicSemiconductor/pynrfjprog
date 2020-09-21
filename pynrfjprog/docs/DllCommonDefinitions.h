@@ -45,7 +45,7 @@
 extern "C" {
 #endif
 
-#define colored(x) (true) /* Internal coloration macro, removed during build */
+
 #define MIN_JLINK_MAJOR_VERSION (6UL)
 #define MIN_JLINK_MINOR_VERSION (42UL)
 
@@ -261,7 +261,7 @@ typedef enum
 {
     NRF51_FAMILY,
     NRF52_FAMILY,
-    NRF53_FAMILY = 53,
+    NRF53_FAMILY   = 53,
     NRF91_FAMILY   = 91,
     UNKNOWN_FAMILY = 99
 } device_family_t;
@@ -442,13 +442,19 @@ typedef enum
 
 } nrfjprogdll_err_t;
 
+typedef enum
+{
+    critical = 50,
+    error    = 40,
+    warning  = 30,
+    info     = 20,
+    debug    = 10,
+    none     = 0,
+} nrfjprogdll_log_level;
+
 /* Expected log function prototype for logging operations. */
 typedef void msg_callback(const char * msg_str);
 
-#if colored(Internal)
-/* Expected log function prototype for contextualized logging operations. */
-typedef void msg_callback_ex(const char * msg_str, void * param);
-#endif
 
 #if defined(__cplusplus)
 }

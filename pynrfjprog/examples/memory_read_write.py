@@ -24,7 +24,10 @@
 from __future__ import print_function
 
 # Import pynrfjprog API module
-from pynrfjprog import LowLevel
+try:
+    from .. import LowLevel
+except Exception:
+    from pynrfjprog import LowLevel
 
 
 def run(snr=None):

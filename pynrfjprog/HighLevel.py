@@ -37,6 +37,9 @@ class API(object):
     Root class of the module. Instance the class to get access to highlevel nrfjprog.dll functions in Python.
     """
 
+    # List of generated probes to make sure their python objects survive to self.close() if neccessary.
+    probes = list()
+
     def __init__(self, log=True):
         """
         Constructor.
@@ -111,6 +114,8 @@ class API(object):
 
     def close(self):
         self.lib.NRFJPROG_dll_close()
+        # List.clear is not available in Python 2.7. Manually delete all elements in list instead.
+        del self.probes[:]
 
     def is_open(self):
 
@@ -134,6 +139,13 @@ class API(object):
         snr = [int(serial_numbers[i]) for i in range(0, min(num_available.value, serial_numbers_len.value))]
 
         return snr
+
+    def register_probe(self, probe):
+        self.probes.append(probe)
+
+    def deregister_probe(self, probe):
+        if probe in self.probes:
+            self.probes.remove(probe)
 
     def __enter__(self):
         """
@@ -182,6 +194,7 @@ class Probe(object):
 
         self.info_callback = Parameters.Logger.create_callback(self._logger.info) if log else None
         self.debug_callback = Parameters.Logger.create_callback(self._logger.debug) if log else None
+        self._api.register_probe(self)
 
     def __enter__(self):
         """
@@ -203,6 +216,7 @@ class Probe(object):
             if result != NrfjprogdllErr.SUCCESS:
                 raise APIError(result, log=self._logger.error)
             self._handle = None
+        self._api.deregister_probe(self)
 
     def probe_reset(self):
         """
@@ -226,7 +240,7 @@ class Probe(object):
 
         if not isinstance(qspi_ini_params, QSPIInitParams):
             raise TypeError('The qspi_ini_params parameter must be an instance of class QSPIInitParams.')
-        if not self._is_u32(memory_size):
+        if not is_u32(memory_size):
             raise TypeError('The memory_size parameter must fit an unsigned 32-bit value.')
 
         memory_size = ctypes.c_uint32(memory_size)
@@ -240,10 +254,10 @@ class Probe(object):
         Sets coprocessor to use for subsequent operations.
         @param CoProcessor coprocessor: Target coprocessor.
         """
-        if not self._is_enum(coprocessor, CoProcessor):
+        if not is_enum(coprocessor, CoProcessor):
             raise TypeError('Parameter coprocessor must be of type int, str or CoProcessor enumeration.')
 
-        coprocessor = ctypes.c_int(self._decode_enum(coprocessor, CoProcessor))
+        coprocessor = ctypes.c_int(decode_enum(coprocessor, CoProcessor))
 
         result = self._api.lib.NRFJPROG_probe_set_coprocessor(self._handle, coprocessor)
         if result != NrfjprogdllErr.SUCCESS:
@@ -285,7 +299,7 @@ class Probe(object):
         if not isinstance(protection_status, ReadbackProtection):
             raise TypeError('Parameter protection_status must be of type int, str or ReadbackProtection enumeration.')
 
-        protection_status = ctypes.c_int(self._decode_enum(protection_status, ReadbackProtection))
+        protection_status = ctypes.c_int(decode_enum(protection_status, ReadbackProtection))
 
         result = self._api.lib.NRFJPROG_readback_protect(self._handle, protection_status)
         if result != NrfjprogdllErr.SUCCESS:
@@ -321,7 +335,7 @@ class Probe(object):
         if not isinstance(verify_action, VerifyAction):
             raise TypeError('Parameter verify_action must be of type int, str or VerifyAction enumeration.')
 
-        verify_action = ctypes.c_int(self._decode_enum(verify_action, VerifyAction))
+        verify_action = ctypes.c_int(decode_enum(verify_action, VerifyAction))
 
         hex_path = str(hex_path).encode('utf-8')
 
@@ -332,12 +346,12 @@ class Probe(object):
     def erase(self, erase_action=EraseAction.ERASE_ALL, start_address=0, end_address=0):
         if not isinstance(erase_action, EraseAction):
             raise TypeError('Parameter erase_action must be of type int, str or EraseAction enumeration.')
-        if not self._is_u32(start_address):
+        if not is_u32(start_address):
             raise TypeError('The start_address parameter must fit an unsigned 32-bit value.')
-        if not self._is_u32(end_address):
+        if not is_u32(end_address):
             raise TypeError('The end_address parameter must fit an unsigned 32-bit value.')
 
-        erase_action = ctypes.c_int(self._decode_enum(erase_action, EraseAction))
+        erase_action = ctypes.c_int(decode_enum(erase_action, EraseAction))
         start_address = ctypes.c_uint32(start_address)
         end_address = ctypes.c_uint32(end_address)
 
@@ -351,10 +365,10 @@ class Probe(object):
             raise APIError(result, log=self._logger.error)
 
     def read(self, address, data_len=4):
-        if not self._is_u32(address):
+        if not is_u32(address):
             raise TypeError('The address parameter must fit an unsigned 32-bit value.')
 
-        if not self._is_u32(data_len):
+        if not is_u32(data_len):
             raise TypeError('The data_len parameter must fit an unsigned 32-bit value.')
 
         address = ctypes.c_uint32(address)
@@ -380,19 +394,19 @@ class Probe(object):
 
     def write(self, address, data):
 
-        if not self._is_u32(address):
+        if not is_u32(address):
             raise ValueError('The address parameter must be an unsigned 32-bit value.')
 
         address = ctypes.c_uint32(address)
 
-        if self._is_u32(data):
+        if is_u32(data):
             data = ctypes.c_uint32(data)
 
             result = self._api.lib.NRFJPROG_write_u32(self._handle, address, data)
 
             if result != NrfjprogdllErr.SUCCESS:
                 raise APIError(result, log=self._logger.error)
-        elif self._is_valid_buf(data):
+        elif is_valid_buf(data):
 
             data_len = ctypes.c_uint32(len(data))
             data = (ctypes.c_uint8 * data_len.value)(*data)
@@ -408,7 +422,7 @@ class Probe(object):
         if not isinstance(reset_action, ResetAction):
             raise TypeError('Parameter reset_action must be of type int, str or ResetAction enumeration.')
 
-        reset_action = ctypes.c_int(self._decode_enum(reset_action, ResetAction))
+        reset_action = ctypes.c_int(decode_enum(reset_action, ResetAction))
 
         result = self._api.lib.NRFJPROG_reset(self._handle, reset_action)
         if result != NrfjprogdllErr.SUCCESS:
@@ -416,10 +430,10 @@ class Probe(object):
 
     def run(self, pc, sp):
 
-        if not self._is_u32(pc):
+        if not is_u32(pc):
             raise ValueError('The pc parameter must be an unsigned 32-bit value.')
 
-        if not self._is_u32(sp):
+        if not is_u32(sp):
             raise ValueError('The sp parameter must be an unsigned 32-bit value.')
 
         pc = ctypes.c_uint32(pc)
@@ -428,55 +442,7 @@ class Probe(object):
         result = self._api.lib.NRFJPROG_run(self._handle, pc, sp)
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, log=self._logger.error)
-
-    @staticmethod
-    def _is_u32(value):
-        return isinstance(value, int) and 0 <= value <= 0xFFFFFFFF
-
-    @staticmethod
-    def _is_u8(value):
-        return isinstance(value, int) and 0 <= value <= 0xFF
-
-    @staticmethod
-    def _is_bool(value):
-        return isinstance(value, bool) or 0 <= value <= 1
-
-    def _is_valid_buf(self, buf):
-        for value in buf:
-            if not self._is_u8(value):
-                return False
-        return len(buf) > 0
-
-    @staticmethod
-    def _is_valid_encoding(encoding):
-        try:
-            codecs.lookup(encoding)
-        except LookupError:
-            return False
-        else:
-            return True
-
-    @staticmethod
-    def _is_enum(param, enum_type):
-        if isinstance(param, enum_type):
-            return True
-        if isinstance(param, int) and param in [member for name, member in enum_type.__members__.items()]:
-            return True
-        elif isinstance(param, str) and param in [name for name, member in enum_type.__members__.items()]:
-            return True
-        return False
-
-    def _decode_enum(self, param, enum_type):
-        if not self._is_enum(param, enum_type):
-            return None
-
-        if isinstance(param, int):
-            return enum_type(param)
-        elif isinstance(param, str):
-            return enum_type[param]
-        else:
-            return param
-
+        
 
 class MCUBootDFUProbe(Probe):
     """ Specialization of Probe interface for MCUBoot DFU via serial port connection. """
@@ -497,10 +463,10 @@ class MCUBootDFUProbe(Probe):
         serial_port = str(serial_port)
         Probe.__init__(self, api, log, serial_port)
 
-        if not self._is_u32(baud_rate):
+        if not is_u32(baud_rate):
             raise TypeError('The baud_rate parameter must fit an unsigned 32-bit value.')
 
-        if not self._is_u32(timeout):
+        if not is_u32(timeout):
             raise TypeError('The timeout parameter must fit an unsigned 32-bit value.')
 
         try:
@@ -539,10 +505,10 @@ class ModemUARTDFUProbe(Probe):
         serial_port = str(serial_port)
         Probe.__init__(self, api, log, serial_port)
 
-        if not self._is_u32(baud_rate):
+        if not is_u32(baud_rate):
             raise TypeError('The baud_rate parameter must fit an unsigned 32-bit value.')
 
-        if not self._is_u32(timeout):
+        if not is_u32(timeout):
             raise TypeError('The timeout parameter must fit an unsigned 32-bit value.')
 
         try:
@@ -586,9 +552,9 @@ class IPCDFUProbe(Probe):
             if jlink_arm_dll_path is not None:
                 jlink_arm_dll_path = str(jlink_arm_dll_path).encode('utf-8')
 
-            if not self._is_enum(coprocessor, CoProcessor):
+            if not is_enum(coprocessor, CoProcessor):
                 raise TypeError('Parameter direction must be of type int, str or CoProcessor enumeration.')
-            coprocessor = ctypes.c_int(self._decode_enum(coprocessor, CoProcessor))
+            coprocessor = ctypes.c_int(decode_enum(coprocessor, CoProcessor))
 
             result = self._api.lib.NRFJPROG_dfu_init(ctypes.byref(self._handle), self.info_callback, self.debug_callback, snr, coprocessor, jlink_arm_dll_path)
             if result != NrfjprogdllErr.SUCCESS:
@@ -660,7 +626,7 @@ class DebugProbe(Probe):
 
         @param int addr: Address of the RTT Control Block in memory.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The address parameter must be an unsigned 32-bit value.')
 
         addr = ctypes.c_uint32(addr)
@@ -710,13 +676,13 @@ class DebugProbe(Probe):
         @param (optional) str or None encoding: Encoding for the data read in order to build a readable string. Default value 'utf-8'. Note that since Python2 native string is coded in ASCII, only ASCII characters will be properly represented.
         @return str or bytearray: Data read. Return type depends on encoding optional parameter. If an encoding is given, the return type will be Python version's native string type. If None is given, a bytearray will be returned.
         """
-        if not self._is_u32(channel_index):
+        if not is_u32(channel_index):
             raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
 
-        if not self._is_u32(length):
+        if not is_u32(length):
             raise ValueError('The length parameter must be an unsigned 32-bit value.')
 
-        if encoding is not None and not self._is_valid_encoding(encoding):
+        if encoding is not None and not is_valid_encoding(encoding):
             raise ValueError('The encoding parameter must be either None or a standard encoding in python.')
 
         channel_index = ctypes.c_uint32(channel_index)
@@ -739,14 +705,14 @@ class DebugProbe(Probe):
         @param (optional) str or None encoding: Encoding of the msg to write. Default value 'utf-8'.
         @return int: Number of bytes written.  Note that if non-'latin-1' characters are used, the number of bytes written depends on the encoding parameter given.
         """
-        if not self._is_u32(channel_index):
+        if not is_u32(channel_index):
             raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
 
-        if encoding is not None and not self._is_valid_encoding(encoding):
+        if encoding is not None and not is_valid_encoding(encoding):
             raise ValueError('The encoding parameter must be either None or a standard encoding in python.')
 
         msg = bytearray(msg.encode(encoding)) if encoding else bytearray(msg)
-        if not self._is_valid_buf(msg):
+        if not is_valid_buf(msg):
             raise ValueError('The msg parameter must be a sequence type with at least one item.')
 
         channel_index = ctypes.c_uint32(channel_index)
@@ -783,13 +749,13 @@ class DebugProbe(Probe):
         @param int, str, or RTTChannelDirection(IntEnum) direction: Direction of the channel to request info.
         @return (str, int): Tuple containing the channel name and the size of channel buffer.
         """
-        if not self._is_u32(channel_index):
+        if not is_u32(channel_index):
             raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
 
-        if not self._is_enum(direction, RTTChannelDirection):
+        if not is_enum(direction, RTTChannelDirection):
             raise ValueError('Parameter direction must be of type int, str or RTTChannelDirection enumeration.')
 
-        direction = self._decode_enum(direction, RTTChannelDirection)
+        direction = decode_enum(direction, RTTChannelDirection)
         if direction is None:
             raise ValueError('Parameter direction must be of type int, str or RTTChannelDirection enumeration.')
 

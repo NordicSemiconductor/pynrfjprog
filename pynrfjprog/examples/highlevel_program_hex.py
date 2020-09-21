@@ -26,7 +26,10 @@ import os
 import argparse
 
 # Import pynrfjprog API module and HEX parser module
-from pynrfjprog import HighLevel
+try:
+    from .. import HighLevel
+except Exception:
+    from pynrfjprog import HighLevel
 
 def find_blinky_hex(device_family, device_version):
     """ Find the appropriate hex file to program """

@@ -56,7 +56,7 @@ class API(object):
         self._device_family = None
         self._jlink_arm_dll_path = None
 
-        self._device_family = self._decode_enum(device_family, DeviceFamily)
+        self._device_family = decode_enum(device_family, DeviceFamily)
         if self._device_family is None:
             raise ValueError('Parameter device_family must be of type int, str or DeviceFamily enumeration.')
 
@@ -169,11 +169,10 @@ class API(object):
 
         @param int serial_number: Serial number of the debug probe to find the com port of.
 
-        @Return int com_ports: An array of the enumerated com ports
-        @Return int num_com_ports: The number of com ports that were discovered.
+        @Return list of ComPortInfo
         """
 
-        if not self._is_u32(serial_number):
+        if not is_u32(serial_number):
             raise ValueError('The serial_number parameter must be an unsigned 32-bit value.')
 
         serial_number = ctypes.c_uint32(serial_number)
@@ -230,10 +229,10 @@ class API(object):
         @param int serial_number: Serial number of the emulator to connect to.
         @param int jlink_speed_khz: SWDCLK speed [kHz].
         """
-        if not self._is_u32(serial_number):
+        if not is_u32(serial_number):
             raise ValueError('The serial_number parameter must be an unsigned 32-bit value.')
 
-        if not self._is_u32(jlink_speed_khz):
+        if not is_u32(jlink_speed_khz):
             raise ValueError('The jlink_speed_khz parameter must be an unsigned 32-bit value.')
 
         serial_number = ctypes.c_uint32(serial_number)
@@ -249,7 +248,7 @@ class API(object):
 
         @param int jlink_speed_khz: SWDCLK speed [kHz].
         """
-        if not self._is_u32(jlink_speed_khz):
+        if not is_u32(jlink_speed_khz):
             raise ValueError('The jlink_speed_khz parameter must be an unsigned 32-bit value.')
 
         jlink_speed_khz = ctypes.c_uint32(jlink_speed_khz)
@@ -268,7 +267,7 @@ class API(object):
 
     def replace_connected_emu_fw(self):
         """
-        Resets the connected emulator.
+        Replaces the firmware of the connected emulator.
         """
         result = self._lib.NRFJPROG_replace_connected_emu_fw()
         if result != NrfjprogdllErr.SUCCESS:
@@ -318,10 +317,10 @@ class API(object):
         @param CoProcessor coprocessor: Target coprocessor for connect_to_device() call.
         @return bool: True if held in reset.
         """
-        if not self._is_enum(coprocessor, CoProcessor):
+        if not is_enum(coprocessor, CoProcessor):
             raise ValueError('CoProcessor Parameter must be of type int, str or CoProcessor enumeration.')
 
-        coprocessor = self._decode_enum(coprocessor, CoProcessor)
+        coprocessor = decode_enum(coprocessor, CoProcessor)
         coprocessor = ctypes.c_int(coprocessor)
 
         held = ctypes.c_bool()
@@ -336,10 +335,10 @@ class API(object):
         Enables chosen coprocessor
         @param CoProcessor coprocessor: Target coprocessor for connect_to_device() call.
         """
-        if not self._is_enum(coprocessor, CoProcessor):
+        if not is_enum(coprocessor, CoProcessor):
             raise ValueError('CoProcessor Parameter must be of type int, str or CoProcessor enumeration.')
 
-        coprocessor = self._decode_enum(coprocessor, CoProcessor)
+        coprocessor = decode_enum(coprocessor, CoProcessor)
         coprocessor = ctypes.c_int(coprocessor)
 
         result = self._lib.NRFJPROG_enable_coprocessor(coprocessor)
@@ -351,10 +350,10 @@ class API(object):
         Disables chosen coprocessor
         @param CoProcessor coprocessor: Target coprocessor for connect_to_device() call.
         """
-        if not self._is_enum(coprocessor, CoProcessor):
+        if not is_enum(coprocessor, CoProcessor):
             raise ValueError('CoProcessor Parameter must be of type int, str or CoProcessor enumeration.')
 
-        coprocessor = self._decode_enum(coprocessor, CoProcessor)
+        coprocessor = decode_enum(coprocessor, CoProcessor)
         coprocessor = ctypes.c_int(coprocessor)
 
         result = self._lib.NRFJPROG_disable_coprocessor(coprocessor)
@@ -366,10 +365,10 @@ class API(object):
         Select coprocessor
         @param CoProcessor coprocessor: Target coprocessor for connect_to_device() call.
         """
-        if not self._is_enum(coprocessor, CoProcessor):
+        if not is_enum(coprocessor, CoProcessor):
             raise ValueError('CoProcessor Parameter must be of type int, str or CoProcessor enumeration.')
 
-        coprocessor = self._decode_enum(coprocessor, CoProcessor)
+        coprocessor = decode_enum(coprocessor, CoProcessor)
         coprocessor = ctypes.c_int(coprocessor)
 
         result = self._lib.NRFJPROG_select_coprocessor(coprocessor)
@@ -423,10 +422,10 @@ class API(object):
 
         @param int, str, or ReadbackProtection(IntEnum) desired_protection_level: Readback protection level for the target.
         """
-        if not self._is_enum(desired_protection_level, ReadbackProtection):
+        if not is_enum(desired_protection_level, ReadbackProtection):
             raise ValueError('Parameter desired_protection_level must be of type int, str or ReadbackProtection enumeration.')
 
-        desired_protection_level = self._decode_enum(desired_protection_level, ReadbackProtection)
+        desired_protection_level = decode_enum(desired_protection_level, ReadbackProtection)
         if desired_protection_level is None:
             raise ValueError('Parameter desired_protection_level must be of type int, str or ReadbackProtection enumeration.')
 
@@ -502,10 +501,10 @@ class API(object):
 
         @return boolean: True if bprot is enabled for address range.
         """
-        if not self._is_u32(address_start):
+        if not is_u32(address_start):
             raise ValueError('The address_start parameter must be an unsigned 32-bit value.')
 
-        if not self._is_u32(length):
+        if not is_u32(length):
             raise ValueError('The length parameter must be an unsigned 32-bit value.')
 
         address_start = ctypes.c_uint32(address_start)
@@ -542,7 +541,7 @@ class API(object):
 
         @param int addr: Address in the page of code flash to erase.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
 
         addr = ctypes.c_uint32(addr)
@@ -568,13 +567,13 @@ class API(object):
         @param int data: Value to write.
         @param boolean control: True for automatic control of NVMC by the function.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
 
-        if not self._is_u32(data):
+        if not is_u32(data):
             raise ValueError('The data parameter must be an unsigned 32-bit value.')
 
-        if not self._is_bool(control):
+        if not is_bool(control):
             raise ValueError('The control parameter must be a boolean value.')
 
         addr = ctypes.c_uint32(addr)
@@ -592,7 +591,7 @@ class API(object):
         @param  int addr: Address to read.
         @return int: Value read.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
 
         addr = ctypes.c_uint32(addr)
@@ -612,13 +611,13 @@ class API(object):
         @param sequence data: Data to write. Any type that implements the sequence API (i.e. string, list, bytearray...) is valid as input.
         @param boolean control: True for automatic control of NVMC by the function.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
 
-        if not self._is_valid_buf(data):
+        if not is_valid_buf(data):
             raise ValueError('The data parameter must be a sequence type with at least one item.')
 
-        if not self._is_bool(control):
+        if not is_bool(control):
             raise ValueError('The control parameter must be a boolean value.')
 
         addr = ctypes.c_uint32(addr)
@@ -638,10 +637,10 @@ class API(object):
         @param int data_len: Number of bytes to read.
         @return [int]: List of values read.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
 
-        if not self._is_u32(data_len):
+        if not is_u32(data_len):
             raise ValueError('The data_len parameter must be an unsigned 32-bit value.')
 
         addr = ctypes.c_uint32(addr)
@@ -684,10 +683,10 @@ class API(object):
         @param int pc: Value for the program counter.
         @param int sp: Value for the stack pointer.
         """
-        if not self._is_u32(pc):
+        if not is_u32(pc):
             raise ValueError('The pc parameter must be an unsigned 32-bit value.')
 
-        if not self._is_u32(sp):
+        if not is_u32(sp):
             raise ValueError('The sp parameter must be an unsigned 32-bit value.')
 
         pc = ctypes.c_uint32(pc)
@@ -791,7 +790,7 @@ class API(object):
 
         @param int section_index: RAM block index to power off.
         """
-        if not self._is_u32(section_index):
+        if not is_u32(section_index):
             raise ValueError('The section_index parameter must be an unsigned 32-bit value.')
 
         section_index = ctypes.c_uint32(section_index)
@@ -807,10 +806,10 @@ class API(object):
         @param  int, str, or CPURegister(IntEnum) register_name: CPU register to read.
         @return int: Value read.
         """
-        if not self._is_enum(register_name, CpuRegister):
+        if not is_enum(register_name, CpuRegister):
             raise ValueError('Parameter register_name must be of type int, str or CpuRegister enumeration.')
 
-        register_name = self._decode_enum(register_name, CpuRegister)
+        register_name = decode_enum(register_name, CpuRegister)
         if register_name is None:
             raise ValueError('Parameter register_name must be of type int, str or CpuRegister enumeration.')
 
@@ -830,13 +829,13 @@ class API(object):
         @param int, str, or CPURegister(IntEnum) register_name: CPU register to write.
         @param int value: Value to write.
         """
-        if not self._is_u32(value):
+        if not is_u32(value):
             raise ValueError('The value parameter must be an unsigned 32-bit value.')
 
-        if not self._is_enum(register_name, CpuRegister):
+        if not is_enum(register_name, CpuRegister):
             raise ValueError('Parameter register_name must be of type int, str or CpuRegister enumeration.')
 
-        register_name = self._decode_enum(register_name, CpuRegister)
+        register_name = decode_enum(register_name, CpuRegister)
         if register_name is None:
             raise ValueError('Parameter register_name must be of type int, str or CpuRegister enumeration.')
 
@@ -894,7 +893,7 @@ class API(object):
         @param int addr: Address to read.
         @return int: Value read.
         """
-        if not self._is_u8(addr):
+        if not is_u8(addr):
             raise ValueError('The addr parameter must be an unsigned 8-bit value.')
 
         addr = ctypes.c_uint8(addr)
@@ -913,10 +912,10 @@ class API(object):
         @param int addr: Address to write.
         @param int data: Value to write.
         """
-        if not self._is_u8(addr):
+        if not is_u8(addr):
             raise ValueError('The addr parameter must be an unsigned 8-bit value.')
 
-        if not self._is_u32(data):
+        if not is_u32(data):
             raise ValueError('The data parameter must be an unsigned 32-bit value.')
 
         addr = ctypes.c_uint8(addr)
@@ -934,10 +933,10 @@ class API(object):
         @param int addr: Address to read.
         @return int: Value read.
         """
-        if not self._is_u8(ap_index):
+        if not is_u8(ap_index):
             raise ValueError('The ap_index parameter must be an unsigned 8-bit value.')
 
-        if not self._is_u8(addr):
+        if not is_u8(addr):
             raise ValueError('The addr parameter must be an unsigned 8-bit value.')
 
         ap_index = ctypes.c_uint8(ap_index)
@@ -958,13 +957,13 @@ class API(object):
         @param int addr: Address to write.
         @param int data: Value to write.
         """
-        if not self._is_u8(ap_index):
+        if not is_u8(ap_index):
             raise ValueError('The ap_index parameter must be an unsigned 8-bit value.')
 
-        if not self._is_u8(addr):
+        if not is_u8(addr):
             raise ValueError('The addr parameter must be an unsigned 8-bit value.')
 
-        if not self._is_u32(data):
+        if not is_u32(data):
             raise ValueError('The data parameter must be an unsigned 32-bit value.')
 
         ap_index = ctypes.c_uint8(ap_index)
@@ -995,7 +994,7 @@ class API(object):
 
         @param int addr: Address of the RTT Control Block in memory.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The address parameter must be an unsigned 32-bit value.')
 
         addr = ctypes.c_uint32(addr)
@@ -1045,13 +1044,13 @@ class API(object):
         @param (optional) str or None encoding: Encoding for the data read in order to build a readable string. Default value 'utf-8'. Note that since Python2 native string is coded in ASCII, only ASCII characters will be properly represented.
         @return str or bytearray: Data read. Return type depends on encoding optional parameter. If an encoding is given, the return type will be Python version's native string type. If None is given, a bytearray will be returned.
         """
-        if not self._is_u32(channel_index):
+        if not is_u32(channel_index):
             raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
 
-        if not self._is_u32(length):
+        if not is_u32(length):
             raise ValueError('The length parameter must be an unsigned 32-bit value.')
 
-        if encoding is not None and not self._is_valid_encoding(encoding):
+        if encoding is not None and not is_valid_encoding(encoding):
             raise ValueError('The encoding parameter must be either None or a standard encoding in python.')
 
         channel_index = ctypes.c_uint32(channel_index)
@@ -1074,14 +1073,14 @@ class API(object):
         @param (optional) str or None encoding: Encoding of the msg to write. Default value 'utf-8'.
         @return int: Number of bytes written.  Note that if non-'latin-1' characters are used, the number of bytes written depends on the encoding parameter given.
         """
-        if not self._is_u32(channel_index):
+        if not is_u32(channel_index):
             raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
 
-        if encoding is not None and not self._is_valid_encoding(encoding):
+        if encoding is not None and not is_valid_encoding(encoding):
             raise ValueError('The encoding parameter must be either None or a standard encoding in python.')
 
         msg = bytearray(msg.encode(encoding)) if encoding else bytearray(msg)
-        if not self._is_valid_buf(msg):
+        if not is_valid_buf(msg):
             raise ValueError('The msg parameter must be a sequence type with at least one item.')
 
         channel_index = ctypes.c_uint32(channel_index)
@@ -1118,13 +1117,13 @@ class API(object):
         @param int, str, or RTTChannelDirection(IntEnum) direction: Direction of the channel to request info.
         @return (str, int): Tuple containing the channel name and the size of channel buffer.
         """
-        if not self._is_u32(channel_index):
+        if not is_u32(channel_index):
             raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
 
-        if not self._is_enum(direction, RTTChannelDirection):
+        if not is_enum(direction, RTTChannelDirection):
             raise ValueError('Parameter direction must be of type int, str or RTTChannelDirection enumeration.')
 
-        direction = self._decode_enum(direction, RTTChannelDirection)
+        direction = decode_enum(direction, RTTChannelDirection)
         if direction is None:
             raise ValueError('Parameter direction must be of type int, str or RTTChannelDirection enumeration.')
 
@@ -1164,10 +1163,10 @@ class API(object):
         class _CtypesQSPIInitParams(ctypes.Structure):
             _fields_ = [("read_mode", ctypes.c_int), ("write_mode", ctypes.c_int), ("address_mode", ctypes.c_int), ("frequency", ctypes.c_int), ("spi_mode", ctypes.c_int), ("sck_delay", ctypes.c_uint32), ("custom_instruction_io2_level", ctypes.c_int), ("custom_instruction_io3_level", ctypes.c_int), ("CSN_pin", ctypes.c_uint32), ("CSN_port", ctypes.c_uint32), ("SCK_pin", ctypes.c_uint32), ("SCK_port", ctypes.c_uint32), ("DIO0_pin", ctypes.c_uint32), ("DIO0_port", ctypes.c_uint32), ("DIO1_pin", ctypes.c_uint32), ("DIO1_port", ctypes.c_uint32), ("DIO2_pin", ctypes.c_uint32), ("DIO2_port", ctypes.c_uint32), ("DIO3_pin", ctypes.c_uint32), ("DIO3_port", ctypes.c_uint32), ("WIP_index", ctypes.c_uint32), ("pp_size", ctypes.c_int)]
         
-        if not self._is_bool(retain_ram):
+        if not is_bool(retain_ram):
             raise ValueError('The retain_ram parameter must be a boolean value.')
             
-        if not self._is_right_class(init_params, QSPIInitParams) and init_params is not None:
+        if not is_right_class(init_params, QSPIInitParams) and init_params is not None:
             raise ValueError('The init_params parameter must be an instance of class QSPIInitParams.')
         
         if init_params is None:
@@ -1197,10 +1196,10 @@ class API(object):
         @param int length: Number of bytes to read.
         @return bytearray: Data read.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
             
-        if not self._is_u32(length):
+        if not is_u32(length):
             raise ValueError('The length parameter must be an unsigned 32-bit value.')
         
         addr = ctypes.c_uint32(addr)
@@ -1220,10 +1219,10 @@ class API(object):
         @param int addr: Address to write to.
         @param sequence data: Data to write. Any type that implements the sequence API (i.e. string, list, bytearray...) is valid as input.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
         
-        if not self._is_valid_buf(data):
+        if not is_valid_buf(data):
             raise ValueError('The data parameter must be a sequence type with at least one item.')
         
         addr = ctypes.c_uint32(addr)
@@ -1241,13 +1240,13 @@ class API(object):
         @param int addr: Address to erase.
         @param int, str, or QSPIEraseLen(IntEnum) length: Erase length.
         """
-        if not self._is_u32(addr):
+        if not is_u32(addr):
             raise ValueError('The addr parameter must be an unsigned 32-bit value.')
         
-        if not self._is_enum(length, QSPIEraseLen):
+        if not is_enum(length, QSPIEraseLen):
             raise ValueError('Parameter length must be of type int, str or QSPIEraseLen enumeration.')
         
-        length = self._decode_enum(length, QSPIEraseLen)
+        length = decode_enum(length, QSPIEraseLen)
         if length is None:
             raise ValueError('Parameter length must be of type int, str or QSPIEraseLen enumeration.')
         
@@ -1268,16 +1267,16 @@ class API(object):
         @param (optional) bool output: Ouput from the custom instruction is desired or not.
         @return None or bytearray: Custom instruction received data. Return type depends on output optional parameter.
         """
-        if not self._is_u8(code):
+        if not is_u8(code):
             raise ValueError('The code parameter must be an unsigned 8-bit value.')
             
-        if not self._is_u32(length):
+        if not is_u32(length):
             raise ValueError('The length parameter must be an unsigned 32-bit value.')
         
-        if not self._is_valid_buf(data_in) and data_in is not None:
+        if not is_valid_buf(data_in) and data_in is not None:
             raise ValueError('The data_in parameter must be a sequence type with at least one item.')
             
-        if not self._is_bool(output):
+        if not is_bool(output):
             raise ValueError('The output parameter must be a boolean value.')
         
         code = ctypes.c_uint8(code)
@@ -1308,54 +1307,6 @@ class API(object):
             print('{} {} {}'.format(datetime.datetime.now().replace(microsecond=0).isoformat(' '), log_str, decode_string(msg).strip()), file=log_file)
         except (ValueError, OSError):
             pass
-
-    def _is_u32(self, value):
-        return isinstance(value, int) and 0 <= value <= 0xFFFFFFFF
-
-    def _is_u8(self, value):
-        return isinstance(value, int) and 0 <= value <= 0xFF
-
-    def _is_bool(self, value):
-        return isinstance(value, bool) or 0 <= value <= 1
-
-    def _is_valid_buf(self, buf):
-        if buf is None:
-            return False
-        for value in buf:
-            if not self._is_u8(value):
-                return False
-        return len(buf) > 0
-
-    def _is_valid_encoding(self, encoding):
-        try:
-            codecs.lookup(encoding)
-        except LookupError:
-            return False
-        else:
-            return True
-
-    def _is_right_class(self, instance, class_type):
-        if instance is None:
-            return False
-        return isinstance(instance, class_type)
-            
-    def _is_enum(self, param, enum_type):
-        if isinstance(param, enum_type):
-            return True
-        if isinstance(param, int) and param in [member for name, member in enum_type.__members__.items()]:
-            return True
-        elif isinstance(param, str) and param in [name for name, member in enum_type.__members__.items()]:
-            return True
-        return False
-
-    def _decode_enum(self, param, enum_type):
-        if not self._is_enum(param, enum_type):
-            return None
-
-        if isinstance(param, int):
-            return enum_type(param)
-        elif isinstance(param, str):
-            return enum_type[param]
 
     def __enter__(self):
         """

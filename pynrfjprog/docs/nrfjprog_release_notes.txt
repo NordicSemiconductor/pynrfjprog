@@ -1,3 +1,39 @@
+Release 10.10.0
+Changelog
+--------------------------------------
+- (nrfjprog.dll) Fixed bug where nrfjprog did not correctly handle debug power. NRFJPROG_close now always ensures that debug power is disabled.
+- (nrfjprog.dll) Fixed issue where nrfjprogdll failed to find the jlinkarm library if it was not located in the default install path on linux and OS X. 
+
+- (pynrfjprog) Fixed bug where nrfjprog did not correctly handle debug power. LowLevel.Close and DebugProbe.uninit now always ensures that debug power is disabled.
+- (pynrfjprog) Added enumerator values for QSPI speeds 64MHz and 96MHz to Parameters.py.
+- (pynrfjprog) Stopped testing with python 3.4.
+- (pynrfjprog) Update example scripts so they work even if pynrfjprog is not available as a module named pynrfjprog.
+- (pynrfjprog) Add an api synchronization primitive to MultiAPI to fix issue where two threads could be using MultiAPI concurrently and the wrong thread got the result package from the runner thread.
+- (pynrfjprog) Added optional argument api_lock_factory to MultiAPI.MultiAPI constructor.
+                This argument can be modified to replace the locking primitive used to make MultiAPI thread safe if your python threading framework will not lock correctly with a threading.Lock object.
+
+- (nrfjprog.exe) Fixed bug where nrfjprog did not correctly handle debug power.
+- (nrfjprog.exe) nrfjprog.exe now attempts to create any intermediate folders if the folder pointed to by --log doesn't exist.
+- (nrfjprog.exe) Fixed bug where nrfjprog did not erase all pages touched with unaligned end in --erasepage.
+- (nrfjprog.exe) Previously, numbers passed as arguments in non-hex format had to be less than 2147483647 (0x7FFFFFFF). This restriction no longer applies.
+- (nrfjprog.exe) Deprecated QSPI pin selection values in QspiDefault.ini for nRF53 devices. nRF53 does not support changing the pins used for QSPI.
+
+- (highleveldll) Fixed bug where nrfjprog did not correctly handle debug power.
+- (highleveldll) Fixed issue where highlevel dll could lock up in when used by multiple users of the same computer.
+- (highleveldll) Fixed bug where some highlevel dll api functions were not thread safe.
+- (highleveldll) Fixed bug where in some circumstances erase_page would not erase pages.
+
+
+Release 10.9.1
+Changelog
+--------------------------------------
+- (Release) Executables and DLLs are now being signed to prevent a Windows "unknown publisher" warning message.
+
+- (nrfjprog.exe) Fixed bug where under special circumstances nrf5340_xxaa_engb would not be identified correctly.
+- (nrfjprog.exe) Fixed issue where trying to read addresses from before ram to after ram would not check if ram was powered.
+
+- (nrfjprog.dll) Fixed bug where under special circumstances nrf5340_xxaa_engb would not be identified correctly.
+
 Release 10.9.0
 Changelog
 --------------------------------------

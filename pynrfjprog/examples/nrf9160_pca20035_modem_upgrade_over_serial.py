@@ -56,7 +56,10 @@ import time
 import os
 
 # Import pynrfjprog HighLevel API module
-from pynrfjprog import HighLevel
+try:
+    from .. import HighLevel
+except Exception:
+    from pynrfjprog import HighLevel
 
 
 def run(serial_device_name_uart0, serial_device_name_uart1, nrf9160_modem_firmware_zip_location):

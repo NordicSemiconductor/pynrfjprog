@@ -26,7 +26,10 @@ from __future__ import print_function
 import argparse
 
 # Import pynrfjprog API module
-from pynrfjprog import HighLevel
+try:
+    from .. import HighLevel
+except Exception:
+    from pynrfjprog import HighLevel
 
 
 def run(snr):

@@ -4,6 +4,7 @@ from builtins import int
 
 import enum
 import ctypes
+import codecs
 import sys
 import datetime
 
@@ -37,6 +38,8 @@ class Logger(object):
         self.logger_owns_file = False
         self.log_file = None
         self.log = log
+        self.log_str = log_str
+
         if log_str_cb is not None:
             self.log_func = lambda x: log_str_cb(decode_string(x).strip())
             self.log = True
@@ -94,6 +97,64 @@ class Logger(object):
 #                                                                                 #
 ###################################################################################
 
+# Helper functions for validating data types
+def is_u32(value):
+    return isinstance(value, int) and 0 <= value <= 0xFFFFFFFF
+
+
+def is_u8(value):
+    return isinstance(value, int) and 0 <= value <= 0xFF
+
+
+def is_bool(value):
+    return isinstance(value, bool) or 0 <= value <= 1
+
+
+def is_valid_buf(buf):
+    if buf is None:
+        return False
+    for value in buf:
+        if not is_u8(value):
+            return False
+    return len(buf) > 0
+
+
+def is_valid_encoding(encoding):
+    try:
+        codecs.lookup(encoding)
+    except LookupError:
+        return False
+    else:
+        return True
+
+
+def is_enum(param, enum_type):
+    if isinstance(param, enum_type):
+        return True
+    if isinstance(param, int) and param in [member for name, member in enum_type.__members__.items()]:
+        return True
+    elif isinstance(param, str) and param in [name for name, member in enum_type.__members__.items()]:
+        return True
+    return False
+
+
+def is_right_class(instance, class_type):
+    if instance is None:
+        return False
+    return isinstance(instance, class_type)
+
+
+def decode_enum(param, enum_type):
+    if not is_enum(param, enum_type):
+        return None
+
+    if isinstance(param, int):
+        return enum_type(param)
+    elif isinstance(param, str):
+        return enum_type[param]
+    else:
+        return param
+
 
 @enum.unique
 class DeviceFamily(enum.IntEnum):
@@ -113,7 +174,7 @@ class DeviceVersion(enum.IntEnum):
     Wraps device_version_t values from DllCommonDefinitions.h
 
     """
-    
+
     UNKNOWN                 = 0
 
     NRF51xxx_xxAA_REV1      = 1
@@ -130,7 +191,7 @@ class DeviceVersion(enum.IntEnum):
     NRF52810_xxAA_REV1      = 13
     NRF52810_xxAA_REV2      = 0x05281001
     NRF52810_xxAA_FUTURE    = 14
-    
+
     NRF52811_xxAA_REV1      = 0x05281100
     NRF52811_xxAA_FUTURE    = 0x052811FF
 
@@ -349,11 +410,13 @@ class QSPIFrequency(enum.IntEnum):
     Wraps qspi_frequency_t values from DllCommonDefinitions.h
 
     """
-    M2              = 15
-    M4              = 7
-    M8              = 3
-    M16             = 1
-    M32             = 0
+    M2              =  15
+    M4              =  7
+    M8              =  3
+    M16             =  1
+    M32             =  0
+    M64             = -1
+    M96             = -2
 
 
 @enum.unique
@@ -469,7 +532,7 @@ class ComPortInfo(object):
         self.path           = decode_string(probe_info.path)
         self.vcom           = probe_info.vcom
         self.serial_number  = probe_info.serial_number
-    
+
     def __repr__(self):
         return "ComPortInfoStruct({}, {}, {})".format(self.path, self.vcom, self.serial_number)
 
@@ -528,12 +591,12 @@ class ProgramOptions(ctypes.Structure):
         self.erase_action = erase_action
         self.qspi_erase_action = qspi_erase_action
         self.reset = reset
-    
+
     def __repr__(self):
         return "ProgramOptions({}, {}, {}, {})".format(
             self.verify,
-            self.erase_action, 
-            self.qspi_erase_action, 
+            self.erase_action,
+            self.qspi_erase_action,
             self.reset
         )
 
@@ -553,7 +616,7 @@ class ReadOptions(ctypes.Structure):
         self.readuicr = readuicr
         self.readficr = readficr
         self.readqspi = readqspi
-    
+
     def __repr__(self):
         return "ReadOptions({}, {}, {}, {}, {})".format(
             self.readram,
@@ -627,7 +690,7 @@ class ProbeInfo(object):
 
         self.num_com_ports = probe_info.num_com_ports
         self.com_ports = [ComPortInfo(comport) for comport in probe_info.com_ports[0:self.num_com_ports]]
-    
+
     def __repr__(self):
         return "ProbeInfo(ProbeInfoStruct({}, {}, {}, {}, [{}]))".format(
             self.serial_number,
@@ -654,7 +717,7 @@ class LibraryInfo(object):
 
         self.version_revision = decode_string(library_info.version_revision)
         self.file_path = decode_string(library_info.file_path)
-    
+
     def __repr__(self):
         return "LibraryInfo(LibraryInfoStruct({}, {}, {}, {}))".format(
             self.version_major,

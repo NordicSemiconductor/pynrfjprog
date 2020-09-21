@@ -8,6 +8,7 @@ from __future__ import print_function
 import inspect
 import traceback
 import multiprocessing
+import threading
 import sys
 
 try:
@@ -47,15 +48,17 @@ class MultiAPI(object):
     Note: A copy of nrfjprog.dll must be found in the working directory.
     """
 
-    def __init__(self, device_family, jlink_arm_dll_path=None, log=False, log_str=None, log_file_path=None):
+    def __init__(self, device_family, jlink_arm_dll_path=None, log=False, log_str=None, log_file_path=None, api_lock_factory=threading.Lock):
         """
         Constructor. Initializes multiprocessing queues, creates a subprocess for the API instance and runs it.
 
         @param enum string or int device_family:   The series of device pynrfjprog will interact with.
         @param optional string jlink_arm_dll_path: Absolute path to the JLinkARM DLL that you want nrfjprog to use. Must be provided if your environment is not standard or your SEGGER installation path is not the default path. See JLink.py for details. Does not support unicode paths.
         @param optional bool log:                  If present and true, will enable logging to sys.stderr with the default log string appended to the beginning of each debug output line.
-        @param optional string log_str:            If present, will enable logging to sys.stderr with overwriten default log string appended to the beginning of each debug output line.
+        @param optional string log_str:            If present, will enable logging to sys.stderr with overwritten default log string appended to the beginning of each debug output line.
         @param optional string log_file_path:      If present, will enable logging to log_file specified. This file will be opened in write mode in API.__init__() and closed when api.close() is called.
+        @param optional function api_lock_factory: A factory function that produces a synchronization primitive with a context manager interface that will be used to guard accesses to the runner thread. By default a threading Lock is used.
+                                                   If a different synchronization primitive is necessary, for example if accessing MultiAPI from a separate multiprocessing thread, or using asyncio, provide an appropriate replacement.
         """
 
         if hasattr(multiprocessing, "get_all_start_methods"):
@@ -80,6 +83,8 @@ class MultiAPI(object):
 
         self._CmdPipeRunner, self._CmdPipeHost = mp_context.Pipe()
         self._CmdAckPipeHost,  self._CmdAckPipeRunner = mp_context.Pipe()
+        self._api_lock_factory = api_lock_factory
+        self._api_lock = None
 
         self._runner_process = mp_context.Process(target=self._runner, args=(device_family, jlink_arm_dll_path, log, log_str, log_file_path))
         self._runner_process.daemon = True
@@ -144,18 +149,22 @@ class MultiAPI(object):
         @returns:          Return value of API.API.func_name(*args, **kwargs)
         """
 
+        if self._api_lock is None:
+            self._api_lock = self._api_lock_factory()
+
         if not self.is_alive():
             raise APIError.APIError(APIError.NrfjprogdllErr.INVALID_OPERATION.value, "Runner process terminated, API is unavailable.")
 
-        self._CmdPipeHost.send(_Command(func_name, *args, **kwargs))
+        with self._api_lock:
+            self._CmdPipeHost.send(_Command(func_name, *args, **kwargs))
 
-        ack = self._CmdAckPipeHost.recv()
+            ack = self._CmdAckPipeHost.recv()
 
-        if ack.exception is not None:
-            print(ack.stacktrace)
-            raise ack.exception
-        if ack.result is not None:
-            return ack.result
+            if ack.exception is not None:
+                print(ack.stacktrace)
+                raise ack.exception
+            if ack.result is not None:
+                return ack.result
 
     def _runner(self, device_family, jlink_arm_dll_path, log, log_str, log_file):
         """Runs methods in separate thread.

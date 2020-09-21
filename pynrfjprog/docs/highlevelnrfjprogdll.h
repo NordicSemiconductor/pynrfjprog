@@ -45,7 +45,7 @@
 
 
 #define major_version (10) 
-#define minor_version (9) 
+#define minor_version (10) 
 #define micro_version (0) 
 
 #define FIRMWARE_STRING_LENGTH  NRFJPROG_STRING_LENGTH
@@ -60,9 +60,6 @@ extern "C" {
 
 /* Provides short strings that describe the currently performed action. */
 typedef void progress_callback(const char * process);
-
-/* Provides debug information about function calls and results. */
-typedef void log_callback(const char * msg);
 
 /* Probe handle type definition. */
 typedef void * Probe_handle_t;
@@ -196,7 +193,7 @@ nrfjprogdll_err_t NRFJPROG_dll_version(uint32_t * major, uint32_t * minor, uint3
  * @retval  NRFJPROG_SUB_DLL_COULD_NOT_BE_OPENED        An error occurred while opening the NRFJPROG DLL.
  * @retval  NRFJPROG_SUB_DLL_COULD_NOT_LOAD_FUNCTIONS   A required function could not be loaded from the NRFJPROG DLL.
  */
-nrfjprogdll_err_t NRFJPROG_dll_open(const char * default_jlink_path, log_callback * log_cb);
+nrfjprogdll_err_t NRFJPROG_dll_open(const char * default_jlink_path, msg_callback * log_cb);
 
 /**
  * @brief   Closes the highlevelnrfjprogdll DLL.
@@ -284,7 +281,7 @@ nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[], uint3
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
  * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
  */
-nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, progress_callback * prog_cb, log_callback * log_cb, uint32_t serial_number, const char * jlink_path);
+nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, progress_callback * prog_cb, msg_callback * log_cb, uint32_t serial_number, const char * jlink_path);
 
 
 /**
@@ -320,7 +317,7 @@ nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, progress_cal
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
  * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
  */
-nrfjprogdll_err_t NRFJPROG_dfu_init(Probe_handle_t * debug_probe, progress_callback * prog_cb, log_callback * log_cb, uint32_t serial_number, coprocessor_t coprocessor, const char * jlink_path_cstr);
+nrfjprogdll_err_t NRFJPROG_dfu_init(Probe_handle_t * debug_probe, progress_callback * prog_cb, msg_callback * log_cb, uint32_t serial_number, coprocessor_t coprocessor, const char * jlink_path_cstr);
 
 /**
  * @brief   Allocates and initializes a new probe connection handle.
@@ -346,7 +343,7 @@ nrfjprogdll_err_t NRFJPROG_dfu_init(Probe_handle_t * debug_probe, progress_callb
  */
     nrfjprogdll_err_t NRFJPROG_mcuboot_dfu_init(Probe_handle_t * debug_probe,
                                                 progress_callback * prog_cb,
-                                                log_callback * log_cb,
+                                                msg_callback * log_cb,
                                                 const char * serial_port,
                                                 const uint32_t baud_rate,
                                                 const uint32_t response_timeout);
@@ -380,7 +377,7 @@ nrfjprogdll_err_t NRFJPROG_dfu_init(Probe_handle_t * debug_probe, progress_callb
  */
 nrfjprogdll_err_t NRFJPROG_modemdfu_dfu_serial_init(Probe_handle_t * debug_probe,
                                                     progress_callback * prog_cb,
-                                                    log_callback * log_cb,
+                                                    msg_callback * log_cb,
                                                     const char * serial_port,
                                                     const uint32_t baud_rate,
                                                     const uint32_t response_timeout);
@@ -803,7 +800,7 @@ nrfjprogdll_err_t NRFJPROG_verify(Probe_handle_t debug_probe, const char * hex_p
  * @post    After the execution of this function, the device CPU will be halted. To unhalt the device CPU, see NRFJPROG_reset() and NRFJPROG_run() functions.
  *
  * @param   debug_probe                         Probe handle.
- * @param   erase_mode                          Erase action selector.
+ * @param   erase_action                        Erase action selector.
  * @param   start_address                       Start address for erase action.
  * @param   end_address                         End address for erase action.
  *
@@ -873,7 +870,7 @@ nrfjprogdll_err_t NRFJPROG_recover(Probe_handle_t debug_probe);
  * @post    After the execution of this function, the device CPU will be halted. To unhalt the device CPU, see NRFJPROG_reset() and NRFJPROG_run() functions.
  *
  * @param   debug_probe                         Probe handle.
- * @param   address                             Start address of the region read.
+ * @param   addr                                Start address of the region read.
  * @param   data                                Pointer to an array to read to.
  * @param   data_len                            Number of bytes to read.
  *

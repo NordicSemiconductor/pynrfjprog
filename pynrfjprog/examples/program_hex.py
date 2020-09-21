@@ -25,7 +25,10 @@ from __future__ import print_function
 import os
 
 # Import pynrfjprog API module and HEX parser module
-from pynrfjprog import LowLevel, Hex
+try:
+    from .. import LowLevel, Hex
+except Exception:
+    from pynrfjprog import LowLevel, Hex
 
 def find_blinky_hex(device_family, device_version):
     """ Find the appropriate hex file to program """

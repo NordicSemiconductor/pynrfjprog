@@ -77,17 +77,6 @@ nrfjprogdll_err_t NRFJPROG_is_dll_open(bool * opened);
 nrfjprogdll_err_t NRFJPROG_open_dll(const char * jlink_path, msg_callback * cb, device_family_t family);
 
 
-#if colored(Internal)
-
-/**
- * @brief   Opens the JLinkARM DLL and sets the log callback. Prepares the dll for work with an nRF device.
- *
- * @details For further details, see the device family header file.
- */
-nrfjprogdll_err_t NRFJPROG_open_dll_tagged_callback(const char * jlink_path, device_family_t family, msg_callback_ex * callback, void * param);
-
-
-#endif
 /**
  * @brief   Closes and frees the JLinkARM DLL.
  *

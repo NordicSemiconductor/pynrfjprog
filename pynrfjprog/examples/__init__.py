@@ -18,4 +18,3 @@ except Exception:
     import highlevel_program_hex
     import highlevel_memory_read_write
     import nrf9160_pca20035_modem_upgrade_over_serial
-

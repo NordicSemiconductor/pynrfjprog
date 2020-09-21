@@ -48,15 +48,6 @@
 extern "C" {
 #endif
 
-/* Expected log function prototype for logging operations. */
-typedef void msg_callback(const char * msg_str);
-
-#if colored(Internal)
-/* Logger  callback that also passes back a context handle, so one thread can handle multiple dll instances. */
-typedef void msg_callback_ex(const char * msg_str, void * param);
-#endif
-
-
 /**
  * @brief   Returns the JLinkARM DLL version.
  *
@@ -118,37 +109,6 @@ nrfjprogdll_err_t NRFJPROG_is_dll_open(bool * opened);
 nrfjprogdll_err_t NRFJPROG_open_dll(const char * jlink_path, msg_callback * cb, device_family_t family);
 
 
-#if colored(Internal)
-/**
- * @brief   Opens the JLinkARM DLL and sets the log callback. Prepares the dll for work with an nRF device.
- *
- * @details This function opens the JLinkARM DLL using the received path. The path should include the name of the DLL
- *          itself (i.e. "JLinkARM.dll"). Only JLinkARM DLLs whose versions are greater than a minimum version will be
- *          accepted. The minimum version for the JLinkARM DLL is defined in MIN_JLINK_MAJOR_VERSION and
- *          MIN_JLINK_MINOR_VERSION defines. The log callback may be NULL. In that case no logging mechanism is provided.
- *          The msg_callback typedef is defined elsewhere in this file. To close the dll, see NRFJPROG_close_dll() function.
- *
- * @pre     Before the execution of this function, the dll must not be open. To close the dll, see NRFJPROG_close_dll() function.
- *
- * @post    After the execution of this function, the JLINKARM DLL pointers will be loaded and some memory reserved. To unload the pointers and free the memory, see NRFJPROG_close_dll() function.
- *
- * @param   jlink_path                          Path to the JLinkARM DLL. Does not support unicode paths. If NULL or nullptr, nrfjprog will attempt to find the newest installed J-Link Dll.
- * @param   family                              Defines the device family the next commands are going to be called to.
- * @param   callback                            Callback for reporting informational and error messages.
- * @param   param                               Pointer passed back as an argument in every call to callback. Can be used to identify the calling dll instance.
- *
- * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has already been called.
- * @retval  INVALID_PARAMETER                   The provided device family is not supported by this DLL.
- * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
- * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL, or the automatic search failed.
- * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
- *                                              A required function could not be loaded from the DLL.
- */
-nrfjprogdll_err_t NRFJPROG_open_dll_tagged_callback(const char * jlink_path, device_family_t family, msg_callback_ex * callback, void * param);
-
-
-#endif
 /**
  * @brief   Closes and frees the JLinkARM DLL.
  *
