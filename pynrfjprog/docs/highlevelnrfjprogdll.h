@@ -1,3 +1,41 @@
+/*
+ * Copyright (c) 2010 - 2018, Nordic Semiconductor ASA
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form, except as embedded into a Nordic
+ *    Semiconductor ASA integrated circuit in a product or a software update for
+ *    such product, must reproduce the above copyright notice, this list of
+ *    conditions and the following disclaimer in the documentation and/or other
+ *    materials provided with the distribution.
+ *
+ * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ *    contributors may be used to endorse or promote products derived from this
+ *    software without specific prior written permission.
+ *
+ * 4. This software, with or without modification, must only be used with a
+ *    Nordic Semiconductor ASA integrated circuit.
+ *
+ * 5. Any software provided in binary form under this license must not be reverse
+ *    engineered, decompiled, modified and/or disassembled.
+ *
+ * THIS SOFTWARE IS PROVIDED BY NORDIC SEMICONDUCTOR ASA "AS IS" AND ANY EXPRESS
+ * OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY, NONINFRINGEMENT, AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE
+ * GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+ * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
+ * OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 #ifndef highlevelnrfjprogdll_FUNC_H
 #define highlevelnrfjprogdll_FUNC_H
 
@@ -6,15 +44,15 @@
 #include "DllCommonDefinitions.h"
 
 
-#define major_version (9) 
-#define minor_version (7) 
-#define micro_version (3) 
+#define major_version (10) 
+#define minor_version (10) 
+#define micro_version (0) 
 
-#define FIRMWARE_STRING_LENGTH (256)
-#define NRFJPROG_MAX_PATH      (260) /* Mirrors Windows max_path value. */
-
+#define FIRMWARE_STRING_LENGTH  NRFJPROG_STRING_LENGTH
 
 #if defined(__cplusplus)
+
+
 extern "C" {
 #endif
 
@@ -22,9 +60,6 @@ extern "C" {
 
 /* Provides short strings that describe the currently performed action. */
 typedef void progress_callback(const char * process);
-
-/* Provides debug information about function calls and results. */
-typedef void log_callback(const char * msg);
 
 /* Probe handle type definition. */
 typedef void * Probe_handle_t;
@@ -46,6 +81,7 @@ typedef enum {
 typedef enum {
     VERIFY_NONE = 0,      /* Do nothing. */
     VERIFY_READ = 1,      /* Verify by reading back contents. */
+    VERIFY_HASH = 2,      /* Verify by hashing contents, faster than VERIFY_READ. */
 } verify_action_t;
 
 typedef struct {
@@ -59,7 +95,10 @@ typedef struct {
     bool readram;
     bool readcode;
     bool readuicr;
+    bool readficr;
     bool readqspi;
+/* Workaround for issue https://bugs.python.org/issue22273 in ctypes, force by-value struct argument into stack.*/
+    bool reserved[3]; 
 } read_options_t;
 
 typedef struct {
@@ -94,9 +133,11 @@ typedef struct {
 } device_info_t;
 
 typedef struct {
-    uint32_t serial_number;                              /* Debug probe serial number. */
-    uint32_t clockspeed_khz;                             /* Requested SWD frequency in kHz. Actual frequency may differ because of device limitations.  */
-    char     firmware_string[FIRMWARE_STRING_LENGTH];    /* Firmware version of debug probe. */
+    uint32_t          serial_number;                            /* Debug probe serial number. */
+    uint32_t          clockspeed_khz;                           /* Requested SWD frequency in kHz. Actual frequency may differ because of device limitations.  */
+    char              firmware_string[NRFJPROG_STRING_LENGTH];  /* Firmware version of debug probe. */
+    uint32_t          num_com_ports;                            /* Number of com ports available in debug probe. */
+    com_port_info_t   com_ports[NRFJPROG_COM_PER_JLINK];        /* Array of at least num_com_ports com port info structs. */
 } probe_info_t;
 
 typedef struct {
@@ -140,7 +181,6 @@ nrfjprogdll_err_t NRFJPROG_dll_version(uint32_t * major, uint32_t * minor, uint3
  *
  * @param   default_jlink_path                          Path to a JLinkARM DLL. May be NULL.
  * @param   log_cb                                      Callback for reporting informational and error messages. May be NULL.
- * @param   prog_cb                                     Callback for reporting currently performed action. May be NULL.
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                           The NRFJPROG_dll_open() function has already been called.
@@ -153,8 +193,7 @@ nrfjprogdll_err_t NRFJPROG_dll_version(uint32_t * major, uint32_t * minor, uint3
  * @retval  NRFJPROG_SUB_DLL_COULD_NOT_BE_OPENED        An error occurred while opening the NRFJPROG DLL.
  * @retval  NRFJPROG_SUB_DLL_COULD_NOT_LOAD_FUNCTIONS   A required function could not be loaded from the NRFJPROG DLL.
  */
-nrfjprogdll_err_t NRFJPROG_dll_open(const char * default_jlink_path, log_callback * log_cb, progress_callback * prog_cb);
-
+nrfjprogdll_err_t NRFJPROG_dll_open(const char * default_jlink_path, msg_callback * log_cb);
 
 /**
  * @brief   Closes the highlevelnrfjprogdll DLL.
@@ -227,8 +266,9 @@ nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[], uint3
  * @post    After the execution of this function, the device CPU will be halted. To unhalt the device CPU, see NRFJPROG_reset(), NRFJPROG_run() functions.
  *
  * @param   debug_probe                         Pointer to probe handle type.
+ * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
  * @param   serial_number                       Serial number of the emulator to connect to.
- * @param   jlink_path                          Path to the JLinkARM DLL to be used with this probe. May be NULL.
+ * @param   jlink_path                          Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
@@ -241,7 +281,106 @@ nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[], uint3
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
  * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
  */
-nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, uint32_t serial_number, const char * jlink_path);
+nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, progress_callback * prog_cb, msg_callback * log_cb, uint32_t serial_number, const char * jlink_path);
+
+
+/**
+ * @brief   Allocates and initializes a new probe connection handle.
+ *
+ * @details Allocates and initializes a new probe connection handle. The probe handle initialized and returned in the debug_probe pointer will
+ *          be required in every function that performs a connection to a device. The used JLINKARM DLL in the afore mentioned operations requiring the
+ *          handle can be provided in the jlink_path parameter. If not provided, the default JLinkARM DLL passed or located in NRFJPROG_dll_open() will be used.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the Segger JLink emulator must be physically connected to a powered board with a Nordic nRF91 device.
+ *
+ * @during  During the execution of this function, if the device was not in debug interface mode an unavoidable pin reset will occur. The pin reset will not occur if the debugger used is the Nordic's JLink On-Board-Debugger.
+ *
+ * @post    After the execution of this function, the device will be in debug interface mode. To exit debug interface mode, see NRFJPROG_reset() function.
+ * @post    After the execution of this function, the device CPU will be halted. To unhalt the device CPU, see NRFJPROG_reset(), NRFJPROG_run() functions.
+ *
+ * @param   debug_probe                         Pointer to probe handle type.
+ * @param   prog_cb                             Callback for reporting currently performed action. May be NULL.
+ * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
+ * @param   serial_number                       Serial number of the emulator to connect to.
+ * @param   coprocessor                         Coprocessor to target.
+ * @param   jlink_path_cstr                     Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
+ * @retval  INVALID_PARAMETER                   The debug_probe pointer is NULL.
+ * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
+ *                                              A required function could not be loaded from the DLL.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
+ * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
+ */
+nrfjprogdll_err_t NRFJPROG_dfu_init(Probe_handle_t * debug_probe, progress_callback * prog_cb, msg_callback * log_cb, uint32_t serial_number, coprocessor_t coprocessor, const char * jlink_path_cstr);
+
+/**
+ * @brief   Allocates and initializes a new probe connection handle.
+ *
+ * @details Allocates and initializes a new probe connection handle. The probe handle initialized and returned in the debug_probe pointer will
+ *          be required in every function that performs a connection to a device. 
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the device must be physically connected to a powered board with a device running mcuboot in serial recovery mode.
+ *
+ * @post    After the execution of this function, the device will be in application mode.
+ *
+ * @param   debug_probe                         Pointer to probe handle type.
+ * @param   prog_cb                             Callback for reporting currently performed action. May be NULL.
+ * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
+ * @param   serial_port                         Serial port of the device connected.
+ * @param   baud_rate                           Serial port baud rate.
+ * @param   response_timeout                    Wait time for a response (milliseconds).
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
+ * @retval  INVALID_PARAMETER                   The debug_probe pointer is NULL.
+ */
+    nrfjprogdll_err_t NRFJPROG_mcuboot_dfu_init(Probe_handle_t * debug_probe,
+                                                progress_callback * prog_cb,
+                                                msg_callback * log_cb,
+                                                const char * serial_port,
+                                                const uint32_t baud_rate,
+                                                const uint32_t response_timeout);
+
+/**
+* @brief   Allocates and initializes a new probe connection handle.
+*
+* @details Allocates and initializes a new probe connection handle. The probe handle initialized and returned in
+* the debug_probe pointer will be required in every function that performs a connection to a device.
+*
+* @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see
+* NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+* @pre     Before the execution of this function the device must be physically connected to a powered board with a
+* device running modem dfu application. The device must be reset after each modem dfu attempt.
+*
+* @post    After the execution of this function, the device will be ready for serial DFU operations.
+*
+* @param   debug_probe                          Pointer to probe handle type.
+* @param   prog_cb                              Callback for reporting currently performed action. May be NULL.
+* @param   log_cb                               Callback for reporting informational and error messages. May be
+* NULL.
+* @param   serial_port                          Serial port of the device connected.
+* @param   baud_rate                            Serial port baud rate.
+* @param   response_timeout                     Wait time for a response (milliseconds).
+*
+* @retval  SUCCESS
+* @retval  INVALID_OPERATION                    The NRFJPROG_dll_open() function has not been called.
+* @retval  INVALID_PARAMETER                    The debug_probe pointer is NULL.
+* @retval  SERIAL_PORT_RESOURCE_ERROR           Unable to open serial port.
+* @retval  OUT_OF_MEMORY                        Could not allocate new probe object
+ */
+nrfjprogdll_err_t NRFJPROG_modemdfu_dfu_serial_init(Probe_handle_t * debug_probe,
+                                                    progress_callback * prog_cb,
+                                                    msg_callback * log_cb,
+                                                    const char * serial_port,
+                                                    const uint32_t baud_rate,
+                                                    const uint32_t response_timeout);
 
 
 /**
@@ -251,13 +390,68 @@ nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, uint32_t ser
  *
  * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
  *
- * @param   debug_probe                         Pointer to probe handle to free and uninitialize.
+ * @param   debug_probe                         Pointer to probe handle type.
+ * @param   prog_cb                             Callback for reporting currently performed action. May be NULL.
+ * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
+ * @param   serial_number                       Serial number of the emulator to connect to.
+ * @param   coprocessor                         Coprocessor to target.
+ * @param   jlink_path_cstr                     Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
  *
  * @retval  SUCCESS
  * @retval  INVALID_PARAMETER                   The debug_probe pointer is NULL.
  *                                              The debug_probe is not initialized.
  */
 nrfjprogdll_err_t NRFJPROG_probe_uninit(Probe_handle_t * debug_probe);
+
+
+/**
+ * @brief   Attempts to reset the selected J-Link OB.
+ *
+ * @details Connects to and resets the J-Link OB.
+            This operation is only available in debug probes of type J-Link OB-SAM3U128-V2-NordicSemi.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @param   debug_probe                         Probe handle.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
+ * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
+ *                                              A required function could not be loaded from the DLL.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
+ * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
+ */
+nrfjprogdll_err_t NRFJPROG_probe_reset(Probe_handle_t debug_probe);
+
+
+/**
+ * @brief   Replaces the firmware on the selected J-Link probe.
+ *
+ * @details Connects to and replaces the firmware on the selected J-Link debug probe with the firmware version shipped with
+ *          the selected J-Link DLL.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @post    After the execution of this function, the debug probe will be reset and available.
+ *
+ * @param   debug_probe                         Probe handle.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
+ * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
+ * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
+ * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
+ *                                              A required function could not be loaded from the DLL.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
+ * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
+ */
+nrfjprogdll_err_t NRFJPROG_probe_replace_fw(Probe_handle_t debug_probe);
 
 
 /**
@@ -283,6 +477,25 @@ nrfjprogdll_err_t NRFJPROG_probe_uninit(Probe_handle_t * debug_probe);
 * @retval  INVALID_DEVICE_FOR_OPERATION        The connected device does not support QSPI.
  */
 nrfjprogdll_err_t NRFJPROG_probe_setup_qspi(Probe_handle_t debug_probe, uint32_t memory_size, qspi_init_params_t qspi_init_params);
+
+
+/**
+* @brief   Sets the coprocessor to use for future operations.
+*
+* @details Initializes the probe handle for multicore devices by setting the target coprocessor.
+*
+* @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+*
+* @post    After the execution of this function, the probe will perform operations on the selected coprocessor.
+*
+* @param   debug_probe                         Probe handle.
+* @param   coprocessor                         Coprocessor to select.
+*
+* @retval  SUCCESS
+* @retval  INVALID_PARAMETER                   The debug_probe parameter is null..
+ */
+nrfjprogdll_err_t NRFJPROG_probe_set_coprocessor(Probe_handle_t debug_probe, coprocessor_t coprocessor);
+
 
 /**
 * @brief   Function deprecated in favor of NRFJPROG_get_probe_info(). Will be removed in a future version.
@@ -587,7 +800,7 @@ nrfjprogdll_err_t NRFJPROG_verify(Probe_handle_t debug_probe, const char * hex_p
  * @post    After the execution of this function, the device CPU will be halted. To unhalt the device CPU, see NRFJPROG_reset() and NRFJPROG_run() functions.
  *
  * @param   debug_probe                         Probe handle.
- * @param   erase_mode                          Erase action selector.
+ * @param   erase_action                        Erase action selector.
  * @param   start_address                       Start address for erase action.
  * @param   end_address                         End address for erase action.
  *
@@ -657,7 +870,7 @@ nrfjprogdll_err_t NRFJPROG_recover(Probe_handle_t debug_probe);
  * @post    After the execution of this function, the device CPU will be halted. To unhalt the device CPU, see NRFJPROG_reset() and NRFJPROG_run() functions.
  *
  * @param   debug_probe                         Probe handle.
- * @param   address                             Start address of the region read.
+ * @param   addr                                Start address of the region read.
  * @param   data                                Pointer to an array to read to.
  * @param   data_len                            Number of bytes to read.
  *
@@ -717,7 +930,7 @@ nrfjprogdll_err_t NRFJPROG_read_u32(Probe_handle_t debug_probe, uint32_t addr, u
  * @details Writes data_len bytes starting at the addr address into the device connected to the debug_probe handle without verifying that the addresses
  *          are accessible or even exist. If address is in internal flash or UICR, it will control the NVMC in order to write into it. If the address 
  *          is in the XIP region of the device and the device is equpped with a QSPI peripheral, the operation will control the QSPI in order to write 
- *          into the external flash. Writes need to be 32-bit aligned. Note that if the target address is in unpowered RAM, the operation will fail.
+ *          into the external flash. Note that if the target address is in unpowered RAM, the operation will fail.
  *
  * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
  * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
@@ -733,7 +946,6 @@ nrfjprogdll_err_t NRFJPROG_read_u32(Probe_handle_t debug_probe, uint32_t addr, u
  * @retval  SUCCESS
  * @retval  INVALID_PARAMETER                   The debug_probe pointer is NULL.
  *                                              The data parameter is NULL.
- *                                              The address is not 32-bit aligned.
  *                                              Attempted to write out of QSPI area.
  * @retval  INVALID_OPERATION                   The target flash is not erased.
  * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
@@ -844,11 +1056,243 @@ nrfjprogdll_err_t NRFJPROG_reset(Probe_handle_t debug_probe, reset_action_t rese
 nrfjprogdll_err_t NRFJPROG_run(Probe_handle_t debug_probe, uint32_t pc, uint32_t sp);
 
 
-char * NRFJPROG_file_resource_from_hex(const char * hex_path);
-char * NRFJPROG_file_resource_from_hex_string(const char * hex_string);
+/**
+ * @brief   Checks if the RTT is started.
+ *
+ * @details Checks if the NRFJPROG_rtt_start() function has been called since the last call to NRFJPROG_rtt_stop() or since initializing the probe.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   started                             Pointer of the location to store the result.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ * @retval  INVALID_PARAMETER                   The started parameter is null.
+ */
+nrfjprogdll_err_t NRFJPROG_is_rtt_started(Probe_handle_t handle, bool * started);
 
-char * NRFJPROG_file_resource_from_bin(const char * hex_path);
-char * NRFJPROG_file_resource_from_bin_string(const char * hex_string);
+
+/**
+ * @brief   Indicates to the dll the location of the RTT control block in the device memory.
+ *
+ * @details Indicates to the dll the location of the RTT control block in the device memory, to accelerate the discovery of the RTT control block.
+ *          If the RTT control block is not located at the address given, NRFJPROG_rtt_start() will never locate the RTT control block.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @pre     Before the execution of this function, the RTT must not be started. To stop the RTT, see NRFJPROG_rtt_stop() function.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   address                             RTT control block address in device memory.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_rtt_start() function has been called.
+ */
+nrfjprogdll_err_t NRFJPROG_rtt_set_control_block_address(Probe_handle_t handle, uint32_t address);
+
+
+/**
+ * @brief   Starts RTT.
+ *
+ * @details Starts RTT, initiating the search for the RTT control block and preparing the DLL for RTT operations. If NRFJPROG_rtt_set_control_block_address() has been called,
+ *          the address provided will be used to locate the control block. Since NRFJPROG_rtt_start() function is not blocking, to find out if NRFJPROG_rtt_start() has located
+ *          the RTT control block and is ready to receive commands, see NRFJPROG_rtt_is_control_block_found() function. After the execution of NRFJPROG_rtt_start(), please
+ *          ensure that NRFJPROG_rtt_stop() function will be executed.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @pre     Before the execution of this function, the RTT must not be started. To stop the RTT, see NRFJPROG_rtt_stop() function.
+ * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Before the execution of this function, the RTT control block must be present in RAM. Normally it is the firmware execution that writes the control block into RAM. To run the firmware, see NRFJPROG_go() and NRFJPROG_run() functions.
+ *
+ * @post    After the execution of this function, the device will be in debug interface mode. To exit debug interface mode, see NRFJPROG_pin_reset(), NRFJPROG_disconnect_from_emu() and NRFJPROG_close_dll() functions.
+ * @post    After the execution of this function, the emulator will be connected to the device. To disconnect from the device, see NRFJPROG_disconnect_from_emu(), NRFJPROG_close_dll() and NRFJPROG_disconnect_from_device() functions.
+ *
+ * @param   debug_probe                         Probe handle.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ *                                              The NRFJPROG_rtt_start() function has already been called.
+ * @retval  WRONG_FAMILY_FOR_DEVICE             The device connected is not an NRF52.
+ * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
+ * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_rtt_start(Probe_handle_t handle);
+
+
+/**
+ * @brief   Checks if RTT control block has been found.
+ *
+ * @details Checks if RTT control block has been found. Can be used to make sure RTT is ready to be used before calling NRFJPROG_rtt_read() and NRFJPROG_rtt_write() functions.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @pre     Before the execution of this function, the RTT must be started. To start the RTT, see NRFJPROG_rtt_start() function.
+ * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Before the execution of this function, a connection to the device must be established. To establish a connection, see NRFJPROG_connect_to_device() and NRFJPROG_rtt_start() functions.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   is_control_block_found              Pointer of the location to store the result.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ *                                              There is no connection between the emulator and the device.
+ *                                              The NRFJPROG_rtt_start() function has not been called.
+ * @retval  INVALID_PARAMETER                   The is_found parameter is null.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_rtt_is_control_block_found(Probe_handle_t handle, bool * is_control_block_found);
+
+
+/**
+ * @brief   Stops RTT.
+ *
+ * @details Stops RTT and clears the RTT Control Buffer.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @pre     Before the execution of this function, the RTT must be started. To start the RTT, see NRFJPROG_rtt_start() function.
+ * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Before the execution of this function, a connection to the device must be established. To establish a connection, see NRFJPROG_connect_to_device() and NRFJPROG_rtt_start() functions.
+ *
+ * @post    After the execution of this function, the RTT control block in RAM will have been erased. Therefore, before another NRFJPROG_rtt_start() can be issued, the control block must be rewritten to RAM. See NRFJPROG_rtt_start() function for details.
+ *
+ * @param   debug_probe                         Probe handle.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ *                                              There is no connection between the emulator and the device.
+ *                                              The NRFJPROG_rtt_start() function has not been called.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_rtt_stop(Probe_handle_t handle);
+
+
+/**
+ * @brief   Reads from an RTT channel.
+ *
+ * @details Reads up to data_len characters from the up_channel_index RTT channel.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @pre     Before the execution of this function, the RTT must be started. To start the RTT, see NRFJPROG_rtt_start() function.
+ * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Before the execution of this function, a connection to the device must be established. To establish a connection, see NRFJPROG_connect_to_device() and NRFJPROG_rtt_start() functions.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   up_channel_index                    RTT channel index to read from.
+ * @param   data                                Pointer of the location to store the value.
+ * @param   data_len                            Number of bytes to read.
+ * @param   data_read                           Pointer to the location to store the actual number of read characters.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ *                                              There is no connection between the emulator and the device.
+ *                                              The NRFJPROG_rtt_start() function has not been called.
+ * @retval  INVALID_PARAMETER                   The data parameter is null.
+ *                                              The data_read parameter is null.
+ *                                              There is no channel in the device with the given up_channel_index index.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_rtt_read(Probe_handle_t handle, uint32_t up_channel_index, char * data, uint32_t data_len, uint32_t * data_read);
+
+
+/**
+ * @brief   Writes to an RTT channel.
+ *
+ * @details Writes the given data_len length data string into the down_channel_index RTT channel.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @pre     Before the execution of this function, the RTT must be started. To start the RTT, see NRFJPROG_rtt_start() function.
+ * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Before the execution of this function, a connection to the device must be established. To establish a connection, see NRFJPROG_connect_to_device() and NRFJPROG_rtt_start() functions.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   down_channel_index                  RTT channel index to write to.
+ * @param   data                                Pointer to a string with the string to write.
+ * @param   data_len                            Length of the string.
+ * @param   data_written                        Pointer to the location to store the actual number of written characters.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ *                                              There is no connection between the emulator and the device.
+ *                                              The NRFJPROG_rtt_start() function has not been called.
+ * @retval  INVALID_PARAMETER                   The data parameter is null.
+ *                                              The data_read parameter is null.
+ *                                              There is no channel in the device with the given down_channel_index index.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_rtt_write(Probe_handle_t handle, uint32_t down_channel_index, const char * data, uint32_t data_len, uint32_t * data_written);
+
+
+/**
+ * @brief   Gets the number of RTT channels.
+ *
+ * @details Gets the number of down and up channels in the device.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @pre     Before the execution of this function, the RTT must be started. To start the RTT, see NRFJPROG_rtt_start() function.
+ * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Before the execution of this function, a connection to the device must be established. To establish a connection, see NRFJPROG_connect_to_device() and NRFJPROG_rtt_start() functions.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   down_channel_number                 Pointer to store the number of down channels.
+ * @param   up_channel_number                   Pointer to store the number of up channels.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ *                                              There is no connection between the emulator and the device.
+ *                                              The NRFJPROG_rtt_start() function has not been called.
+ * @retval  INVALID_PARAMETER                   The down_channel_number parameter is null.
+ *                                              The up_channel_number parameter is null.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_rtt_read_channel_count(Probe_handle_t handle, uint32_t * down_channel_number, uint32_t * up_channel_number);
+
+
+/**
+ * @brief   Reads the info from one RTT channel.
+ *
+ * @details Reads the info from one RTT channel of index channel_index of direction dir. Reads the rtt channel size into channel_size and name into channel_name pointers.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @pre     Before the execution of this function, the RTT must be started. To start the RTT, see NRFJPROG_rtt_start() function.
+ * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Before the execution of this function, a connection to the device must be established. To establish a connection, see NRFJPROG_connect_to_device() and NRFJPROG_rtt_start() functions.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   channel_index                       Channel index to read the info from.
+ * @param   dir                                 Channel direction of channel to read the info from.
+ * @param   channel_name                        Pointer to store the channel name, must be able to store at least 32 characters.
+ * @param   channel_name_len                    Size of channel_name storage size.
+ * @param   channel_size                        Pointer to store the channel size.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ *                                              There is no connection between the emulator and the device.
+ *                                              The NRFJPROG_rtt_start() function has not been called.
+ * @retval  INVALID_PARAMETER                   The channel_name parameter is null.
+ *                                              The channel_size parameter is null.
+ *                                              The channel_size_len parameter is less than 32.
+ *                                              The dir parameter is neither UP_DIRECTION or DOWN_DIRECTION defined in rtt_direction_t enum in DllCommonDefinitions.h
+ *                                              The channel with index channel_index does not exist in the device.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_rtt_read_channel_info(Probe_handle_t handle, uint32_t channel_index, rtt_direction_t dir, char * channel_name, uint32_t channel_name_len, uint32_t * channel_size);
 
 
 #if defined(__cplusplus)

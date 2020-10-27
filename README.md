@@ -1,8 +1,9 @@
-[![Build Status](https://travis-ci.org/NordicSemiconductor/pynrfjprog.svg?branch=master)](https://travis-ci.org/NordicSemiconductor/pynrfjprog)
-[![PyPI](https://img.shields.io/pypi/l/Django.svg)](https://opensource.org/licenses/BSD-3-Clause)
+![PyPI](https://img.shields.io/static/v1?label=license&message=Nordic%205-Clause%20License&color=brightgreen)
+![PyPI](https://img.shields.io/static/v1?label=platform&message=windows%20%7C%20linux%20%7C%20osx&color=lightgrey)
+![PyPI](https://img.shields.io/static/v1?label=python&message=python-2.7%20%7C%20>=3.4&color=blue) ![PyPI](https://img.shields.io/pypi/v/pynrfjprog)
 
 # pynrfjprog
-Python wrapper around the nrfjprog dynamic link library (DLL). Use of this API allows developers to program/debug nRF5 devices from the interpreter, write simple scripts for a more efficient development work flow, or write automated test frameworks. It can also be used to create applications in Python (i.e. command-line tools).
+Python wrapper around the nrfjprog dynamic link libraries (DLL). Use of this API allows developers to program/debug nRF SOC and SIP devices from the interpreter, write simple scripts for a more efficient development work flow, or write automated test frameworks. It can also be used to create applications in Python (i.e. command-line tools).
 
 ## Use-cases
 *  Maximizing development efficiency: i.e. a script to perform various operations every time an application is built and run (could be hooked into a Makefile or automated build system etc...).
@@ -24,19 +25,31 @@ JLinkARMDLL # A DLL provided by SEGGER that works with SEGGER debuggers. Perform
 
 ## Structure
 ```pynrfjprog
-pynrfjprog\
-  # LICENSE, README.md, setup.py and requirements.txt (used to install this module).
-  pynrfjprog\
-    __init__.py # Package marker to make pynrfjprog a module. Also defines the version number.
-    API.py # Wrapper around the nrfjprog DLL.
-    MultiAPI.py # Allow multiple devices (up to 128) to be programmed simultaneously.
-    JLink.py # Finds the JLinkARM DLL required by pynrfjprog.
-    Hex.py # DEPRECATED. Use [intelhex](https://pypi.python.org/pypi/IntelHex) instead.
-      win_dll\ # nrfjprog libraries.
-      osx_dylib\
-      linux_64bit_so\
-      linux_32bit_so\
-      docs\ # Header files of the nrfjprog DLL to provide in-depth documentation of the functions API.py wraps.
+pynrfjprog
+  ├── pynrfjprog
+  │     ├──__init__.py    # Package marker to make pynrfjprog a module. Also defines the version number
+  │     ├── API.py        # Legacy name of LowLevel.py. It's kept for backward support
+  │     ├── APIError.py   # Wrapper for the error return codes of the DLL
+  │     ├── Hex.py        # Hex parsing library
+  │     ├── HighLevel.py  # Wrapper for the nrfjprog highlevel DLL
+  │     ├── JLink.py      # Finds the JLinkARM DLL required by pynrfjprog
+  │     ├── LowLevel.py   # Wrapper for the nrfjprog DLL, previously API.py
+  │     ├── MultiAPI.py   # Allow multiple devices (up to 128) to be programmed simultaneously with a LowLevel API
+  │     ├── lib_x64
+  │     │   └── # 64-bit nrfjprog libraries
+  │     ├── lib_x86
+  │     │   └── # 32-bit nrfjprog libraries
+  │     ├── docs
+  │     │   └── # Header files of the nrfjprog DLL to provide in-depth documentation of the functions that are wrapped
+  │     └── examples
+  │         └── # Example scripts to show off the different APIs
+  ├── LICENSE
+  ├── README.md
+  ├── requirements.txt
+  └── setup.py
+  
+  
+    
 ```
 
 ## Getting started
@@ -80,6 +93,32 @@ api2.close()
 api3.close()
 ```
 Note: MultiAPI has the same interface as API, it just allows you to create multiple instances of API.
+
+To program hex files using the HighLevel API:
+```
+from pynrfjprog import HighLevel
+
+api = HighLevel.API()
+api.open()
+
+# To program J-Link probe at snr <snr>:
+probe = HighLevel.DebugProbe(api, <snr>)
+probe.program(<hex_file>)
+probe.close()
+
+# To program MCUBoot target at serial port <serial>:
+probe = HighLevel.MCUBootDFUProbe(api, <serial>)
+probe.program(<hex_file>)
+probe.close()
+
+# To update LTE modem connected to J-Link prbe at snr <snr>:
+probe = HighLevel.IPCDFUProbe(api, <snr>)
+probe.program(<hex_file>)
+probe.close()
+
+api.close()
+```
+Note: Only one HighLevel API can be instantiated and opened at a time. But, several HighLevel probes can be opened from the same API at the same time, as long as you don't open two probes to the same target.
 
 ## Contributing
 Contributing is encouraged along with the following coding standards.
