@@ -519,6 +519,30 @@ nrfjprogdll_err_t NRFJPROG_readback_status(readback_protection_status_t * status
 
 
 /**
+ * @brief   Returns the status of the erase protection.
+ *
+ * @details nRF51 series devices do not implement erase protection.
+ *          This function always sets status to false, and returns an error.
+ *
+ * @param   status                              Pointer for storing of eraseprotect status.
+ *
+ * @retval  INVALID_DEVICE_FOR_OPERATION        This family does not support ERASEPROTECT.
+ * @retval  INVALID_PARAMETER                   The status pointer is NULL.
+ */
+nrfjprogdll_err_t NRFJPROG_is_eraseprotect_enabled(bool * status);
+
+/**
+ * @brief   Enable erase protection
+ *
+ * @details nRF51 series devices do not implement erase protection.
+ *          This function always returns an error.
+ *
+ * @retval  INVALID_DEVICE_FOR_OPERATION        This family does not support ERASEPROTECT.
+ */
+nrfjprogdll_err_t NRFJPROG_enable_eraseprotect();
+
+
+/**
  * @brief   Returns the region 0 size and source of protection if any.
  *
  * @details Returns the region 0 size and source of protection if any.

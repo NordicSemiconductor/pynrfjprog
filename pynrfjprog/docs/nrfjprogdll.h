@@ -244,6 +244,19 @@ nrfjprogdll_err_t NRFJPROG_readback_protect(readback_protection_status_t desired
  */
 nrfjprogdll_err_t NRFJPROG_readback_status(readback_protection_status_t * status);
 
+/**
+ * @brief   Returns the status of the erase protection.
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_is_eraseprotect_enabled(bool * status);
+
+/**
+ * @brief   Enable erase protection
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_enable_eraseprotect();
 
 /**
  * @brief   Returns the region 0 size and source of protection if any for nRF51 devices.

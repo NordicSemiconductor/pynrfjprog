@@ -449,6 +449,28 @@ class API(object):
 
         return ReadbackProtection(status.value).name
 
+    def enable_eraseprotect(self):
+        """
+        Protects the device against erasing.
+        """
+        result = self._lib.NRFJPROG_enable_eraseprotect()
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+    def is_eraseprotect_enabled(self):
+        """
+        Returns the status of the erase protection.
+
+        @return bool: True if erase protection is enabled.
+        """
+        status = ctypes.c_bool()
+
+        result = self._lib.NRFJPROG_is_eraseprotect_enabled(ctypes.byref(status))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+
+        return status.value
+
     def read_region_0_size_and_source(self):
         """
         Returns the region 0 size and source of protection if any for nRF51 devices.

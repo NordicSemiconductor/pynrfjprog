@@ -103,11 +103,11 @@ typedef enum
 /* Possible readback protection status. */
 typedef enum
 {
-    NONE = 0,
-    REGION_0,
-    ALL,
-    BOTH,
-    SECURE,
+    NONE     = 0, // No readback protection enabled
+    REGION_0 = 1, // Region 0 is readback protected
+    ALL      = 2, // All memories are readback protected
+    BOTH     = 3, // Region 0 and Region 1 are readback protected
+    SECURE   = 4, // Secure memory regions are protected. Non-secure debugging is available
 } readback_protection_status_t;
 
 /* Possible region 0 source. */
@@ -193,9 +193,8 @@ typedef enum
     NRF52840_xxAA_FUTURE = 12,
 
     /* nRF53XXX versions */
-    NRF5340_xxAA_ENGA   = 0x05340000,
-    NRF5340_xxAA_ENGB   = 0x05340001,
-    NRF5340_xxAA_REV1   = 0x05340002,
+    NRF5340_xxAA_ENGA = 0x05340000,
+    NRF5340_xxAA_ENGB = 0x05340001,
     NRF5340_xxAA_FUTURE = 0x053400FF,
 
     /* NRF9160 versions. */
@@ -248,6 +247,8 @@ typedef enum
     UNKNOWN_REV = 0,
     ENGA        = 10,
     ENGB        = 11,
+    ENGC        = 12,
+    ENGD        = 13,
     REV1        = 20,
     REV2        = 21,
     REV3        = 22,
@@ -259,8 +260,8 @@ typedef enum
 /* Identified types of nRF devices */
 typedef enum
 {
-    NRF51_FAMILY,
-    NRF52_FAMILY,
+    NRF51_FAMILY   = 0,
+    NRF52_FAMILY   = 1,
     NRF53_FAMILY   = 53,
     NRF91_FAMILY   = 91,
     UNKNOWN_FAMILY = 99

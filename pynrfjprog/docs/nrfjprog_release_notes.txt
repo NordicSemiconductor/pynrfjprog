@@ -1,3 +1,25 @@
+Release 10.11.1
+Changelog
+--------------------------------------
+- (nrfjprog.exe) Fixed issue where nrfjprog could not be called thorugh a symlink on unix systems. Introduced in 10.11.0.
+
+
+Release 10.11.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v6.86f.
+
+- (nrfjprog.dll) Updated doc string for NRFJPROG_erase_all to make the note about NVM block protection more clear.
+- (nrfjprog.dll) Add function NRFJPROG_is_eraseprotect_enabled(). In devices that does not support erase protection (nrf51, nrf52), this function returns false.
+- (nrfjprog.dll) If erase protection is enabled, erase functions will now return NOT_AVAILABLE_BECAUSE_PROTECTION if the target operation is not possible.
+- (nrfjprog.dll) NRFJPROG_recover() can now disable erase protection if no readback protection is enabled.
+- (nrfjprog.dll) Fixed issue where in nRF53 devices, NRFJPROG_readback_protect(SECURE) did not enable secure ap protection.
+- (nrfjprog.dll) Fixed issue where in devices with trustzone, nrfjprog could select NVMC_NS for erase operations, causing the erase operation to fail silently.
+- (nrfjprog.dll) Fixed issue where if SECURE readbackprotection was enabled, certain functions would fail with NOT_AVAILABLE_BECAUSE_PROTECTION even though the operation was possible.
+
+- (pynrfjprog) Added functions is_eraseprotect_enabled() and enable_eraseprotect().
+- (pynrfjprog) Added missing enumerator SECURE to ReadbackProtection enumerator.
+
 Release 10.10.0
 Changelog
 --------------------------------------

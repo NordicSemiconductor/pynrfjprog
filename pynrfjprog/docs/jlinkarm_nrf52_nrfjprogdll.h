@@ -526,6 +526,30 @@ nrfjprogdll_err_t NRFJPROG_readback_status(readback_protection_status_t * status
 
 
 /**
+ * @brief   Returns the status of the erase protection.
+ *
+ * @details nRF52 series devices do not implement erase protection.
+ *          This function always sets status to false, and returns an error.
+ *
+ * @param   status                              Pointer for storing of eraseprotect status.
+ *
+ * @retval  INVALID_DEVICE_FOR_OPERATION        This family does not support ERASEPROTECT.
+ * @retval  INVALID_PARAMETER                   The status pointer is NULL.
+ */
+nrfjprogdll_err_t NRFJPROG_is_eraseprotect_enabled(bool * status);
+
+/**
+ * @brief   Enable erase protection
+ *
+ * @details nRF52 series devices do not implement erase protection.
+ *          This function always returns an error.
+ *
+ * @retval  INVALID_DEVICE_FOR_OPERATION        This family does not support ERASEPROTECT.
+ */
+nrfjprogdll_err_t NRFJPROG_enable_eraseprotect();
+
+
+/**
  * @brief   Since region 0 cannot be configured in NRF52 devices, returns 0 size and NO_REGION_0 source.
  *
  * @param   size                                Pointer for storing of region 0 protection size.
@@ -668,8 +692,8 @@ nrfjprogdll_err_t NRFJPROG_is_bprot_enabled(bool * bprot_enabled, uint32_t addre
 /**
  * @brief   Erases all code and UICR flash.
  *
- * @details Erases all code and UICR flash regions. Note that erase_all() will not disable BPROT if enabled while in debug
- *          interface mode. See NRFJPROG_disable_bprot() funtion to disable BPROT while in debug interface mode.
+ * @details Erases all code and UICR flash regions. Note that erase_all() will not disable BPROT or ACL.
+ *          See NRFJPROG_disable_bprot() funtion to disable BPROT and ACL while in debug interface mode.
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
  * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.

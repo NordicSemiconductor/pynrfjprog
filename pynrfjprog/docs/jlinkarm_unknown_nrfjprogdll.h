@@ -421,6 +421,19 @@ nrfjprogdll_err_t NRFJPROG_readback_protect(readback_protection_status_t desired
  */
 nrfjprogdll_err_t NRFJPROG_readback_status(readback_protection_status_t * status);
 
+/**
+ * @brief   Operation not available without a known family.
+ *
+ * @retval  INVALID_OPERATION                   This function cannot be executed without a known family.
+ */
+nrfjprogdll_err_t NRFJPROG_is_eraseprotect_enabled(bool * status);
+
+/**
+ * @brief   Operation not available without a known family.
+ *
+ * @retval  INVALID_OPERATION                   This function cannot be executed without a known family.
+ */
+nrfjprogdll_err_t NRFJPROG_enable_eraseprotect();
 
 /**
  * @brief   Operation not available without a known family.

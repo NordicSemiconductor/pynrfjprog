@@ -162,6 +162,7 @@ class DeviceFamily(enum.IntEnum):
     Wraps device_family_t values from DllCommonDefinitions.h
 
     """
+
     NRF51              = 0
     NRF52              = 1
     NRF53              = 53
@@ -217,10 +218,9 @@ class DeviceVersion(enum.IntEnum):
     NRF52840_xxAA_REV1      = 18
     NRF52840_xxAA_REV2      = 0x05284003
     NRF52840_xxAA_FUTURE    = 12
-
+    
     NRF5340_xxAA_ENGA       = 0x05340000
     NRF5340_xxAA_ENGB       = 0x05340001
-    NRF5340_xxAA_REV1       = 0x05340002
     NRF5340_xxAA_FUTURE     = 0x053400FF
 
     NRF9160_xxAA_REV1       = 0x09160000
@@ -319,6 +319,7 @@ class ReadbackProtection(enum.IntEnum):
     REGION_0                = 1
     ALL                     = 2
     BOTH                    = 3
+    SECURE                  = 4
 
 
 class CpuRegister(enum.IntEnum):
