@@ -172,10 +172,12 @@ typedef enum
     NRF52832_xxAA_ENGB   = 8,
     NRF52832_xxAA_REV1   = 9,
     NRF52832_xxAA_REV2   = 19,
+    NRF52832_xxAA_REV3   = 0x05283201,
     NRF52832_xxAA_FUTURE = 11,
 
     NRF52832_xxAB_REV1   = 15,
     NRF52832_xxAB_REV2   = 20,
+    NRF52832_xxAB_REV3   = 0x05283211,
     NRF52832_xxAB_FUTURE = 16,
 
     /* nRF52833 versions. */
@@ -190,11 +192,14 @@ typedef enum
     NRF52840_xxAA_ENGB   = 21,
     NRF52840_xxAA_REV1   = 18,
     NRF52840_xxAA_REV2   = 0x05284003,
+    NRF52840_xxAA_REV3   = 0x05284004,
     NRF52840_xxAA_FUTURE = 12,
 
     /* nRF53XXX versions */
     NRF5340_xxAA_ENGA = 0x05340000,
     NRF5340_xxAA_ENGB = 0x05340001,
+    NRF5340_xxAA_ENGC = 0x05340002,
+    NRF5340_xxAA_ENGD = 0x05340003,
     NRF5340_xxAA_FUTURE = 0x053400FF,
 
     /* NRF9160 versions. */

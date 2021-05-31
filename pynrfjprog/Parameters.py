@@ -204,6 +204,7 @@ class DeviceVersion(enum.IntEnum):
     NRF52832_xxAA_ENGB      = 8
     NRF52832_xxAA_REV1      = 9
     NRF52832_xxAA_REV2      = 19
+    NRF52832_xxAA_REV3      = 0x5283201
     NRF52832_xxAA_FUTURE    = 11
 
     NRF52832_xxAB_REV1      = 15
@@ -221,6 +222,8 @@ class DeviceVersion(enum.IntEnum):
     
     NRF5340_xxAA_ENGA       = 0x05340000
     NRF5340_xxAA_ENGB       = 0x05340001
+    NRF5340_xxAA_ENGC       = 0x05340002
+    NRF5340_xxAA_ENGD       = 0x05340003
     NRF5340_xxAA_FUTURE     = 0x053400FF
 
     NRF9160_xxAA_REV1       = 0x09160000

@@ -10,6 +10,7 @@ import codecs
 import ctypes
 import os
 import logging
+from pathlib import Path
 
 from .APIError import *
 from .Parameters import *
@@ -28,6 +29,7 @@ Logging:
 
 # Disable logging to API logger if no other handlers are present
 logging.getLogger(__name__).addHandler(logging.NullHandler())
+QSPIIniFile = Path(__file__).parent / "QspiDefault.ini"
 
 
 class API(object):
@@ -236,7 +238,12 @@ class Probe(object):
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, log=self._logger.error)
 
-    def setup_qspi(self, memory_size, qspi_ini_params=QSPIInitParams()):
+    def setup_qspi(self, memory_size=None, qspi_ini_params=QSPIInitParams()):
+        """
+        Setup QSPI for subsequent operations.
+        @param uint32 memory_size: Target memory size
+        @param QSPIInitParams qspi_ini_params: QSPI init params.
+        """
 
         if not isinstance(qspi_ini_params, QSPIInitParams):
             raise TypeError('The qspi_ini_params parameter must be an instance of class QSPIInitParams.')
@@ -246,6 +253,18 @@ class Probe(object):
         memory_size = ctypes.c_uint32(memory_size)
 
         result = self._api.lib.NRFJPROG_probe_setup_qspi(self._handle, memory_size, qspi_ini_params)
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result, log=self._logger.error)
+
+    def setup_qspi_with_ini(self, ini_path=QSPIIniFile):
+        """
+        Setup QSPI for subsequent operations. ini_path should be the path to an nrfjprog QSPI ini file.
+        If not passed, the bundled ini file at HighLevel.QSPIIniFile is used.
+        @param Path ini_path: Path to ini file containing qspi setup.
+        """
+
+        ini_path = str(ini_path).encode('utf-8')
+        result = self._api.lib.NRFJPROG_probe_setup_qspi_ini(self._handle, ini_path)
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, log=self._logger.error)
 
@@ -302,6 +321,18 @@ class Probe(object):
         protection_status = ctypes.c_int(decode_enum(protection_status, ReadbackProtection))
 
         result = self._api.lib.NRFJPROG_readback_protect(self._handle, protection_status)
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result, log=self._logger.error)
+
+    def get_erase_protection(self):
+        is_erase_protect = ctypes.c_bool()
+        result = self._api.lib.NRFJPROG_is_eraseprotect_enabled(self._handle, ctypes.byref(is_erase_protect))
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result, log=self._logger.error)
+        return is_erase_protect.value
+
+    def enable_erase_protect(self):
+        result = self._api.lib.NRFJPROG_enable_eraseprotect(self._handle)
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, log=self._logger.error)
 
@@ -442,11 +473,14 @@ class Probe(object):
         result = self._api.lib.NRFJPROG_run(self._handle, pc, sp)
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, log=self._logger.error)
-        
+
+    def get_python_logger_name(self):
+        return self._logger.name
+
 
 class MCUBootDFUProbe(Probe):
     """ Specialization of Probe interface for MCUBoot DFU via serial port connection. """
-    def __init__(self, api, serial_port, baud_rate=115200, timeout=30000, log=True):
+    def __init__(self, api, serial_port, baud_rate=115200, timeout=30000, log=True, log_suffix=None):
         """
         :param api:                 The HighLevel.API instance to use as a library backend
         :type api:                  HighLevel.API
@@ -458,10 +492,14 @@ class MCUBootDFUProbe(Probe):
         :type timeout:              32-bit unsigned integer
         :param log:                 If False, info callback and debug callback is not generated, improving performance slightly.
         :type log:                  Boolean
+        :param log_suffix:          Probe will log to logging logger pynrfjprog.HighLevel.Probes.<log_suffix>. By default 'serial_port' is used as log suffix.
+        :type log_suffix:           String
         """
+        if log_suffix is None:
+            log_suffix = str(serial_port)
 
         serial_port = str(serial_port)
-        Probe.__init__(self, api, log, serial_port)
+        Probe.__init__(self, api, log, log_suffix)
 
         if not is_u32(baud_rate):
             raise TypeError('The baud_rate parameter must fit an unsigned 32-bit value.')
@@ -488,7 +526,7 @@ class MCUBootDFUProbe(Probe):
 
 class ModemUARTDFUProbe(Probe):
     """ Specialization of Probe interface for Modem UART DFU via serial port connection. """
-    def __init__(self, api, serial_port, baud_rate=1000000, timeout=30000, log=True):
+    def __init__(self, api, serial_port, baud_rate=1000000, timeout=30000, log=True, log_suffix=None):
         """
         :param api:                 The HighLevel.API instance to use as a library backend
         :type api:                  HighLevel.API
@@ -500,10 +538,13 @@ class ModemUARTDFUProbe(Probe):
         :type timeout:              32-bit unsigned integer
         :param log:                 If False, info callback and debug callback is not generated, improving performance slightly.
         :type log:                  Boolean
+        :param log_suffix:          Probe will log to logging logger pynrfjprog.HighLevel.Probes.<log_suffix>. By default 'serial_port' is used as log suffix.
+        :type log_suffix:           String
         """
-
         serial_port = str(serial_port)
-        Probe.__init__(self, api, log, serial_port)
+        if log_suffix is None:
+            log_suffix = serial_port
+        Probe.__init__(self, api, log, log_suffix)
 
         if not is_u32(baud_rate):
             raise TypeError('The baud_rate parameter must fit an unsigned 32-bit value.')
@@ -530,7 +571,7 @@ class ModemUARTDFUProbe(Probe):
 
 class IPCDFUProbe(Probe):
     """ Specialization of Probe interface for IPC DFU via SWD debugger connection. """
-    def __init__(self, api, snr, coprocessor, jlink_arm_dll_path=None, log=True):
+    def __init__(self, api, snr, coprocessor, jlink_arm_dll_path=None, log=True, log_suffix=None):
         """
         :param api:                 The HighLevel.API instance to use as a library backend
         :type api:                  HighLevel.API
@@ -542,8 +583,12 @@ class IPCDFUProbe(Probe):
         :type jlink_arm_dll_path:   String
         :param log:                 If False, info callback and debug callback is not generated, improving performance slightly.
         :type log:                  Boolean
+        :param log_suffix:          Probe will log to logging logger pynrfjprog.HighLevel.Probes.<log_suffix>. By default 'snr' is used as log suffix.
+        :type log_suffix:           String
         """
-        Probe.__init__(self, api, log, str(snr))
+        if log_suffix is None:
+            log_suffix = str(snr)
+        Probe.__init__(self, api, log, log_suffix)
 
         try:
             self._handle = ctypes.c_void_p(None)
@@ -570,7 +615,7 @@ class IPCDFUProbe(Probe):
 
 class DebugProbe(Probe):
     """ Specialization of Probe interface for SWD debugger connections. """
-    def __init__(self, api, snr, coprocessor=None, jlink_arm_dll_path=None, log=True):
+    def __init__(self, api, snr, coprocessor=None, jlink_arm_dll_path=None, log=True, log_suffix=None):
         """
         :param api:                 The HighLevel.API instance to use as a library backend
         :type api:                  HighLevel.API
@@ -582,8 +627,12 @@ class DebugProbe(Probe):
         :type jlink_arm_dll_path:   String
         :param log:                 If False, info callback and debug callback is not generated, improving performance slightly.
         :type log:                  Boolean
+        :param log_suffix:          Probe will log to logging logger pynrfjprog.HighLevel.Probes.<log_suffix>. By default 'snr' is used as log suffix.
+        :type log_suffix:           String
         """
-        Probe.__init__(self, api, log, str(snr))
+        if log_suffix is None:
+            log_suffix = str(snr)
+        Probe.__init__(self, api, log, log_suffix)
 
         try:
             self._handle = ctypes.c_void_p(None)

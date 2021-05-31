@@ -438,7 +438,6 @@ nrfjprogdll_err_t NRFJPROG_disable_coprocessor(coprocessor_t coprocessor);
  *                                                      The NRFJPROG_connect_to_device() function has already been called.
  * @retval  INVALID_PARAMETER                           The coprocessor is not one belonging to a coprocessor of the device.
  *                                                      The coprocessor is not a valid coprocessor.
- * @retval  NOT_AVAILABLE_BECAUSE_COPROCESSOR_DISABLED  The coprocessor selected belongs to a coprocessor that is disabled.
  * @retval  JLINKARM_DLL_ERROR                          The JLinkARM DLL function returned an error.
  */
 nrfjprogdll_err_t NRFJPROG_select_coprocessor(coprocessor_t coprocessor);
@@ -1768,6 +1767,14 @@ nrfjprogdll_err_t NRFJPROG_qspi_init(bool retain_ram, const qspi_init_params_t *
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
  */
 nrfjprogdll_err_t NRFJPROG_qspi_uninit(void);
+
+/**
+ * @brief   Operation not available for devices of NRF53 family. RX delay is handled in hardware.
+ *
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ * @retval  INVALID_DEVICE_FOR_OPERATION        The version of the connected device does not support this operation.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_set_rx_delay(uint8_t rx_delay);
 
 
 /**

@@ -1,8 +1,53 @@
+Release 10.12.2
+Changelog
+--------------------------------------
+- No changes, updated to synchronize with mergehex.
+
+
+Release 10.12.1
+Changelog
+--------------------------------------
+- (highleveldll) Fixed issue where NRFJPROG_get_connected_probes would not find connected probes on some versions of OSX.
+
+Release 10.12.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v6.88a
+
+- (nrfjprog.exe) In certain devices, ap protect did not stay disabled after calling nrfjprog.exe --recover. Fixed by programming in a fw that unlocks the device.
+- (nrfjprog.exe) In certain devices, the code memory will contain a small fw after nrfjprog.exe --recover, which must be erased when programming.
+- (nrfjprog.exe) Added support for flag --recover in combination with --program. For devices needs to be unlocked when blank, this avoids programming the unlock fw.
+- (nrfjprog.exe) Support programming and generation of .elf, .axf, and .bin files in addition to .hex.
+- (nrfjprog.exe) Fixed bug where all log messages were prefixed 'Debug' regardless of log level.
+- (nrfjprog.exe) Added RxDelay parameter to QSPIDefault.ini file.
+- (nrfjprog.exe) Nrfdfu.h was missing in install folder, fixed.
+
+- (highleveldll) Added function NRFJPROG_probe_setup_qspi_ini().
+- (highleveldll) Support programming and generation of .elf, .axf, and .bin files in addition to .hex.
+- (highleveldll) Fixed bug where 'NRFJPROG_get_device_info' returned error 'NOT_AVAILABLE_BECAUSE_PROTECTION' for all readback protected devices regardless of being able to read the device information.
+- (highleveldll) Added functions NRFJPROG_is_eraseprotect_enabled() and NRFJPROG_enable_eraseprotect().
+- (highleveldll) NRFJPROG_get_connected_probes no longer loads the jlink dll to detect connected J-Link debug probes.
+- (highleveldll) Deprecation: Parameter default_jlink_path to NRFJPROG_dll_open() is deprecated, and will be removed in a future major release of nrfjprog.
+
+- (nrfjprog.dll) Added NRFJPROG_qspi_set_rx_delay() function.
+- (nrfjprog.dll) Fixed bug where all log messages were prefixed 'Debug' regardless of log level.
+- (nrfjprog.dll) Fixed bug where certain commands could fail with JLINKARMDLL_ERROR if target debug power was disabled during an open nrfjprogdll session.
+- (nrfjprog.dll) NRFJPROG_select_coprocessor no longer checks if the coprocessor is enabled. Instead, the selected coprocessor is automatically enabled when 
+                 NRFJPROG_connect_to_device, or another function that connects to the device is called.
+- (nrfjprog.dll) If the target page for a call to NRFJPROG_erase_page was protected by the MPU, the operation would previously fail silently on some devices.
+
+- (pynrfjprog) Added function LowLevel.qspi_set_rx_delay()
+- (pynrfjprog) Added function HighLevel.probe_setup_qspi_ini()
+- (pynrfjprog) Added functions HighLevel.is_eraseprotect_enabled() and HighLevel.enable_eraseprotect()
+- (pynrfjprog) Added optional argument 'log_suffix' to HighLevel probes to improve control over python logging.
+
 Release 10.11.1
 Changelog
 --------------------------------------
 - (nrfjprog.exe) Fixed issue where nrfjprog could not be called thorugh a symlink on unix systems. Introduced in 10.11.0.
+- (nrfjprog.exe) Fixed bug where --erasepage would erase too many pages when only start address was provided by user.
 
+- (nrfjprog.dll) Fixed bug where DLL loading did not detect missing functions in target DLL.
 
 Release 10.11.0
 Changelog

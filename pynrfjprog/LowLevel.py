@@ -1183,7 +1183,30 @@ class API(object):
         @param (optional) QSPIInitParams init_params: Configuration for the QSPI operations.
         """
         class _CtypesQSPIInitParams(ctypes.Structure):
-            _fields_ = [("read_mode", ctypes.c_int), ("write_mode", ctypes.c_int), ("address_mode", ctypes.c_int), ("frequency", ctypes.c_int), ("spi_mode", ctypes.c_int), ("sck_delay", ctypes.c_uint32), ("custom_instruction_io2_level", ctypes.c_int), ("custom_instruction_io3_level", ctypes.c_int), ("CSN_pin", ctypes.c_uint32), ("CSN_port", ctypes.c_uint32), ("SCK_pin", ctypes.c_uint32), ("SCK_port", ctypes.c_uint32), ("DIO0_pin", ctypes.c_uint32), ("DIO0_port", ctypes.c_uint32), ("DIO1_pin", ctypes.c_uint32), ("DIO1_port", ctypes.c_uint32), ("DIO2_pin", ctypes.c_uint32), ("DIO2_port", ctypes.c_uint32), ("DIO3_pin", ctypes.c_uint32), ("DIO3_port", ctypes.c_uint32), ("WIP_index", ctypes.c_uint32), ("pp_size", ctypes.c_int)]
+            _fields_ = [
+                ("read_mode", ctypes.c_int), 
+                ("write_mode", ctypes.c_int), 
+                ("address_mode", ctypes.c_int), 
+                ("frequency", ctypes.c_int), 
+                ("spi_mode", ctypes.c_int), 
+                ("sck_delay", ctypes.c_uint32), 
+                ("custom_instruction_io2_level", ctypes.c_int), 
+                ("custom_instruction_io3_level", ctypes.c_int), 
+                ("CSN_pin", ctypes.c_uint32), 
+                ("CSN_port", ctypes.c_uint32), 
+                ("SCK_pin", ctypes.c_uint32), 
+                ("SCK_port", ctypes.c_uint32), 
+                ("DIO0_pin", ctypes.c_uint32), 
+                ("DIO0_port", ctypes.c_uint32), 
+                ("DIO1_pin", ctypes.c_uint32), 
+                ("DIO1_port", ctypes.c_uint32), 
+                ("DIO2_pin", ctypes.c_uint32), 
+                ("DIO2_port", ctypes.c_uint32), 
+                ("DIO3_pin", ctypes.c_uint32), 
+                ("DIO3_port", ctypes.c_uint32), 
+                ("WIP_index", ctypes.c_uint32), 
+                ("pp_size", ctypes.c_int)
+            ]
         
         if not is_bool(retain_ram):
             raise ValueError('The retain_ram parameter must be a boolean value.')
@@ -1195,7 +1218,30 @@ class API(object):
             init_params = QSPIInitParams()
 
         retain_ram = ctypes.c_bool(retain_ram)
-        qspi_init_params = _CtypesQSPIInitParams(init_params.read_mode, init_params.write_mode, init_params.address_mode, init_params.frequency, init_params.spi_mode, init_params.sck_delay, init_params.custom_instruction_io2_level, init_params.custom_instruction_io3_level, init_params.CSN_pin, init_params.CSN_port, init_params.SCK_pin, init_params.SCK_port, init_params.DIO0_pin, init_params.DIO0_port, init_params.DIO1_pin, init_params.DIO1_port, init_params.DIO2_pin, init_params.DIO2_port, init_params.DIO3_pin, init_params.DIO3_port, init_params.WIP_index, init_params.pp_size)
+        qspi_init_params = _CtypesQSPIInitParams(
+            init_params.read_mode, 
+            init_params.write_mode, 
+            init_params.address_mode, 
+            init_params.frequency, 
+            init_params.spi_mode, 
+            init_params.sck_delay, 
+            init_params.custom_instruction_io2_level, 
+            init_params.custom_instruction_io3_level, 
+            init_params.CSN_pin, 
+            init_params.CSN_port, 
+            init_params.SCK_pin, 
+            init_params.SCK_port, 
+            init_params.DIO0_pin, 
+            init_params.DIO0_port, 
+            init_params.DIO1_pin, 
+            init_params.DIO1_port, 
+            init_params.DIO2_pin, 
+            init_params.DIO2_port, 
+            init_params.DIO3_pin, 
+            init_params.DIO3_port, 
+            init_params.WIP_index, 
+            init_params.pp_size
+        )
         
         result = self._lib.NRFJPROG_qspi_init(retain_ram, ctypes.byref(qspi_init_params))
         if result != NrfjprogdllErr.SUCCESS:
@@ -1207,6 +1253,22 @@ class API(object):
         
         """
         result = self._lib.NRFJPROG_qspi_uninit()
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+            
+    def qspi_set_rx_delay(self, rx_delay):
+        """
+        Set QSPI RX delay.
+
+        @param int rx_delay: Rx delay to set. See the product specification of your device for possible values.
+        
+        """            
+        if not is_u8(rx_delay):
+            raise ValueError('The rx_delay parameter must be an unsigned 8-bit value.')
+        
+        rx_delay = ctypes.c_uint8(rx_delay)
+
+        result = self._lib.NRFJPROG_qspi_set_rx_delay(rx_delay)
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result)
             

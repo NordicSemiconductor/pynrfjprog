@@ -617,6 +617,13 @@ nrfjprogdll_err_t NRFJPROG_qspi_init(bool retain_ram, const qspi_init_params_t *
  */
 nrfjprogdll_err_t NRFJPROG_qspi_uninit(void);
 
+/**
+ * @brief   Set QSPI RX delay
+ *
+ * @details For further details, see the device family header file.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_set_rx_delay(uint8_t rx_delay);
+
 
 /**
  * @brief   Reads from the QSPI-connected external memory.

@@ -866,6 +866,14 @@ nrfjprogdll_err_t NRFJPROG_qspi_init(bool retain_ram, const qspi_init_params_t *
  */
 nrfjprogdll_err_t NRFJPROG_qspi_uninit(void);
 
+/**
+ * @brief   Operation not available without a known family.
+ *
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ * @retval  INVALID_DEVICE_FOR_OPERATION        The version of the connected device does not support this operation.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_set_rx_delay(uint8_t rx_delay);
+
 
 /**
  * @brief   Operation not available without a known family.

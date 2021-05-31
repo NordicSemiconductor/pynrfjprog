@@ -3,4 +3,4 @@ Package marker file.
 
 """
 
-__version__ = "10.11.1" 
+__version__ = "10.12.2" 

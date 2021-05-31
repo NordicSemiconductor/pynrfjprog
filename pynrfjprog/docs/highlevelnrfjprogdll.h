@@ -45,8 +45,8 @@
 
 
 #define major_version (10) 
-#define minor_version (11) 
-#define micro_version (1) 
+#define minor_version (12) 
+#define micro_version (2) 
 
 #define FIRMWARE_STRING_LENGTH  NRFJPROG_STRING_LENGTH
 
@@ -179,7 +179,7 @@ nrfjprogdll_err_t NRFJPROG_dll_version(uint32_t * major, uint32_t * minor, uint3
  * @post    After the execution of this function the DLL will be ready for use.
  * @post    After the execution of this function certain resources will be allocated. To deallocate these resources and allocated memory see NRFJPROG_dll_close() function.
  *
- * @param   default_jlink_path                          Path to a JLinkARM DLL. May be NULL.
+ * @param   default_jlink_path                          Deprecated: Pass jlink path to probe init instead. Path to a JLinkARM DLL. May be NULL.
  * @param   log_cb                                      Callback for reporting informational and error messages. May be NULL.
  *
  * @retval  SUCCESS
@@ -238,13 +238,7 @@ nrfjprogdll_err_t NRFJPROG_is_dll_open(bool * is_opened);
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
- * @retval  INVALID_PARAMETER                   The serial_numbers parameter is NULL.
- *                                              The num_available parameter is NULL.
- * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
- * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
- * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
- *                                              A required function could not be loaded from the DLL.
- * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  INTERNAL_ERROR                      An error occured during usb device readout. See the log for more details.
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers.
  */
 nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[], uint32_t serial_numbers_len, uint32_t * num_available);
@@ -466,17 +460,41 @@ nrfjprogdll_err_t NRFJPROG_probe_replace_fw(Probe_handle_t debug_probe);
 *
 * @param   debug_probe                         Probe handle.
 * @param   memory_size                         Size of the attached qspi flash memory.
-* @param   qspi_ini_path                       Path to the .ini containing initialization parameters for the QSPI memory interface.
+* @param   qspi_init_params                    Struct containing qspi settings.
 *
 * @retval  SUCCESS
 * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
-*                                              The qspi_ini_path parameter is null.
-*                                              Could not find the supplied .ini file.
-*                                              The supplied .ini file has syntax errors.
 *                                              One of the QSPI parameters failed verification.
 * @retval  INVALID_DEVICE_FOR_OPERATION        The connected device does not support QSPI.
  */
-nrfjprogdll_err_t NRFJPROG_probe_setup_qspi(Probe_handle_t debug_probe, uint32_t memory_size, qspi_init_params_t qspi_init_params);
+nrfjprogdll_err_t NRFJPROG_probe_setup_qspi(Probe_handle_t debug_probe,
+                                            uint32_t memory_size,
+                                            qspi_init_params_t qspi_init_params);
+
+/**
+ * @brief   Initializes the probe handle for QSPI communication using an nrfjprog.exe ini file.
+ *
+ * @details Initializes the probe handle for QSPI communication with the information provided in the qspi_ini_path
+ *          ini file. This information will be used to perform QSPI operations if needed.
+ *
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the
+ *          probe, see NRFJPROG_probe_init().
+ *
+ * @post    After the execution of this function, the probe will be able to perform QSPI operations.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   qspi_ini_path                       Path to the .ini containing initialization parameters for the QSPI
+ *                                              memory interface.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
+ *                                              The qspi_ini_path parameter is null.
+ *                                              Could not find the supplied .ini file.
+ *                                              The supplied .ini file has syntax errors.
+ *                                              One of the QSPI parameters failed verification.
+ * @retval  INVALID_DEVICE_FOR_OPERATION        The connected device does not support QSPI.
+ */
+nrfjprogdll_err_t NRFJPROG_probe_setup_qspi_ini(Probe_handle_t debug_probe, const char * qspi_ini_path);
 
 
 /**
@@ -619,8 +637,8 @@ nrfjprogdll_err_t NRFJPROG_get_device_info(Probe_handle_t debug_probe, device_in
  * @param   protection                         Pointer to where the device's readback protection level should be stored.
  *
  * @retval  SUCCESS
- * @retval  INVALID_PARAMETER                   The dll is not open.
- *                                              The debug_probe parameter is null.
+ * @retval  INVALID_OPERATION                   The dll is not open.
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
  *                                              The protection parameter is null.
  * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
  * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
@@ -642,8 +660,8 @@ nrfjprogdll_err_t NRFJPROG_get_readback_protection(Probe_handle_t debug_probe, r
  * @param   device_info                         Pointer to where the device's info should be stored.
  *
  * @retval  SUCCESS
- * @retval  INVALID_PARAMETER                   The dll is not open.
- *                                              The debug_probe parameter is null.
+ * @retval  INVALID_OPERATION                   The dll is not open.
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
  *                                              The protection_level parameter is not a valid protection level for this device.
  * @retval  JLINKARM_DLL_TOO_OLD                The version of JLinkARM is lower than the minimum version required.
  * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
@@ -652,6 +670,59 @@ nrfjprogdll_err_t NRFJPROG_get_readback_protection(Probe_handle_t debug_probe, r
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
  */
 nrfjprogdll_err_t NRFJPROG_readback_protect(Probe_handle_t debug_probe, readback_protection_status_t protection_level);
+
+
+/**
+ * @brief   Returns the status of the erase protection.
+ *
+ * @details Returns the status of the erase protection. If status is true, erase protection is enabled, and it
+ *          may not be possible to erase the device. Note that not all nRF devices implement erase protection.
+ *
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   status                              Pointer for storing of eraseprotect status.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The dll is not open.
+ *                                              The provided probe does not support this operation.
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
+ *                                              The status parameter is NULL.
+ * @retval  INVALID_DEVICE_FOR_OPERATION        The version of the connected device does not support this operation.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_is_eraseprotect_enabled(Probe_handle_t debug_probe, bool * status);
+
+
+/**
+ * @brief   Enable erase protection
+ *
+ * @details Protects the device against reuse by enabling ERASEPROTECT and resetting. The function will reset
+ *          with a debug reset after execution. To disable erase protection, see the product specification of your
+ *          device. Note that disabling erase protection may require fw that is able to disable the protection to
+ *          already be programmed. NRFJPROG_recover() may be able to disable erase protection if APPROTECT and
+ *          SECUREAPPROTECT is not enabled. Note that not all nRF devices implement erase protection.
+ *
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @post    After the execution of this function, the device will be in debug interface mode. To exit debug interface
+ *          mode, see NRFJPROG_pin_reset(), NRFJPROG_disconnect_from_emu() and NRFJPROG_close_dll() functions.
+ * @post    After the execution of this function, the device CPU will be running.
+ * @post    After the execution of this function, ERASEPROTECT will be enabled, and functions NRFJPROG_erase_all(), and
+ *          NRFJPROG_page_erase() are not available.
+ *
+ * @param   debug_probe                         Probe handle.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The dll is not open.
+ *                                              The provided probe does not support this operation.
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
+ * @retval  INVALID_DEVICE_FOR_OPERATION        The version of the connected device does not support this operation.
+ * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
+ * @retval  NVMC_ERROR                          Flash operation failed.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_enable_eraseprotect(Probe_handle_t debug_probe);
 
 
 /**

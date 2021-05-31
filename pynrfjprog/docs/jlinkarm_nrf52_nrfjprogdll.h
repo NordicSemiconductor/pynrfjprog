@@ -1735,6 +1735,26 @@ nrfjprogdll_err_t NRFJPROG_qspi_init(bool retain_ram, const qspi_init_params_t *
  */
 nrfjprogdll_err_t NRFJPROG_qspi_uninit(void);
 
+/**
+ * @brief   Set QSPI RX delay
+ *
+ * @details Configures the dll to set the QSPI peripheral rx_delay mechanism to account for CLK round trip issues. If this function is not called, a default value will be used.
+ *
+ * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
+ * @pre     Before the execution of this function, the QSPI must not be initialized.
+ *
+ * @post    After the execution of this function, the DLL will be prepared to use rx_delay instead of the built in default value.
+ * @post    After the execution of this function, the RAM memory contents might be altered. To restore the contents of the RAM memory, see NRFJPROG_qspi_uninit() function.
+ *
+ * @param   rx_delay                            Rx delay to set. See the product specification of your device for possible values.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
+ *                                              The NRFJPROG_qspi_init() function has been called.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ */
+nrfjprogdll_err_t NRFJPROG_qspi_set_rx_delay(uint8_t rx_delay);
+
 
 /**
  * @brief   Reads from the external QSPI-connected memory.
