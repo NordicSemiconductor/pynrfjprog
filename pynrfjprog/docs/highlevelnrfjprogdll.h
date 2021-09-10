@@ -45,24 +45,18 @@
 
 
 #define major_version (10) 
-#define minor_version (12) 
-#define micro_version (2) 
+#define minor_version (14) 
+#define micro_version (0) 
 
 #define FIRMWARE_STRING_LENGTH  NRFJPROG_STRING_LENGTH
 
 #if defined(__cplusplus)
-
-
 extern "C" {
 #endif
 
-/* Log function prototypes for logging and progress reporting operations. */
-
-/* Provides short strings that describe the currently performed action. */
-typedef void progress_callback(const char * process);
-
-/* Probe handle type definition. */
-typedef void * Probe_handle_t;
+/* Type definitions kept for backwards compatibility. Underlying type is the same as before.*/
+typedef nrfjprog_inst_t Probe_handle_t;
+typedef msg_callback progress_callback;
 
 typedef enum {
     RESET_NONE     = 0,
@@ -70,19 +64,6 @@ typedef enum {
     RESET_DEBUG    = 2,
     RESET_PIN      = 3
 } reset_action_t;
-
-typedef enum {
-    ERASE_NONE                 = 0,      /* Do nothing. */
-    ERASE_ALL                  = 1,      /* Erase whole chip. */
-    ERASE_PAGES                = 2,      /* Erase specified sectors, excluding UICR. */
-    ERASE_PAGES_INCLUDING_UICR = 3       /* Erase specified sectors, with UICR support. */
-} erase_action_t;
-
-typedef enum {
-    VERIFY_NONE = 0,      /* Do nothing. */
-    VERIFY_READ = 1,      /* Verify by reading back contents. */
-    VERIFY_HASH = 2,      /* Verify by hashing contents, faster than VERIFY_READ. */
-} verify_action_t;
 
 typedef struct {
     verify_action_t verify;           /* Select post-program Verify action. */
@@ -92,43 +73,33 @@ typedef struct {
 } program_options_t;
 
 typedef struct {
-    bool readram;
-    bool readcode;
-    bool readuicr;
-    bool readficr;
-    bool readqspi;
-/* Workaround for issue https://bugs.python.org/issue22273 in ctypes, force by-value struct argument into stack.*/
-    bool reserved[3]; 
-} read_options_t;
-
-typedef struct {
     
     /* Type of device we are dealing with. */
-    device_family_t     device_family;
-    device_version_t    device_type;
+    device_family_t     device_family;          /* Unknown value: UNKNOWN_FAMILY*/
+    device_version_t    device_type;            /* Unknown value: UNKNOWN */
     
     /* Code flash info. */
-    uint32_t            code_address;
-    uint32_t            code_page_size;
-    uint32_t            code_size;
+    uint32_t            code_address;           /* Unknown value: NRFJPROG_INVALID_ADDRESS */
+    uint32_t            code_page_size;         /* Unknown value: 0 */
+    uint32_t            code_size;              /* Unknown value: 0 */
 
     /* Info flash info. */
-    uint32_t            uicr_address;
-    uint32_t            info_page_size;
+    uint32_t            uicr_address;           /* Unknown value: NRFJPROG_INVALID_ADDRESS */
+    uint32_t            info_page_size;         /* Unknown value: 0 */
 
     /* RAM info. */
-    bool                code_ram_present;
-    uint32_t            code_ram_address;
-    uint32_t            data_ram_address;
-    uint32_t            ram_size;
+    bool                code_ram_present;       /* Unknown value: false */
+    uint32_t            code_ram_address;       /* Unknown value: NRFJPROG_INVALID_ADDRESS */
+    uint32_t            data_ram_address;       /* Unknown value: NRFJPROG_INVALID_ADDRESS */
+    uint32_t            ram_size;               /* Unknown value: 0 */
 
     /* QSPI info. */
-    bool                qspi_present;
-    uint32_t            xip_address;
-    uint32_t            xip_size;
+    bool                qspi_present;           /* Unknown value: false */
+    uint32_t            xip_address;            /* Unknown value: NRFJPROG_INVALID_ADDRESS */
+    uint32_t            xip_size;               /* Unknown value: 0 */
 
     /* Pin reset. */
-    uint32_t            pin_reset_pin;
+    uint32_t            pin_reset_pin;          /* Unknown value: NRFJPROG_INVALID_RESET_PIN */
 
 } device_info_t;
 
@@ -165,6 +136,36 @@ nrfjprogdll_err_t NRFJPROG_dll_version(uint32_t * major, uint32_t * minor, uint3
 
 
 /**
+ * @brief   Attempts to find and return the path to the newest JLinkARM shared library installation.
+ *
+ * @details Attempts to find the newest JLinkARM shared library installation. The path returned will be the same path found when auto-detecting
+ *          JLinkARM DLL in function NRFJPROG_open_dll(). Note that NRFJPROG_find_jlink_path() always returns a system search result, and not which JLinkARM
+ *          library is in use. See function NRFJPROG_get_jlink_path() for the latter.
+ *
+ *          Upon success, the path to the JLinkARM shared library is stored in 'buffer' as a 0-terminated UTF-8 string, and bytes_copied is updated accordingly.
+ *          If buffer and buffer_size was passed as NULL and zero, bytes_copied is set to the total size needed to store the returned JLinkARM path.
+ *          This can be used to find the buffer size needed. The size of 'bytes_copied' includes 0-terminator.
+ *
+ *          The search strategy chosen is dependent on platform. On Windows, Windows Registry is searched.
+ *          On OSX the default install location "/Applications/SEGGER/JLink/" is scanned for shared library files.
+ *          Similarly, on Linux, the default install location "/opt/SEGGER/JLink/" is checked.
+ *          On unix-like systems the function might also return a library name compatible with dlopen if no library file is found in the default search path.
+ *
+ * @param   buffer                              Buffer to store the path. Can be NULL if buffer_size is zero.
+ * @param   buffer_size                         Length of buffer.
+ * @param   bytes_copied                        Pointer to variable that will hold the amount of bytes copied.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   buffer is NULL while buffer_size is non-zero.
+ *                                              bytes_copied is NULL.
+ * @retval  JLINKARM_DLL_NOT_FOUND              No search results yielded.
+ */
+nrfjprogdll_err_t NRFJPROG_find_jlink_path(char * buffer,
+                                           uint32_t buffer_size,
+                                           uint32_t * bytes_copied);
+
+
+/**
  * @brief   Opens the highlevelnrfjprogdll DLL and prepares it for use.
  *
  * @details Opens the highlevelnrfjprogdll DLL and prepares it for use, loading the necessary functions from the nrfjprogdll DLL. If default_jlink_path is given,
@@ -181,6 +182,7 @@ nrfjprogdll_err_t NRFJPROG_dll_version(uint32_t * major, uint32_t * minor, uint3
  *
  * @param   default_jlink_path                          Deprecated: Pass jlink path to probe init instead. Path to a JLinkARM DLL. May be NULL.
  * @param   log_cb                                      Callback for reporting informational and error messages. May be NULL.
+ * @param   log_param                                       Pointer that will be passed back along with log_cb. Will not be dereferenced, may be any value.
  *
  * @retval  SUCCESS
  * @retval  INVALID_OPERATION                           The NRFJPROG_dll_open() function has already been called.
@@ -194,6 +196,7 @@ nrfjprogdll_err_t NRFJPROG_dll_version(uint32_t * major, uint32_t * minor, uint3
  * @retval  NRFJPROG_SUB_DLL_COULD_NOT_LOAD_FUNCTIONS   A required function could not be loaded from the NRFJPROG DLL.
  */
 nrfjprogdll_err_t NRFJPROG_dll_open(const char * default_jlink_path, msg_callback * log_cb);
+nrfjprogdll_err_t NRFJPROG_dll_open_ex(const char * default_jlink_path, msg_callback_ex * log_cb, void * log_param);
 
 /**
  * @brief   Closes the highlevelnrfjprogdll DLL.
@@ -226,7 +229,7 @@ nrfjprogdll_err_t NRFJPROG_is_dll_open(bool * is_opened);
  *
  * @details Returns the amount and serial numbers of the USB J-Link emulators connected to the PC. If serial_numbers_len is 0, 
  *          only the amount of USB J-Link emulators connected to the PC is returned. Since NRFJPROG_get_connected_probes() function
- *          is a general function that does not receive a Probe_handle_t as first parameter but connects to the emulators, the default
+ *          is a general function that does not receive a nrfjprog_inst_t as first parameter but connects to the emulators, the default
  *          JLinkARM DLL passed or located in NRFJPROG_dll_open() will be used.
  *
  * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
@@ -241,8 +244,9 @@ nrfjprogdll_err_t NRFJPROG_is_dll_open(bool * is_opened);
  * @retval  INTERNAL_ERROR                      An error occured during usb device readout. See the log for more details.
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers.
  */
-nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[], uint32_t serial_numbers_len, uint32_t * num_available);
-
+nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[],
+                                                uint32_t serial_numbers_len,
+                                                uint32_t * num_available);
 
 /**
  * @brief   Allocates and initializes a new probe connection handle.
@@ -260,8 +264,12 @@ nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[], uint3
  * @post    After the execution of this function, the device CPU will be halted. To unhalt the device CPU, see NRFJPROG_reset(), NRFJPROG_run() functions.
  *
  * @param   debug_probe                         Pointer to probe handle type.
+ * @param   prog_cb                             Callback for reporting progress info. May be NULL.
  * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
+ * @param   log_param                           User-selectable value that will be passed back when calling log_cb in the _ex version of this function.
+ *                                              log_param will not be dereferenced. May be NULL.
  * @param   serial_number                       Serial number of the emulator to connect to.
+ * @param   clock_speed                         SWD frequency in kHz. If clock_speed == 0 the default clock speed 2000kHz will be used.
  * @param   jlink_path                          Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
  *
  * @retval  SUCCESS
@@ -272,11 +280,22 @@ nrfjprogdll_err_t NRFJPROG_get_connected_probes(uint32_t serial_numbers[], uint3
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
  * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
  */
-nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, progress_callback * prog_cb, msg_callback * log_cb, uint32_t serial_number, const char * jlink_path);
-
+nrfjprogdll_err_t NRFJPROG_probe_init_ex(nrfjprog_inst_t * debug_probe,
+                                         msg_callback * prog_cb,
+                                         msg_callback_ex * log_cb,
+                                         void * log_param,
+                                         uint32_t serial_number,
+                                         uint32_t clock_speed,
+                                         const char * jlink_path);
+nrfjprogdll_err_t NRFJPROG_probe_init(nrfjprog_inst_t * debug_probe,
+                                      msg_callback * prog_cb,
+                                      msg_callback * log_cb,
+                                      uint32_t serial_number,
+                                      const char * jlink_path);
 
 /**
  * @brief   Allocates and initializes a new probe connection handle.
@@ -296,7 +315,10 @@ nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, progress_cal
  * @param   debug_probe                         Pointer to probe handle type.
  * @param   prog_cb                             Callback for reporting currently performed action. May be NULL.
  * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
+ * @param   log_param                           User-selectable value that will be passed back when calling log_cb in the _ex version of this function.
+ *                                              log_param will not be dereferenced. May be NULL.
  * @param   serial_number                       Serial number of the emulator to connect to.
+ * @param   clock_speed                         SWD frequency in kHz. If clock_speed == 0 the default clock speed will be used.
  * @param   coprocessor                         Coprocessor to target.
  * @param   jlink_path_cstr                     Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
  *
@@ -308,10 +330,24 @@ nrfjprogdll_err_t NRFJPROG_probe_init(Probe_handle_t * debug_probe, progress_cal
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
  * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
  */
-nrfjprogdll_err_t NRFJPROG_dfu_init(Probe_handle_t * debug_probe, progress_callback * prog_cb, msg_callback * log_cb, uint32_t serial_number, coprocessor_t coprocessor, const char * jlink_path_cstr);
+nrfjprogdll_err_t NRFJPROG_dfu_init_ex(nrfjprog_inst_t * debug_probe,
+                                       msg_callback * prog_cb,
+                                       msg_callback_ex * log_cb,
+                                       void * log_param,
+                                       uint32_t serial_number,
+                                       uint32_t clock_speed,
+                                       coprocessor_t coprocessor,
+                                       const char * jlink_path_cstr);
+nrfjprogdll_err_t NRFJPROG_dfu_init(nrfjprog_inst_t * debug_probe,
+                                    msg_callback * prog_cb,
+                                    msg_callback * log_cb,
+                                    uint32_t serial_number,
+                                    coprocessor_t coprocessor,
+                                    const char * jlink_path_cstr);
 
 /**
  * @brief   Allocates and initializes a new probe connection handle.
@@ -327,6 +363,8 @@ nrfjprogdll_err_t NRFJPROG_dfu_init(Probe_handle_t * debug_probe, progress_callb
  * @param   debug_probe                         Pointer to probe handle type.
  * @param   prog_cb                             Callback for reporting currently performed action. May be NULL.
  * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
+ * @param   log_param                           User-selectable value that will be passed back when calling log_cb in the _ex version of this function.
+ *                                              log_param will not be dereferenced. May be NULL.
  * @param   serial_port                         Serial port of the device connected.
  * @param   baud_rate                           Serial port baud rate.
  * @param   response_timeout                    Wait time for a response (milliseconds).
@@ -335,42 +373,57 @@ nrfjprogdll_err_t NRFJPROG_dfu_init(Probe_handle_t * debug_probe, progress_callb
  * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
  * @retval  INVALID_PARAMETER                   The debug_probe pointer is NULL.
  */
-    nrfjprogdll_err_t NRFJPROG_mcuboot_dfu_init(Probe_handle_t * debug_probe,
-                                                progress_callback * prog_cb,
-                                                msg_callback * log_cb,
-                                                const char * serial_port,
-                                                const uint32_t baud_rate,
-                                                const uint32_t response_timeout);
+nrfjprogdll_err_t NRFJPROG_mcuboot_dfu_init_ex(nrfjprog_inst_t * debug_probe,
+                                               msg_callback * prog_cb,
+                                               msg_callback_ex * log_cb,
+                                               void * log_param,
+                                               const char * serial_port,
+                                               const uint32_t baud_rate,
+                                               const uint32_t response_timeout);
+nrfjprogdll_err_t NRFJPROG_mcuboot_dfu_init(nrfjprog_inst_t * debug_probe,
+                                            msg_callback * prog_cb,
+                                            msg_callback * log_cb,
+                                            const char * serial_port,
+                                            const uint32_t baud_rate,
+                                            const uint32_t response_timeout);
 
 /**
-* @brief   Allocates and initializes a new probe connection handle.
-*
-* @details Allocates and initializes a new probe connection handle. The probe handle initialized and returned in
-* the debug_probe pointer will be required in every function that performs a connection to a device.
-*
-* @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see
-* NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
-* @pre     Before the execution of this function the device must be physically connected to a powered board with a
-* device running modem dfu application. The device must be reset after each modem dfu attempt.
-*
-* @post    After the execution of this function, the device will be ready for serial DFU operations.
-*
-* @param   debug_probe                          Pointer to probe handle type.
-* @param   prog_cb                              Callback for reporting currently performed action. May be NULL.
-* @param   log_cb                               Callback for reporting informational and error messages. May be
-* NULL.
-* @param   serial_port                          Serial port of the device connected.
-* @param   baud_rate                            Serial port baud rate.
-* @param   response_timeout                     Wait time for a response (milliseconds).
-*
-* @retval  SUCCESS
-* @retval  INVALID_OPERATION                    The NRFJPROG_dll_open() function has not been called.
-* @retval  INVALID_PARAMETER                    The debug_probe pointer is NULL.
-* @retval  SERIAL_PORT_RESOURCE_ERROR           Unable to open serial port.
-* @retval  OUT_OF_MEMORY                        Could not allocate new probe object
+ * @brief   Allocates and initializes a new probe connection handle.
+ *
+ * @details Allocates and initializes a new probe connection handle. The probe handle initialized and returned in
+*          the debug_probe pointer will be required in every function that performs a connection to a device.
+ *
+ * @pre     Before the execution of this function the DLL must be ready for use. To query the state of the DLL see
+*          NRFJPROG_is_dll_open() function. To ready the DLL for use see NRFJPROG_dll_open() function.
+ * @pre     Before the execution of this function the device must be physically connected to a powered board with a
+*          device running modem dfu application. The device must be reset after each modem dfu attempt.
+ *
+ * @post    After the execution of this function, the device will be ready for serial DFU operations.
+ *
+ * @param   debug_probe                          Pointer to probe handle type.
+ * @param   prog_cb                              Callback for reporting currently performed action. May be NULL.
+ * @param   log_cb                               Callback for reporting informational and error messages. May be NULL.
+ * @param   log_param                            User-selectable value that will be passed back when calling log_cb in the _ex version of this function.
+ *                                               log_param will not be dereferenced. May be NULL.
+ * @param   serial_port                          Serial port of the device connected.
+ * @param   baud_rate                            Serial port baud rate.
+ * @param   response_timeout                     Wait time for a response (milliseconds).
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_OPERATION                    The NRFJPROG_dll_open() function has not been called.
+ * @retval  INVALID_PARAMETER                    The debug_probe pointer is NULL.
+ * @retval  SERIAL_PORT_RESOURCE_ERROR           Unable to open serial port.
+ * @retval  OUT_OF_MEMORY                        Could not allocate new probe object
  */
-nrfjprogdll_err_t NRFJPROG_modemdfu_dfu_serial_init(Probe_handle_t * debug_probe,
-                                                    progress_callback * prog_cb,
+nrfjprogdll_err_t NRFJPROG_modemdfu_dfu_serial_init_ex(nrfjprog_inst_t * debug_probe,
+                                                       msg_callback * prog_cb,
+                                                       msg_callback_ex * log_cb,
+                                                       void * log_param,
+                                                       const char * serial_port,
+                                                       const uint32_t baud_rate,
+                                                       const uint32_t response_timeout);
+nrfjprogdll_err_t NRFJPROG_modemdfu_dfu_serial_init(nrfjprog_inst_t * debug_probe,
+                                                    msg_callback * prog_cb,
                                                     msg_callback * log_cb,
                                                     const char * serial_port,
                                                     const uint32_t baud_rate,
@@ -385,17 +438,12 @@ nrfjprogdll_err_t NRFJPROG_modemdfu_dfu_serial_init(Probe_handle_t * debug_probe
  * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
  *
  * @param   debug_probe                         Pointer to probe handle type.
- * @param   prog_cb                             Callback for reporting currently performed action. May be NULL.
- * @param   log_cb                              Callback for reporting informational and error messages. May be NULL.
- * @param   serial_number                       Serial number of the emulator to connect to.
- * @param   coprocessor                         Coprocessor to target.
- * @param   jlink_path_cstr                     Path to the JLinkARM DLL to be used with this probe. May be NULL. Does not support unicode paths.
  *
  * @retval  SUCCESS
  * @retval  INVALID_PARAMETER                   The debug_probe pointer is NULL.
  *                                              The debug_probe is not initialized.
  */
-nrfjprogdll_err_t NRFJPROG_probe_uninit(Probe_handle_t * debug_probe);
+nrfjprogdll_err_t NRFJPROG_probe_uninit(nrfjprog_inst_t * debug_probe);
 
 
 /**
@@ -416,10 +464,11 @@ nrfjprogdll_err_t NRFJPROG_probe_uninit(Probe_handle_t * debug_probe);
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
  * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
  */
-nrfjprogdll_err_t NRFJPROG_probe_reset(Probe_handle_t debug_probe);
+nrfjprogdll_err_t NRFJPROG_probe_reset(nrfjprog_inst_t debug_probe);
 
 
 /**
@@ -442,32 +491,39 @@ nrfjprogdll_err_t NRFJPROG_probe_reset(Probe_handle_t debug_probe);
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  OUT_OF_MEMORY                       Could not allocate buffer for reading serial numbers
  * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
  */
-nrfjprogdll_err_t NRFJPROG_probe_replace_fw(Probe_handle_t debug_probe);
+nrfjprogdll_err_t NRFJPROG_probe_replace_fw(nrfjprog_inst_t debug_probe);
 
 
 /**
-* @brief   Initializes the probe handle for QSPI communication.
-*
-* @details Initializes the probe handle for QSPI communication with the information provided in the qspi_init_params struct.
-*          This information will be used to perform QSPI operations if needed.
-*
-* @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
-*
-* @post    After the execution of this function, the probe will be able to perform QSPI operations.
-*
-* @param   debug_probe                         Probe handle.
-* @param   memory_size                         Size of the attached qspi flash memory.
-* @param   qspi_init_params                    Struct containing qspi settings.
-*
-* @retval  SUCCESS
-* @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
-*                                              One of the QSPI parameters failed verification.
-* @retval  INVALID_DEVICE_FOR_OPERATION        The connected device does not support QSPI.
+ * @brief   Initializes the probe handle for QSPI communication.
+ *
+ * @details Initializes the probe handle for QSPI communication with the information provided in the qspi_init_params struct.
+ *          This information will be used to perform QSPI operations if needed.
+ *
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @post    After the execution of this function, the probe will be able to perform QSPI operations.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   memory_size                         Size of the attached qspi flash memory.
+ * @param   qspi_init_params                    Struct containing qspi settings.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
+ *                                              One of the QSPI parameters failed verification.
+ * @retval  INVALID_OPERATION                   Cannot configure QSPI while QSPI peripheral is initialized.
+ * @retval  INVALID_DEVICE_FOR_OPERATION        The connected device does not support QSPI.
+ * @retval  OUT_OF_MEMORY                       Ran out of memory while parsing QSPI params.
+ * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    Failed to read device information due to protection.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
+ *
  */
-nrfjprogdll_err_t NRFJPROG_probe_setup_qspi(Probe_handle_t debug_probe,
+nrfjprogdll_err_t NRFJPROG_probe_setup_qspi(nrfjprog_inst_t debug_probe,
                                             uint32_t memory_size,
                                             qspi_init_params_t qspi_init_params);
 
@@ -492,44 +548,51 @@ nrfjprogdll_err_t NRFJPROG_probe_setup_qspi(Probe_handle_t debug_probe,
  *                                              Could not find the supplied .ini file.
  *                                              The supplied .ini file has syntax errors.
  *                                              One of the QSPI parameters failed verification.
+ * @retval  INVALID_OPERATION                   Cannot configure QSPI while QSPI peripheral is initialized.
  * @retval  INVALID_DEVICE_FOR_OPERATION        The connected device does not support QSPI.
+ *                                              The provided QSPI ini file contains custom QSPI instructions that requires long frame support,
+ *                                                  but this device does not have long frame support.
+ * @retval  OUT_OF_MEMORY                       Ran out of memory while parsing QSPI params.
+ * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    Failed to read device information due to protection.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_probe_setup_qspi_ini(Probe_handle_t debug_probe, const char * qspi_ini_path);
+nrfjprogdll_err_t NRFJPROG_probe_setup_qspi_ini(nrfjprog_inst_t debug_probe, const char * qspi_ini_path);
 
 
 /**
-* @brief   Sets the coprocessor to use for future operations.
-*
-* @details Initializes the probe handle for multicore devices by setting the target coprocessor.
-*
-* @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
-*
-* @post    After the execution of this function, the probe will perform operations on the selected coprocessor.
-*
-* @param   debug_probe                         Probe handle.
-* @param   coprocessor                         Coprocessor to select.
-*
-* @retval  SUCCESS
-* @retval  INVALID_PARAMETER                   The debug_probe parameter is null..
+ * @brief   Sets the coprocessor to use for future operations.
+ *
+ * @details Initializes the probe handle for multicore devices by setting the target coprocessor.
+ *
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ *
+ * @post    After the execution of this function, the probe will perform operations on the selected coprocessor.
+ *
+ * @param   debug_probe                         Probe handle.
+ * @param   coprocessor                         Coprocessor to select.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
  */
-nrfjprogdll_err_t NRFJPROG_probe_set_coprocessor(Probe_handle_t debug_probe, coprocessor_t coprocessor);
+nrfjprogdll_err_t NRFJPROG_probe_set_coprocessor(nrfjprog_inst_t debug_probe, coprocessor_t coprocessor);
 
 
 /**
-* @brief   Function deprecated in favor of NRFJPROG_get_probe_info(). Will be removed in a future version.
-* 
-* @details Reads back the serial number of the USB J-LINK emulator used to initialize the provided debug_probe handle.
-*
-* @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
+ * @brief   Function deprecated in favor of NRFJPROG_get_probe_info(). Will be removed in a future version.
+ * 
+ * @details Reads back the serial number of the USB J-LINK emulator used to initialize the provided debug_probe handle.
+ *
+ * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
 
-* @param   debug_probe                         Probe handle.
-* @param   serial_number                       Pointer to where serial number value should be stored.
-*
-* @retval  SUCCESS
-* @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
-*                                              The serial_number parameter is null.
+ * @param   debug_probe                         Probe handle.
+ * @param   serial_number                       Pointer to where serial number value should be stored.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The debug_probe parameter is null.
+ *                                              The serial_number parameter is null.
  */
-nrfjprogdll_err_t NRFJPROG_get_snr(Probe_handle_t debug_probe, uint32_t * serial_number);
+nrfjprogdll_err_t NRFJPROG_get_snr(nrfjprog_inst_t debug_probe, uint32_t * serial_number);
 
 
 /**
@@ -556,7 +619,7 @@ nrfjprogdll_err_t NRFJPROG_get_snr(Probe_handle_t debug_probe, uint32_t * serial
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  */
-nrfjprogdll_err_t NRFJPROG_get_jlinkarm_version(Probe_handle_t debug_probe, uint32_t * major, uint32_t * minor, char * revision);
+nrfjprogdll_err_t NRFJPROG_get_jlinkarm_version(nrfjprog_inst_t debug_probe, uint32_t * major, uint32_t * minor, char * revision);
 
 
 /**
@@ -577,8 +640,9 @@ nrfjprogdll_err_t NRFJPROG_get_jlinkarm_version(Probe_handle_t debug_probe, uint
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_get_library_info(Probe_handle_t debug_probe, library_info_t * library_info);
+nrfjprogdll_err_t NRFJPROG_get_library_info(nrfjprog_inst_t debug_probe, library_info_t * library_info);
 
 
 /**
@@ -599,14 +663,17 @@ nrfjprogdll_err_t NRFJPROG_get_library_info(Probe_handle_t debug_probe, library_
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_get_probe_info(Probe_handle_t debug_probe, probe_info_t * probe_info);
+nrfjprogdll_err_t NRFJPROG_get_probe_info(nrfjprog_inst_t debug_probe, probe_info_t * probe_info);
 
 
 /**
  * @brief   Reads information from the device connected to the provided debug_probe handle.
  *
- * @details Reads information from the device connected to the initialized probe.
+ * @details Reads information from the device connected to the initialized probe. If an error is returned by the function, not all information is available.
+ *          Unavailable fields of the device_info struct is set to it's default/unknown value. See device_info_t definition for more info.
+ *          In general, information about the device memory layout is unavailable when the device is readback protected.
  *          
  * @pre     Before the execution of this function the provided debug_probe handle must be initialized. To initialize the probe, see NRFJPROG_probe_init().
  *
@@ -622,8 +689,9 @@ nrfjprogdll_err_t NRFJPROG_get_probe_info(Probe_handle_t debug_probe, probe_info
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_get_device_info(Probe_handle_t debug_probe, device_info_t * device_info);
+nrfjprogdll_err_t NRFJPROG_get_device_info(nrfjprog_inst_t debug_probe, device_info_t * device_info);
 
 
 /**
@@ -645,8 +713,9 @@ nrfjprogdll_err_t NRFJPROG_get_device_info(Probe_handle_t debug_probe, device_in
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_get_readback_protection(Probe_handle_t debug_probe, readback_protection_status_t * protection);
+nrfjprogdll_err_t NRFJPROG_get_readback_protection(nrfjprog_inst_t debug_probe, readback_protection_status_t * protection);
 
 
 /**
@@ -668,8 +737,9 @@ nrfjprogdll_err_t NRFJPROG_get_readback_protection(Probe_handle_t debug_probe, r
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_readback_protect(Probe_handle_t debug_probe, readback_protection_status_t protection_level);
+nrfjprogdll_err_t NRFJPROG_readback_protect(nrfjprog_inst_t debug_probe, readback_protection_status_t protection_level);
 
 
 /**
@@ -690,8 +760,9 @@ nrfjprogdll_err_t NRFJPROG_readback_protect(Probe_handle_t debug_probe, readback
  *                                              The status parameter is NULL.
  * @retval  INVALID_DEVICE_FOR_OPERATION        The version of the connected device does not support this operation.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_is_eraseprotect_enabled(Probe_handle_t debug_probe, bool * status);
+nrfjprogdll_err_t NRFJPROG_is_eraseprotect_enabled(nrfjprog_inst_t debug_probe, bool * status);
 
 
 /**
@@ -721,8 +792,9 @@ nrfjprogdll_err_t NRFJPROG_is_eraseprotect_enabled(Probe_handle_t debug_probe, b
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
  * @retval  NVMC_ERROR                          Flash operation failed.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_enable_eraseprotect(Probe_handle_t debug_probe);
+nrfjprogdll_err_t NRFJPROG_enable_eraseprotect(nrfjprog_inst_t debug_probe);
 
 
 /**
@@ -766,6 +838,7 @@ nrfjprogdll_err_t NRFJPROG_enable_eraseprotect(Probe_handle_t debug_probe);
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  *                                              Attempted to access unpowered RAM.
  * @retval  OUT_OF_MEMORY                       Could not allocate programming buffers.
  * @retval  EMULATOR_NOT_CONNECTED              The emulator serial_number is not connected to the PC.
@@ -773,7 +846,7 @@ nrfjprogdll_err_t NRFJPROG_enable_eraseprotect(Probe_handle_t debug_probe);
  * @retval  NVMC_ERROR                          Flash operation failed.
  * @retval  VERIFY_ERROR                        Program verification failed.
  */
-nrfjprogdll_err_t NRFJPROG_program(Probe_handle_t debug_probe, const char * hex_path, program_options_t program_options);
+nrfjprogdll_err_t NRFJPROG_program(nrfjprog_inst_t debug_probe, const char * hex_path, program_options_t program_options);
 
 
 /**
@@ -805,6 +878,7 @@ nrfjprogdll_err_t NRFJPROG_program(Probe_handle_t debug_probe, const char * hex_
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  *                                              The address to read is in unpowered RAM.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available because the device is readback protected.
  * @retval  INVALID_DEVICE_FOR_OPERATION        The connected device does not support an attempted operation.
@@ -813,7 +887,7 @@ nrfjprogdll_err_t NRFJPROG_program(Probe_handle_t debug_probe, const char * hex_
  *                                              Could not extend hex file buffer.
  *                                              Could not save the hex file.
  */
-nrfjprogdll_err_t NRFJPROG_read_to_file(Probe_handle_t debug_probe, const char * hex_path, read_options_t read_options);
+nrfjprogdll_err_t NRFJPROG_read_to_file(nrfjprog_inst_t debug_probe, const char * hex_path, read_options_t read_options);
 
 
 /**
@@ -843,13 +917,14 @@ nrfjprogdll_err_t NRFJPROG_read_to_file(Probe_handle_t debug_probe, const char *
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  *                                              The address to read is in unpowered RAM.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available because the device is readback protected.
  * @retval  INVALID_DEVICE_FOR_OPERATION        The connected device does not support an attempted operation.
  * @retval  OUT_OF_MEMORY                       Could not allocate program buffers.
  * @retval  VERIFY_ERROR                        Program verification failed.
  */
-nrfjprogdll_err_t NRFJPROG_verify(Probe_handle_t debug_probe, const char * hex_path, verify_action_t verify_action);
+nrfjprogdll_err_t NRFJPROG_verify(nrfjprog_inst_t debug_probe, const char * hex_path, verify_action_t verify_action);
 
 
 /**
@@ -889,7 +964,7 @@ nrfjprogdll_err_t NRFJPROG_verify(Probe_handle_t debug_probe, const char * hex_p
  * @retval  NVMC_ERROR                          Flash operation failed.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  */
-nrfjprogdll_err_t NRFJPROG_erase(Probe_handle_t debug_probe, erase_action_t erase_action, uint32_t start_address, uint32_t end_address);
+nrfjprogdll_err_t NRFJPROG_erase(nrfjprog_inst_t debug_probe, erase_action_t erase_action, uint32_t start_address, uint32_t end_address);
 
 
 /**
@@ -921,11 +996,12 @@ nrfjprogdll_err_t NRFJPROG_erase(Probe_handle_t debug_probe, erase_action_t eras
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  NVMC_ERROR                          Flash operation failed.
  * @retval  NOT_AVAILABLE_BECAUSE_MPU_CONFIG    The operation is not available due to the MPU configuration. The operation is not available due to the presence of Pre-Programmed Factory Code (PPFC). 
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  */
-nrfjprogdll_err_t NRFJPROG_recover(Probe_handle_t debug_probe);
+nrfjprogdll_err_t NRFJPROG_recover(nrfjprog_inst_t debug_probe);
 
 
 /**
@@ -954,12 +1030,13 @@ nrfjprogdll_err_t NRFJPROG_recover(Probe_handle_t debug_probe);
  * @retval  RAM_IS_OFF_ERROR                    Attempted to read powered-down RAM.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to read-back protection.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  */
-nrfjprogdll_err_t NRFJPROG_read(Probe_handle_t debug_probe, uint32_t addr, uint8_t * data, uint32_t data_len);
+nrfjprogdll_err_t NRFJPROG_read(nrfjprog_inst_t debug_probe, uint32_t addr, uint8_t * data, uint32_t data_len);
 
 
 /**
@@ -987,12 +1064,13 @@ nrfjprogdll_err_t NRFJPROG_read(Probe_handle_t debug_probe, uint32_t addr, uint8
  * @retval  RAM_IS_OFF_ERROR                    Attempted to read powered-down RAM.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to read-back protection.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  */
-nrfjprogdll_err_t NRFJPROG_read_u32(Probe_handle_t debug_probe, uint32_t addr, uint32_t * data);
+nrfjprogdll_err_t NRFJPROG_read_u32(nrfjprog_inst_t debug_probe, uint32_t addr, uint32_t * data);
 
 
 /**
@@ -1024,12 +1102,13 @@ nrfjprogdll_err_t NRFJPROG_read_u32(Probe_handle_t debug_probe, uint32_t addr, u
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  RAM_IS_OFF_ERROR                    Attempted to read disabled RAM.
  * @retval  NVMC_ERROR                          Flash operation failed.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  */
-nrfjprogdll_err_t NRFJPROG_write(Probe_handle_t debug_probe, uint32_t address, const uint8_t * data, uint32_t data_len);
+nrfjprogdll_err_t NRFJPROG_write(nrfjprog_inst_t debug_probe, uint32_t address, const uint8_t * data, uint32_t data_len);
 
 
 /**
@@ -1060,12 +1139,13 @@ nrfjprogdll_err_t NRFJPROG_write(Probe_handle_t debug_probe, uint32_t address, c
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  RAM_IS_OFF_ERROR                    Attempted to write disabled RAM.
  * @retval  NVMC_ERROR                          Flash operation failed.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  */
-nrfjprogdll_err_t NRFJPROG_write_u32(Probe_handle_t debug_probe, uint32_t address, uint32_t data);
+nrfjprogdll_err_t NRFJPROG_write_u32(nrfjprog_inst_t debug_probe, uint32_t address, uint32_t data);
 
 
 /**
@@ -1090,6 +1170,7 @@ nrfjprogdll_err_t NRFJPROG_write_u32(Probe_handle_t debug_probe, uint32_t addres
  * @retval  INVALID_PARAMETER                   The debug_probe pointer is NULL.
  *                                              The reset_action cannot be encoded as a reset_action_t enum.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  INVALID_DEVICE_FOR_OPERATION        The reset_action parameter is RESET_DEBUG but the device is without CTRL-AP.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The reset_action parameter is RESET_SYSTEM and the device is readback protected.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
@@ -1097,7 +1178,7 @@ nrfjprogdll_err_t NRFJPROG_write_u32(Probe_handle_t debug_probe, uint32_t addres
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  */
-nrfjprogdll_err_t NRFJPROG_reset(Probe_handle_t debug_probe, reset_action_t reset_action);
+nrfjprogdll_err_t NRFJPROG_reset(nrfjprog_inst_t debug_probe, reset_action_t reset_action);
 
 
 /**
@@ -1118,13 +1199,14 @@ nrfjprogdll_err_t NRFJPROG_reset(Probe_handle_t debug_probe, reset_action_t rese
  * @retval  INVALID_OPERATION                   The NRFJPROG_dll_open() function has not been called.
  * @retval  INVALID_PARAMETER                   The debug_probe pointer is null.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  * @retval  JLINKARM_DLL_NOT_FOUND              The jlink_path did not yield a usable DLL.
  * @retval  JLINKARM_DLL_COULD_NOT_BE_OPENED    An error occurred while opening the JLinkARM DLL.
  *                                              A required function could not be loaded from the DLL.
  */
-nrfjprogdll_err_t NRFJPROG_run(Probe_handle_t debug_probe, uint32_t pc, uint32_t sp);
+nrfjprogdll_err_t NRFJPROG_run(nrfjprog_inst_t debug_probe, uint32_t pc, uint32_t sp);
 
 
 /**
@@ -1139,10 +1221,9 @@ nrfjprogdll_err_t NRFJPROG_run(Probe_handle_t debug_probe, uint32_t pc, uint32_t
  * @param   started                             Pointer of the location to store the result.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
  * @retval  INVALID_PARAMETER                   The started parameter is null.
  */
-nrfjprogdll_err_t NRFJPROG_is_rtt_started(Probe_handle_t handle, bool * started);
+nrfjprogdll_err_t NRFJPROG_is_rtt_started(nrfjprog_inst_t handle, bool * started);
 
 
 /**
@@ -1159,10 +1240,9 @@ nrfjprogdll_err_t NRFJPROG_is_rtt_started(Probe_handle_t handle, bool * started)
  * @param   address                             RTT control block address in device memory.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
- *                                              The NRFJPROG_rtt_start() function has been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_rtt_start() function has been called.
  */
-nrfjprogdll_err_t NRFJPROG_rtt_set_control_block_address(Probe_handle_t handle, uint32_t address);
+nrfjprogdll_err_t NRFJPROG_rtt_set_control_block_address(nrfjprog_inst_t handle, uint32_t address);
 
 
 /**
@@ -1185,15 +1265,15 @@ nrfjprogdll_err_t NRFJPROG_rtt_set_control_block_address(Probe_handle_t handle, 
  * @param   debug_probe                         Probe handle.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
- *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              The NRFJPROG_rtt_start() function has already been called.
  * @retval  WRONG_FAMILY_FOR_DEVICE             The device connected is not an NRF52.
  * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
  * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_rtt_start(Probe_handle_t handle);
+nrfjprogdll_err_t NRFJPROG_rtt_start(nrfjprog_inst_t handle);
 
 
 /**
@@ -1211,14 +1291,14 @@ nrfjprogdll_err_t NRFJPROG_rtt_start(Probe_handle_t handle);
  * @param   is_control_block_found              Pointer of the location to store the result.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
- *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              There is no connection between the emulator and the device.
  *                                              The NRFJPROG_rtt_start() function has not been called.
  * @retval  INVALID_PARAMETER                   The is_found parameter is null.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_rtt_is_control_block_found(Probe_handle_t handle, bool * is_control_block_found);
+nrfjprogdll_err_t NRFJPROG_rtt_is_control_block_found(nrfjprog_inst_t handle, bool * is_control_block_found);
 
 
 /**
@@ -1237,13 +1317,13 @@ nrfjprogdll_err_t NRFJPROG_rtt_is_control_block_found(Probe_handle_t handle, boo
  * @param   debug_probe                         Probe handle.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
- *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              There is no connection between the emulator and the device.
  *                                              The NRFJPROG_rtt_start() function has not been called.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_rtt_stop(Probe_handle_t handle);
+nrfjprogdll_err_t NRFJPROG_rtt_stop(nrfjprog_inst_t handle);
 
 
 /**
@@ -1264,16 +1344,16 @@ nrfjprogdll_err_t NRFJPROG_rtt_stop(Probe_handle_t handle);
  * @param   data_read                           Pointer to the location to store the actual number of read characters.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
- *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              There is no connection between the emulator and the device.
  *                                              The NRFJPROG_rtt_start() function has not been called.
  * @retval  INVALID_PARAMETER                   The data parameter is null.
  *                                              The data_read parameter is null.
  *                                              There is no channel in the device with the given up_channel_index index.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_rtt_read(Probe_handle_t handle, uint32_t up_channel_index, char * data, uint32_t data_len, uint32_t * data_read);
+nrfjprogdll_err_t NRFJPROG_rtt_read(nrfjprog_inst_t handle, uint32_t up_channel_index, char * data, uint32_t data_len, uint32_t * data_read);
 
 
 /**
@@ -1294,16 +1374,16 @@ nrfjprogdll_err_t NRFJPROG_rtt_read(Probe_handle_t handle, uint32_t up_channel_i
  * @param   data_written                        Pointer to the location to store the actual number of written characters.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
- *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              There is no connection between the emulator and the device.
  *                                              The NRFJPROG_rtt_start() function has not been called.
  * @retval  INVALID_PARAMETER                   The data parameter is null.
  *                                              The data_read parameter is null.
  *                                              There is no channel in the device with the given down_channel_index index.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_rtt_write(Probe_handle_t handle, uint32_t down_channel_index, const char * data, uint32_t data_len, uint32_t * data_written);
+nrfjprogdll_err_t NRFJPROG_rtt_write(nrfjprog_inst_t handle, uint32_t down_channel_index, const char * data, uint32_t data_len, uint32_t * data_written);
 
 
 /**
@@ -1322,15 +1402,15 @@ nrfjprogdll_err_t NRFJPROG_rtt_write(Probe_handle_t handle, uint32_t down_channe
  * @param   up_channel_number                   Pointer to store the number of up channels.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
- *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              There is no connection between the emulator and the device.
  *                                              The NRFJPROG_rtt_start() function has not been called.
  * @retval  INVALID_PARAMETER                   The down_channel_number parameter is null.
  *                                              The up_channel_number parameter is null.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_rtt_read_channel_count(Probe_handle_t handle, uint32_t * down_channel_number, uint32_t * up_channel_number);
+nrfjprogdll_err_t NRFJPROG_rtt_read_channel_count(nrfjprog_inst_t handle, uint32_t * down_channel_number, uint32_t * up_channel_number);
 
 
 /**
@@ -1352,8 +1432,7 @@ nrfjprogdll_err_t NRFJPROG_rtt_read_channel_count(Probe_handle_t handle, uint32_
  * @param   channel_size                        Pointer to store the channel size.
  *
  * @retval  SUCCESS
- * @retval  INVALID_OPERATION                   The NRFJPROG_open_dll() function has not been called.
- *                                              The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
  *                                              There is no connection between the emulator and the device.
  *                                              The NRFJPROG_rtt_start() function has not been called.
  * @retval  INVALID_PARAMETER                   The channel_name parameter is null.
@@ -1362,8 +1441,9 @@ nrfjprogdll_err_t NRFJPROG_rtt_read_channel_count(Probe_handle_t handle, uint32_
  *                                              The dir parameter is neither UP_DIRECTION or DOWN_DIRECTION defined in rtt_direction_t enum in DllCommonDefinitions.h
  *                                              The channel with index channel_index does not exist in the device.
  * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
-nrfjprogdll_err_t NRFJPROG_rtt_read_channel_info(Probe_handle_t handle, uint32_t channel_index, rtt_direction_t dir, char * channel_name, uint32_t channel_name_len, uint32_t * channel_size);
+nrfjprogdll_err_t NRFJPROG_rtt_read_channel_info(nrfjprog_inst_t handle, uint32_t channel_index, rtt_direction_t dir, char * channel_name, uint32_t channel_name_len, uint32_t * channel_size);
 
 
 #if defined(__cplusplus)

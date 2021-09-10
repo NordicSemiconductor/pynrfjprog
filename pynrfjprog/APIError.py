@@ -19,6 +19,7 @@ class NrfjprogdllErr(enum.IntEnum):
     INVALID_DEVICE_FOR_OPERATION                =   -4
     WRONG_FAMILY_FOR_DEVICE                     =   -5
     UNKNOWN_DEVICE                              =   -6
+    INVALID_SESSION                             =   -7
 
     EMULATOR_NOT_CONNECTED                      =  -10
     CANNOT_CONNECT                              =  -11
@@ -39,6 +40,7 @@ class NrfjprogdllErr(enum.IntEnum):
     JLINKARM_DLL_ERROR                          = -102
     JLINKARM_DLL_TOO_OLD                        = -103
     JLINKARM_DLL_READ_ERROR                     = -104
+    JLINKARM_DLL_TIME_OUT_ERROR                 = -105
 
     SERIAL_PORT_NOT_FOUND                       = -110
     SERIAL_PORT_PERMISSION_ERROR                = -111
@@ -55,6 +57,11 @@ class NrfjprogdllErr(enum.IntEnum):
     RAM_IS_OFF_ERROR                            = -161
     FILE_OPERATION_FAILED                       = -162
 
+    FILE_PARSING_ERROR                          = -170
+    FILE_UNKNOWN_FORMAT_ERROR                   = -171
+    FILE_INVALID_ERROR                          = -172
+    UNKNOWN_MEMORY_ERROR                        = -173
+
     PYTHON_ALREADY_INSTANTIATED_ERROR           = -200
 
     TIME_OUT                                    = -220
@@ -63,14 +70,13 @@ class NrfjprogdllErr(enum.IntEnum):
     INTERNAL_ERROR                              = -254
     NOT_IMPLEMENTED_ERROR                       = -255
 
-
 class APIError(Exception):
     """
     pynrfjprog DLL exception class, inherits from the built-in Exception class.
 
     """
 
-    def __init__(self, err_code=None, err_msg="", log=None):
+    def __init__(self, err_code=None, err_msg="", log=None, error_data=None):
         """
         Constructs a new object and sets the err_code.
 
@@ -81,6 +87,10 @@ class APIError(Exception):
         self.err_msg = err_msg
         self.error_enum = NrfjprogdllErr(err_code)
         self.err_str = 'An error was reported by NRFJPROG DLL: {} {}. {}'.format(self.err_code, self.error_enum .name, err_msg).rstrip()
+
+        if error_data:
+            error_data = " \n" + ("\n\textra: ".join(error_data))
+            self.err_str += error_data
 
         Exception.__init__(self, self.err_str)
 

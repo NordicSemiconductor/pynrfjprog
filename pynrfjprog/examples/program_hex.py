@@ -56,17 +56,9 @@ def run(snr=None):
     """
     print('# Hex file programming example using pynrfjprog started...')
     
-    # Detect the device family of your device. Initialize an API object with UNKNOWN family and read the device's family. This step is performed so this example can be run in all devices without customer input.
+    # We will detect the device family of your device. Initialize an API object with UNKNOWN family.
     print('# Opening API with device family UNKNOWN, reading the device family.')
-    with LowLevel.API(LowLevel.DeviceFamily.UNKNOWN) as api:            # Using with construction so there is no need to open or close the API class.
-        if snr is not None:
-            api.connect_to_emu_with_snr(snr)
-        else:
-            api.connect_to_emu_without_snr()
-        device_family = api.read_device_family()
-    
-    # Initialize an API object with the target family. This will load nrfjprog.dll with the proper target family.
-    api = LowLevel.API(device_family)
+    api = LowLevel.API(LowLevel.DeviceFamily.UNKNOWN)
     
     # Open the loaded DLL and connect to an emulator probe. If several are connected a pop up will appear.
     api.open()
@@ -76,6 +68,11 @@ def run(snr=None):
             api.connect_to_emu_with_snr(snr)
         else:
             api.connect_to_emu_without_snr()
+
+        # Read the device's family.
+        # This step is performed so this example can be run in all devices without customer input.
+        device_family = api.read_device_family()
+        api.select_family(device_family)
 
         device_version = api.read_device_version()
 

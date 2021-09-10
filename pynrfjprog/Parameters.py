@@ -1,25 +1,47 @@
 
 from __future__ import print_function
+
+import logging
+import time
 from builtins import int
 
 import enum
 import ctypes
 import codecs
 import sys
+import os
+import platform
 import datetime
 
 
 NRFJPROG_MAX_PATH = 260
 NRFJPROG_STRING_LENGTH = 256
 NRFJPROG_COM_PER_JLINK = 10
+NRFJPROG_INVALID_ADDRESS = 0xFFFFFFFF
+NRFJPROG_INVALID_RESET_PIN = 0xFFFFFFFF
 
+
+def find_lib_dir():
+    this_dir = os.path.dirname(__file__)
+
+    os_name = sys.platform.lower()
+
+    if platform.machine().startswith('arm') and not os_name.startswith('dar'):
+        nrfjprog_dll_folder = 'lib_armhf'
+    else:
+        if sys.maxsize > 2 ** 32:
+            nrfjprog_dll_folder = 'lib_x64'
+        else:
+            nrfjprog_dll_folder = 'lib_x86'
+    
+    return os.path.abspath(os.path.join(this_dir, nrfjprog_dll_folder))
 
 def decode_string(string):
     """ This function ensures that string output from ctypes is normalized to the local string type. """
     if sys.version_info[0] == 2 or isinstance(string, str):
         return string
     else:
-        return string.decode('utf-8',errors='replace')
+        return string.decode('utf-8', errors='replace')
 
 
 ###################################################################################
@@ -28,68 +50,86 @@ def decode_string(string):
 #                                                                                 #
 ###################################################################################
 
+class CallbackHandler(logging.Handler):
+    def __init__(self, callback):
+        super(CallbackHandler, self).__init__()
+        self.callback = callback
 
-class Logger(object):
-    def __init__(self, log=None, log_str_cb=None, log_str=None,  log_file_path=None, log_stringio=None):
+    def emit(self, record):
+        self.callback(record)
+
+class ErrorHandler(logging.Handler):
+    def __init__(self):
+        super(ErrorHandler, self).__init__()
+        self.errors = list()
+        self.setLevel(logging.ERROR)
+
+    def emit(self, record):
+        self.errors.append(record)
+
+
+class LoggerAdapter(logging.LoggerAdapter):
+    def __init__(self, logger, id, log=None, log_str_cb=None, log_str=None,  log_file_path=None, log_stringio=None):
         """
         Setup API's debug output logging mechanism.
 
         """
-        self.logger_owns_file = False
-        self.log_file = None
-        self.log = log
-        self.log_str = log_str
+        super(LoggerAdapter, self).__init__(logger, id)
+
+        self.log_cb = None
+        self.error_handler = ErrorHandler()
+        self.logger.addHandler(self.error_handler)
+
+        # Enable logging by default
+        self.logger.disabled = False
 
         if log_str_cb is not None:
-            self.log_func = lambda x: log_str_cb(decode_string(x).strip())
-            self.log = True
+            handler = CallbackHandler(log_str_cb)
+            handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+            self.logger.addHandler(handler)
+        if log_stringio is not None:
+            handler = logging.StreamHandler(log_stringio)
+            handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+            self.logger.addHandler(handler)
+        elif log_file_path is not None:
+            handler = logging.FileHandler(log_file_path)
+            handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+            self.logger.addHandler(handler)
+        elif not log:
+            # No logging requested, disable log.
+            self.logger.disabled = True
+
+        if not self.logger.disabled:
+            if log_str is not None:
+                log_str += "%(message)s"
+                formatter = logging.Formatter(log_str)
+                for handler in self.logger.handlers:
+                    handler.setFormatter(formatter)
+
+            self.log_cb = ctypes.CFUNCTYPE(None, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_void_p)\
+                (
+                    lambda logger_name, level, msg_str, instance:
+                        self.log_function(decode_string(logger_name).strip(), level, decode_string(msg_str).strip())
+                )
+
+    def set_id(self, id):
+        self.extra = id
+
+    def log_function(self, logger_name, level, msg_str):
+        msg = f"[{logger_name}] {msg_str}"
+        self.log(NrfjrpogdllLogLevel.get_level_from_value(level), msg)
+
+    def process(self, msg, kwargs):
+        if self.extra is not None:
+            return '[%s] %s' % (self.extra, msg), kwargs
         else:
-            if log_str is None:
-                self.log_str = '[NRFJPROG LOG]:'
-            else:
-                self.log_str = log_str
-                self.log = True
+            return msg, kwargs
 
-            if log_stringio is not None:
-                self.log_file = log_stringio
-                self.log = True
-            elif log_file_path is not None:
-                self.log_file = open(log_file_path, 'a', 1)
-                self.logger_owns_file = True
-                self.log = True
-            elif self.log:
-                self.log_file = sys.stderr
-
-            self.log_func = self.log_function
-
-        if self.log:
-            self.log_func('-----------------------------------------------------------------------')
-            self.log_cb = Logger.create_callback(self.log_func)
-        else:
-            self.log_cb = None
-            self.log_func = None
-
-    def __enter__(self):
-        self.open()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
-
-    def open(self):
-        if self.logger_owns_file and self.log_file.closed:
-            self.log_file = open(self.log_file.name, 'a', 1)
-
-    def close(self):
-        if self.logger_owns_file and not self.log_file.closed:
-            self.log_file.close()
-
-    def log_function(self, msg):
-        print('{} {} {}'.format(datetime.datetime.now().replace(microsecond=0).isoformat(' '), self.log_str, msg), file=self.log_file)
-
-    @staticmethod
-    def create_callback(log_func):
-        return ctypes.CFUNCTYPE(None, ctypes.c_char_p)(lambda msg: log_func(decode_string(msg).strip()))
-
+    def get_errors(self):
+        # Sleep 500 milliseconds so that any pending log messages can propagate to the logger.
+        time.sleep(.5)
+        formatter = logging.Formatter("%(message)s")
+        return [formatter.format(record) for record in self.error_handler.errors]
 
 ###################################################################################
 #                                                                                 #
@@ -218,6 +258,7 @@ class DeviceVersion(enum.IntEnum):
     NRF52840_xxAA_ENGB      = 21
     NRF52840_xxAA_REV1      = 18
     NRF52840_xxAA_REV2      = 0x05284003
+    NRF52840_xxAA_REV3      = 0x05284004
     NRF52840_xxAA_FUTURE    = 12
     
     NRF5340_xxAA_ENGA       = 0x05340000
@@ -229,6 +270,7 @@ class DeviceVersion(enum.IntEnum):
     NRF9160_xxAA_REV1       = 0x09160000
     NRF9160_xxAA_REV2       = 0x09160001
     NRF9160_xxAA_FUTURE     = 0x091600FF
+
 
 
 class DeviceName(enum.IntEnum):
@@ -352,6 +394,46 @@ class CpuRegister(enum.IntEnum):
     XPSR                    = 16
     MSP                     = 17
     PSP                     = 18
+
+
+@enum.unique
+class NrfjrpogdllLogLevel(enum.IntEnum):
+    """
+    Values for nrfjprogdll_log_level from DllCommonDefinitions.h
+    """
+    critical = 60
+    error    = 50
+    warning  = 40
+    info     = 30
+    debug    = 20
+    trace    = 10
+    none     = 0
+
+    @staticmethod
+    def get_name_from_value(level):
+        try:
+            return NrfjrpogdllLogLevel(level).name
+        except ValueError:
+            return NrfjrpogdllLogLevel.info.name
+
+    @staticmethod
+    def get_level_from_value(level):
+        if level == NrfjrpogdllLogLevel.critical:
+            return logging.CRITICAL
+        elif level == NrfjrpogdllLogLevel.error:
+            return logging.ERROR
+        elif level == NrfjrpogdllLogLevel.warning:
+            return logging.WARNING
+        elif level == NrfjrpogdllLogLevel.info:
+            return logging.INFO
+        elif level == NrfjrpogdllLogLevel.debug:
+            return logging.DEBUG
+        elif level == NrfjrpogdllLogLevel.trace:
+            return logging.DEBUG
+        elif level == NrfjrpogdllLogLevel.none:
+            return logging.NOTSET
+        else:
+            return logging.NOTSET
 
 
 ###################################################################################
@@ -541,6 +623,111 @@ class ComPortInfo(object):
         return "ComPortInfoStruct({}, {}, {})".format(self.path, self.vcom, self.serial_number)
 
 
+@enum.unique
+class MemoryType(enum.IntEnum):
+    """
+    Wraps memory_type_t values from DllCommonDefinitions.h
+    """
+    CODE     = 0
+    DATA_RAM = 1
+    CODE_RAM = 2
+    FICR     = 3
+    UICR     = 4
+    XIP      = 5
+
+
+@enum.unique
+class MemoryAccess(enum.IntFlag):
+    """
+    Wraps memory_access_t values from DllCommonDefinitions.h. Note that values are bit masks.
+    """
+    MEM_ACCESS_EXECUTE = 1,
+    MEM_ACCESS_WRITE   = 2,
+    MEM_ACCESS_READ    = 4,
+    MEM_ACCESS_ERASE   = 8,
+    MEM_ACCESS_SECURE  = 16,
+
+
+class MemoryDescriptionStruct(ctypes.Structure):
+    """
+    Wraps memory_description_t values from DllCommonDefinitions.h
+    """
+    _fields_ = [("start",                   ctypes.c_uint32),
+                ("size",                    ctypes.c_uint32),
+                ("num_pages",               ctypes.c_uint32),
+                ("type",                    ctypes.c_int),
+                ("access_flags",            ctypes.c_int),
+                ("has_trustzone_alias",     ctypes.c_bool),
+                ("is_runtime_configurable", ctypes.c_bool),
+                ("_id",                     ctypes.c_uint32),
+                ("label",                   (ctypes.c_char * 33)),
+                ("_reserved",               (ctypes.c_uint32 * 8))]
+
+
+class PageRepetitionsStruct(ctypes.Structure):
+    """
+    Wraps page_repetitions_t values from DllCommonDefinitions.h
+    """
+    _fields_ = [("size",                    ctypes.c_uint32),
+                ("num_repeats",             ctypes.c_uint32)]
+
+
+class MemoryDescription(object):
+    """
+    Description of a device memory.
+
+    Returned by function API.read_memory_descriptors in LowLevel.py.
+    """
+    def __init__(self, memory_description_struct):
+        self._cstruct = memory_description_struct
+
+        self.start = self._cstruct.start
+        self.size = self._cstruct.size
+        self.num_pages = self._cstruct.num_pages
+        self.type = MemoryType(self._cstruct.type)
+        self.access_flags = self._cstruct.access_flags
+        self.has_trustzone_alias = self._cstruct.has_trustzone_alias
+        self.is_runtime_configurable = self._cstruct.is_runtime_configurable
+        self._id = self._cstruct._id
+        self.label = decode_string(self._cstruct.label)
+
+        self.page_repetitions = None
+
+    def executable(self):
+        return (self.access_flags & MemoryAccess.MEM_ACCESS_EXECUTE.value) > 0
+
+    def writable(self):
+        return (self.access_flags & MemoryAccess.MEM_ACCESS_WRITE.value) > 0
+
+    def readable(self):
+        return (self.access_flags & MemoryAccess.MEM_ACCESS_READ.value) > 0
+
+    def erasable(self):
+        return (self.access_flags & MemoryAccess.MEM_ACCESS_ERASE.value) > 0
+
+    def read_page_sizes(self, lowlevel_api):
+        """
+        A short hand function for updating the page sizes from a LowLevel API instance.
+
+        @param LowLevel.API lowlevel_api: An API instance that has been opened and connected to a debug probe.
+        @return PageRepetitions: A list of page repetitions describing the page sizes of the memory.
+        """
+        self.page_repetitions = lowlevel_api.read_page_sizes(self)
+        return self.page_repetitions
+
+
+class PageRepetitions(object):
+    """
+    Page repetitions describe a homogenous block of memory. For memories with varying page size, such as the RAM of a nRF52840,
+    a list of page repetitions can be used to describe the order and size of each page.
+
+    Returned by function API.read_page_sizes in LowLevel.py.
+    """
+    def __init__(self, page_repetitions_struct):
+        self.size = page_repetitions_struct.size
+        self.num_repeats = page_repetitions_struct.num_repeats
+
+
 ###################################################################################
 #                                                                                 #
 #                              High level data types                              #
@@ -656,7 +843,7 @@ class DeviceInfoStruct(ctypes.Structure):
 
 
 class DeviceInfo(object):
-    def __init__(self, device_info):
+    def __init__(self, device_info, dll_ret_code=None):
         """ Info about an nRF device. """
         self.device_type         = DeviceVersion(device_info.device_type)
         self.device_family       = DeviceFamily(device_info.device_family)
@@ -673,6 +860,9 @@ class DeviceInfo(object):
         self.xip_address         = device_info.xip_address
         self.xip_size            = device_info.xip_size
         self.pin_reset_pin       = device_info.pin_reset_pin
+
+        # Return code from HighLevel DLL when this struct was read.
+        self.dll_ret_code       = dll_ret_code
 
 
 class ProbeInfoStruct(ctypes.Structure):

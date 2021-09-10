@@ -1,8 +1,108 @@
+Release 10.14.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v7.52d
+- (OSXRelease) Provide universal binaries for MacOS M1 and x86_64.
+
+- (LinuxRelease) Provide binaries for armhf raspbian targets.
+- (LinuxRelease) Removed 32bit deliveries for Linux.
+
+- (WindowsRelease) Update windows installer.
+- (WindowsRelease) Windows binaries depended on MSVC toolset v142, but v140 vas bundled in the installer. Introduced in 10.13.0. VC Redistributable has been updated toolset v142.
+- (WindowsRelease) Add an optional pynrfjprog component to installer.
+- (WindowsRelease) Fixed bug where 32-bit installer was bundled with 64-bit Segger JLink installer on Windows.
+
+- (highleveldll) Improved modem serial DFU resilience to UART data loss by introducing re-sending of unacknowledged packages.
+- (highleveldll) Added function NRFJPROG_find_jlink_path. Allows user to get auto-detected JLinkARM shared library path without initializing highlevel dll.
+- (highleveldll) Fixed sector-erase in program function erased too many pages when provided image had data at the end of a page.
+- (highleveldll) Fixed issue where mfw packages containing unsegmented update image would not update nrf9160 modem successfully.
+- (highleveldll) Image program/read/verify operations will now return an error at an earlier stage if the format is unrecognized.
+
+- (nrfjprog.dll) Added function NRFJPROG_find_jlink_path. Allows user to get auto-detected JLinkARM shared library path without initializing nrfjprog dll.
+- (nrfjprog.dll) Fixed erase_file function erased too many pages when provided image had data at the end of a page.
+- (nrfjprog.dll) Image program/read/verify operations will now return an error at an earlier stage if the format is unrecognized.
+
+- (pynrfjprog) HighLevel.py: Added function API.find_jlink_path. Allows user to get auto-detected JLinkARM shared library path.
+- (pynrfjprog) LowLevel.py: Added function API.find_jlink_path. Allows user to get auto-detected JLinkARM shared library path.
+- (pynrfjprog) JLink.py: Redirect find_latest_dll() to HighLevel.API.find_jlink_path.
+- (pynrfjprog) Improved modem serial DFU resilience to UART data loss by introducing re-sending of unacknowledged packages.
+- (pynrfjprog) HighLevel.py: Fixed program function with sector-erase option erased too many pages when provided image had data at the end of a page.
+- (pynrfjprog) LowLevel.py: Fixed erase_file function erased too many pages when provided image had data at the end of a page.
+- (pynrfjprog) Fixed issue where mfw packages containing unsegmented update image would not update nrf9160 modem successfully.
+- (pynrfjprog) Image program/read/verify operations will now return an error at an earlier stage if the format is unrecognized.
+
+- (nrfjprog.exe) Fixed --sectorerase with --program option erased too many pages when provided image had data at the end of a page.
+- (nrfjprog.exe) Fixed issue where mfw packages containing unsegmented update image would not update nrf9160 modem successfully.
+- (nrfjprog.exe) Improved helptext and logging regarding supported hex/image formats. File operations will now return an error at an earlier stage if the format is unrecognized.
+
+
+Release 10.13.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v7.50a
+
+- (nrfjprog.exe) Made --coprocessor flag with CP_APPLICATION as the argument available for all devices.
+- (nrfjprog.exe) When an error condition occurs, nrfjprog.exe now prints the last error messages from nrfjprog.dll as part of the error output if logging is enabled.
+- (nrfjprog.exe) Fixed issue where not all memory layouts were correctly discovered.
+- (nrfjprog.exe) Deprecated QSPI .ini parse error codes.
+- (nrfjprog.exe) --program no longer checks if flash is erased before writing in order to improve performance. The user can append option "--verify" to check memory after write operation.
+- (nrfjprog.exe) --program can now be used perform modem firmware upgrade using debugger on nRF91 devices by passing the modem firmware .zip file as argument.
+- (nrfjprog.exe) Added field "RetainRAM" to QSPI ini file.
+
+- (nrfjprog.dll) Made functions NRFJPROG_select_coprocessor(), NRFJPROG_is_coprocessor_enabled(), and NRFJPROG_enable_coprocessor() available for all families.
+- (nrfjprog.dll) Function NRFJPROG_select_coprocessor() no longer requires the debug probe to be disconnected from the device.
+- (nrfjprog.dll) Added functions NRFJPROG_read_memory_descriptors and NRFJPROG_read_page_sizes for reading device memory information.
+- (nrfjprog.dll) Added function NRFJPROG_select_family(). Allows switching from UNKNOWN family to other family dll interfaces when using nrfjprog.dll.
+- (nrfjprog.dll) Added function NRFJPROG_qspi_configure(). Configures, but does not start QSPI.
+- (nrfjprog.dll) Added function NRFJPROG_qspi_configure_ini(). Configures QSPI settings based on .ini file.
+- (nrfjprog.dll) Added function NRFJPROG_qspi_start(). Starts QSPI based on previously configured settings.
+- (nrfjprog.dll) Added function NRFJPROG_qspi_set_size(). Sets the size of the external memory.
+- (nrfjprog.dll) Added function NRFJPROG_qspi_get_size(). Gets the size of the external memory.
+- (nrfjprog.dll) Added function NRFJPROG_program_file(). Programs file or files to device. Can be used to perform modem firmware upgrade on nRF91 devices.
+- (nrfjprog.dll) Added function NRFJPROG_read_to_file(). Reads memories from device to file.
+- (nrfjprog.dll) Added function NRFJPROG_verify_file(). Verifies memories against file.
+- (nrfjprog.dll) Added function NRFJPROG_erase_file(). Erases non-volatile memories covered by file.
+- (nrfjprog.dll) Added NRFJPROG_*_inst versions of all functions. These functions allow a user to connect to multiple debug probes simultaneously by maintaining separate backend instances.
+- (nrfjprog.dll) Each instance created by NRFJPROG_open_dll_inst creates a jlinkarm_nrf_worker process executable that hosts the jlink connection. unless a corresponding 
+                    NRFJPROG_close_inst is called, this process will remain, and may prevent your program from closing.
+- (nrfjprog.dll) Removed implementation of deprecated function NRFJPROG_is_ram_powered, deprecated since 9.2.0. The function now returns NOT_IMPLEMENTED_ERROR.
+- (nrfjprog.dll) Added definitions for NRFJPROG_INVALID_ADDRESS and NRFJPROG_INVALID_RESET_PIN to DllCommonDefinitions.h.
+- (nrfjprog.dll) Some devices with hardened AP PROTECT were not correctly unlocked with NRFJPROG_recover().
+- (nrfjprog.dll) Add new return value JLINKARM_DLL_TIMEOUT_ERROR. This error indicates that the J-Link communication timed out.
+- (nrfjprog.dll) Add new return values FILE_PARSING_ERROR, FILE_UNKNOWN_FORMAT_ERROR, FILE_INVALID_ERROR, UNKNOWN_MEMORY_ERROR, used for indicating file operation errors (hex parsing).
+
+- (highleveldll) Add NRFJPROG_*probe_init_ex functions that use msg_callback_ex with an optional argument param instead of log_callback. This allows easier logging of multiple probe instances.
+- (highleveldll) Added support for pipelined updates of nrf9160 modem in supported bootloaders.
+- (highleveldll) NRFJPROG_set_coprocessor no longer executes a NRFJPROG_disconnect_from_device() in the background.
+- (highleveldll) When using NRFJPROG_*probe_init_ex constructors, SWD-based probe connections can now set clock speeds manually.
+- (highleveldll) Fixed issue where not all memory layouts were correctly discovered.
+- (highleveldll) get_device_info now allows a partially populated device_info_t struct to in order to handle situations where device version, family and memory layout are not all available at the same time.
+- (highleveldll) Added support for performing modem firmware update on nRF91 devices using DebugProbe->program and DebugProbe->verify.
+- (highleveldll) NRFJPROG_program() no longer checks if flash is erased before writing in order to improve performance. Enable verification to check result after writing.
+
+- (pynrfjprog) APIError now contains the last error messages reported from the dll if logging is enabled.
+- (pynrfjprog) Removed deprecated function NRFJPROG_is_ram_powered, deprecated since 9.2.0
+- (pynrfjprog) Drop support for deprecated Python versions 2.7, 3.4, and 3.5
+- (pynrfjprog) MultiAPI.MultiAPI is now deprecated and will be removed in a future major version of pynrfjprog. It redirects to LowLevel.API that fulfills the same purpose.
+- (pynrfjprog) HighLevel: DebugProbe and IPCDFUProbe constructors can set SWD clock speed through keyword argument clock_speed.
+- (pynrfjprog) HighLevel: get_device_info no longer throws an exception, but stores the dll return code in the DeviceInfo class.
+- (pynrjfprog) Parameters.py: Added definitions for NRFJPROG_INVALID_ADDRESS and NRFJPROG_INVALID_RESET_PIN.
+- (pynrfjprog) LowLevel.py: Updated with new functions from nrfjprog.dll, adding program_file(), read_to_file(), verify_file(), erase_file(),
+                    qspi_init_ini(), qspi_start(), qspi_configure() and qspi_configure_ini.
+- (pynrfjprog) Parameters.py: Added NrfjrpogdllLogLevel, wrapping nrfjprogdll_log_level enum from DllCommonDefinitions.h.
+- (pynrfjprog) APIError.py: Added return values JLINKARM_DLL_TIME_OUT_ERROR, FILE_PARSING_ERROR, FILE_UNKNOWN_FORMAT_ERROR, UNKNOWN_MEMORY_ERROR, reflecting changes in DllCommonDefinitions.h.
+- (pynrfjprog) Update JLink.py find_latest_jlink script to support windows installs with J-Link sw pack installs in both program files and program files(x86)
+
+- (nrfdfu) Removed IPCHandler type. This DFU mechanism is now covered by nrfjprog.dll.
+
+- (warning) Please note, it is now more important than before to always explicitly close a connection using the appropriate function call. 
+            Failure to properly clean up a session will lead to leftover jlinkarm_nrf_worker processes remaining in the system. 
+            This may prevent your program from exiting. This may also prevent future nrfjprog or J-Link sessions from working correctly.
+
 Release 10.12.2
 Changelog
 --------------------------------------
 - No changes, updated to synchronize with mergehex.
-
 
 Release 10.12.1
 Changelog
