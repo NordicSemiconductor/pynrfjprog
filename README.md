@@ -63,16 +63,14 @@ python setup.py install
 ```
 Open the Python interpreter and connect nRF5 device to PC:
 ```
-from pynrfjprog import API
+from pynrfjprog import LowLevel
 
-api = API.API('NRF52')
-api.open()
-api.enum_emu_snr()
-api.connect_to_emu_without_snr()
-api.erase_all()
-api.write_u32(ADDRESS, DATA, IS_FLASH)
-api.disconnect_from_emu()
-api.close()
+with LowLevel.API('NRF52') as api:
+    api.enum_emu_snr()
+    api.connect_to_emu_without_snr()
+    api.erase_all()
+    api.write_u32(ADDRESS, DATA, IS_FLASH)
+    api.disconnect_from_emu()
 ```
 
 To work with multiple nRF5 devices at once:
@@ -98,25 +96,20 @@ To program hex files using the HighLevel API:
 ```
 from pynrfjprog import HighLevel
 
-api = HighLevel.API()
-api.open()
+with HighLevel.API() as api:
+    snrs = api.get_connected_probes()
 
-# To program J-Link probe at snr <snr>:
-probe = HighLevel.DebugProbe(api, <snr>)
-probe.program(<hex_file>)
-probe.close()
+    # To program J-Link probe at snr <snr>:
+    with HighLevel.DebugProbe(api, <snr>) as probe:
+        probe.program(<hex_file>)
 
-# To program MCUBoot target at serial port <serial>:
-probe = HighLevel.MCUBootDFUProbe(api, <serial>)
-probe.program(<hex_file>)
-probe.close()
+    # To program MCUBoot target at serial port <serial>:
+    with HighLevel.MCUBootDFUProbe(api, <serial>) as probe:
+        probe.program(<hex_file>)
 
-# To update LTE modem connected to J-Link prbe at snr <snr>:
-probe = HighLevel.IPCDFUProbe(api, <snr>)
-probe.program(<hex_file>)
-probe.close()
-
-api.close()
+    # To update LTE modem connected to J-Link probe at snr <snr>:
+    with HighLevel.IPCDFUProbe(api, <snr>, HighLevel.CoProcessor.CP_MODEM) as probe:
+        probe.program(<zip_file>, HighLevel.ProgramOptions(verify = HighLevel.VerifyAction.VERIFY_HASH))
 ```
 Note: Only one HighLevel API can be instantiated and opened at a time. But, several HighLevel probes can be opened from the same API at the same time, as long as you don't open two probes to the same target.
 
