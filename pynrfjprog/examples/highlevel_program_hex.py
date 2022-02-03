@@ -35,13 +35,13 @@ def find_blinky_hex(device_family, device_version):
     """ Find the appropriate hex file to program """
 
     module_dir, module_file = os.path.split(__file__)
-    hex_file_path = os.path.join(os.path.abspath(module_dir), device_family.lower() + "_dk_blinky.hex")
+    device_version_short = device_version.split('_')[0]
+    hex_file_path = os.path.join(os.path.abspath(module_dir), device_version_short.lower() + "_dk_blinky.hex")
 
     if os.path.exists(hex_file_path):
         return hex_file_path
 
-    device_version_short = device_version.split('_')[0]
-    hex_file_path = os.path.join(os.path.abspath(module_dir), device_version_short.lower() + "_dk_blinky.hex")
+    hex_file_path = os.path.join(os.path.abspath(module_dir), device_family.lower() + "_dk_blinky.hex")
 
     if os.path.exists(hex_file_path):
         return hex_file_path
