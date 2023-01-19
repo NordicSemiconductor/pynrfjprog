@@ -1,54 +1,40 @@
-from setuptools import setup, find_packages
-import pynrfjprog
+from setuptools import setup
+from setuptools.command.install import install
+from distutils import log
+import os
+import stat
+import pynrfjprog 
+
+class PostInstall(install):
+
+    def run(self):
+        # Perform normal install
+        install.run(self)
+        
+        # Post-install scripts
+        try:
+            root_path = os.path.join(self.install_lib,"pynrfjprog")
+            for relative_lib_path in [x for x in os.listdir(root_path) if x.startswith("lib")]:
+                lib_path = os.path.join(root_path,relative_lib_path)
+                for file in os.listdir(lib_path):
+                    file_abs_path = os.path.join(lib_path,file)
+                    if file.startswith("jlinkarm_nrf_worker"):
+                        log.info(f"Mark {relative_lib_path}/{file} as executable")
+                        st = os.stat(file_abs_path)
+                        os.chmod(file_abs_path, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        except Exception:
+            log.warn("Unable to set the executable bit on jlinkarm_nrf_worker")
 
 setup(
-
     name='pynrfjprog',
-
     version=pynrfjprog.__version__,
-
-    description='A simple Python interface for the nrfjprog functionality',
-    long_description='A simple Python interface for the nrfjprog.dll, libnrfjprogdll.so and libnrfjprogdll.dylib. This package can only be used with Python 2.7.x or 3.4.x or later',
-
-    url='http://www.nordicsemi.com/',
-
-    author='Nordic Semiconductor ASA',
-    author_email='sagtools@nordicsemi.no',
-
-    license=open('LICENSE').read(),
-
-    python_requires='>=3.5',
-
-    classifiers=[
-
-        'Development Status :: 5 - Production/Stable',
-
-        'Intended Audience :: Developers',
-
-        'Operating System :: MacOS',
-        'Operating System :: Microsoft :: Windows',
-        'Operating System :: POSIX :: Linux',
-
-        'Topic :: Software Development :: Build Tools',
-        'Topic :: Software Development :: Debuggers',
-        'Topic :: Software Development :: Embedded Systems',
-
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9'
-    ],
-
-    keywords='nrfjprog pynrfjprog highlevelpynrfjprog',
-
-    install_requires=['future'],
-
-    packages=find_packages(),
     package_data={
         'pynrfjprog.lib_x86': ['*.dll', '*.so*', '*.dylib*', 'jlinkarm_nrf_worker*'],
         'pynrfjprog.lib_armhf': ['*.dll', '*.so*', '*.dylib*', 'jlinkarm_nrf_worker*'],
+        'pynrfjprog.lib_arm64': ['*.dll', '*.so*', '*.dylib*', 'jlinkarm_nrf_worker*'],
         'pynrfjprog.lib_x64': ['*.dll', '*.so*', '*.dylib*', 'jlinkarm_nrf_worker*'],
         'pynrfjprog.docs': ['*.h', 'nrfjprog_release_notes*.txt'],
-        'pynrfjprog.examples': ['*.hex']
-    }
+        'pynrfjprog.examples.hex_files': ['*.hex']
+    },
+    cmdclass={'install': PostInstall}
 )

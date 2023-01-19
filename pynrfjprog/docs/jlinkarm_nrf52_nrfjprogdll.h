@@ -273,6 +273,36 @@ nrfjprogdll_err_t NRFJPROG_enum_emu_snr(uint32_t serial_numbers[], uint32_t seri
 
 
 /**
+ * @brief   Enumerates connection information of discoverable J-Link emulators.
+ *
+ * @details This function uses the J-Link DLL to get a list of discovered emulators. Information about each probe is copied to the array 'emu_infos',
+ *          up to a max count of 'emu_infos_len'. 'num_available' is updated with the total number of emulators discovered by the J-Link DLL.
+ *          If 'emu_infos' is NULL and 'emu_infos_len' is zero, only 'num_available' will be updated.
+ *          Which interfaces are checked is controlled by the parameters 'list_usb_emus' and 'list_ip_emus'.
+ *          If only USB devices are needed, the function NRFJPROG_enum_emu_snr() can be used instead.
+ *
+ *          Note that not all network connected debuggers are discoverable. Generally, debug probes with built in Ethernet/Wi-Fi support are automatically discoverable,
+ *          but sessions created through the JLink Remote Server application are not.
+ *
+ * @param   instance                            A handle to an open nrfjprog instance.
+ * @param   emu_infos                           Array in which to store the enumerated emulator connection information. Can be NULL.
+ * @param   emu_infos_len                       Number of emu_con_info_t structs that can be stored in the emu_infos array.
+ * @param   num_available                       The total number of emulators discovered.
+ * @param   list_usb_emus                       List emulators discovered on the USB interface.
+ * @param   list_ip_emus                        List emulators discovered on the IP/network interface.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  INVALID_PARAMETER                   The emu_infos parameter is NULL but emu_infos_len is > 0.
+ *                                              The num_available parameter is NULL.
+ * @retval  OUT_OF_MEMORY                       Memory could not be allocated for the operation.
+ */
+nrfjprogdll_err_t NRFJPROG_enum_emu_con_info_inst(nrfjprog_inst_t instance, emu_con_info_t emu_infos[], uint32_t emu_infos_len, uint32_t * num_available, bool list_usb_emus, bool list_ip_emus);
+nrfjprogdll_err_t NRFJPROG_enum_emu_con_info(emu_con_info_t emu_infos[], uint32_t emu_infos_len, uint32_t * num_available, bool list_usb_emus, bool list_ip_emus);
+
+
+/**
  * @brief   Checks if the emulator has an established connection with Segger emulator/debugger.
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
@@ -350,6 +380,58 @@ nrfjprogdll_err_t NRFJPROG_connect_to_emu_with_snr(uint32_t serial_number, uint3
  */
 nrfjprogdll_err_t NRFJPROG_connect_to_emu_without_snr_inst(nrfjprog_inst_t instance, uint32_t clock_speed_in_khz);
 nrfjprogdll_err_t NRFJPROG_connect_to_emu_without_snr(uint32_t clock_speed_in_khz);
+
+
+/**
+ * @brief   Connects to a given emulator/debugger
+ *
+ * @details Connect to an emulator over IP. The target emulator can be specified either by hostname and port, OR by serial number.
+ *          When a hostname is provided, the serial number argument is ignored.
+ *
+ *          The hostname c-string can be an IPv4 address or hostname. IPv6 is currently not supported. The hostname can also be used to
+ *          connect to a JLink emulator that is connected in tunnel mode.
+ *          Example of hostname strings:
+ *              IPv4: "192.168.0.1"
+ *              Hostname: "myserver.com", "localhost"
+ *              Tunnel: "tunnel:123456789:test:jlink-europe.segger.com"
+ *
+ *          In the tunnel example above a devkit with serial number '123456789' is connected to the official jlink-europe.segger.com tunnel server using the
+ *          J-Link remote Server application with password "test". Read more about JLink Remote Server here https://wiki.segger.com/J-Link_Remote_Server .
+ *
+ *          If a serial number is passed while hostname is NULL, the serial number will be looked for in a list of JLink emulators that has been discovered on the network.
+ *          Note that not all network sessions are discoverable. Generally, debug probes with built in Ethernet/Wi-Fi support are automatically discoverable,
+ *          but sessions created through the JLink Remote Server application are not. The list of discovered network debuggers can be retrieved using function
+ *          NRFJPROG_enum_emu_con_info().
+ *
+ *          Not specifying hostname nor serial number will result in a pop-up window appearing for the user to make a selection. This is done by passing NULL for 'ip'
+ *          and NRFJPROG_INVALID_EMU_SNR for 'serial_number'. NRFJPROG_INVALID_EMU_SNR is defined in DllCommonDefinitions.h.
+ *
+ *          Tip: The function NRFJPROG_read_connected_emu_snr() can be used to check the serial number of an emulator after connecting.
+ *
+ * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
+ * @pre     Before the execution of this function, a connection to the emulator must not be established. To disconnect from an emulator, see NRFJPROG_disconnect_from_emu() function.
+ * @pre     Before the execution of this function, the emulator must be physically connected to a powered board.
+ *
+ * @post    After the execution of this function, the PC will be connected to an emulator. To disconnect to the emulator, see NRFJPROG_disconnect_from_emu() and NRFJPROG_close_dll() functions.
+ *
+ * @param   instance                            A handle to an open nrfjprog instance.
+ * @param   hostname                            The hostname/IP address to connect to (C-string). Can be NULL.
+ * @param   port                                Specifies which port to use when connecting. Only applies when the 'hostname' parameter is set. Pass '0' for default port (19020).
+ * @param   serial_number                       Serial number of the emulator to connect to. Pass NRFJPROG_INVALID_EMU_SNR for no serial number.
+ * @param   clock_speed_in_khz                  Speed for the SWD communication. It must be between JLINKARM_SWD_MIN_SPEED_KHZ
+ *                                              and JLINKARM_SWD_MAX_SPEED_KHZ defined in DllCommonDefinitions.h. If the emulator
+ *                                              does not support the input clock_speed, the emulators maximum supported speed
+ *                                              will be used.
+ *
+ * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() has already been called.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
+ * @retval  LOW_VOLTAGE                         Low voltage was detected at the target device.
+ * @retval  INVALID_PARAMETER                   The clock_speed_in_khz parameter is not within limits.
+ */
+nrfjprogdll_err_t NRFJPROG_connect_to_emu_with_ip_inst(nrfjprog_inst_t instance, const char * hostname, uint16_t port, uint32_t serial_number, uint32_t clock_speed_in_khz);
+nrfjprogdll_err_t NRFJPROG_connect_to_emu_with_ip(const char * hostname, uint16_t port, uint32_t serial_number, uint32_t clock_speed_in_khz);
 
 
 /**
@@ -811,6 +893,33 @@ nrfjprogdll_err_t NRFJPROG_sys_reset(void);
 nrfjprogdll_err_t NRFJPROG_pin_reset_inst(nrfjprog_inst_t instance);
 nrfjprogdll_err_t NRFJPROG_pin_reset(void);
 
+/**
+ * @brief   Executes a hard reset.
+ *
+ * @details Executes a hard reset by turning on the watchdog timer with a 1 ms timeout, and disconnecting from the device before the 1 ms has passed.
+ *          Devices with hardened AP protect will be protected after this operation.
+ *
+ * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
+ * @pre     Before the execution of this function, a connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Before the execution of this function, access port protection must be disabled. To disable access port protection, see NRFJPROG_recover() function.
+ *
+ * @post    After the execution of this function, the device will not be in debug interface mode. To enter debug interface mode, see NRFJPROG_connect_to_device() function.
+ * @post    After the execution of this function, the emulator will be disconnected from the device. To connect to the device, see NRFJPROG_connect_to_device() function.
+ * @post    After the execution of this function, the trace and debug resources will be switched off. To switch on the debug resources, see NRFJPROG_connect_to_device() function.
+ * @post    After the execution of this function, the device CPU will be running. To halt the device CPU, see NRFJPROG_halt() function.
+ *
+ * @param   instance                            A handle to an open nrfjprog instance.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
+ * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
+ * @retval  WRONG_FAMILY_FOR_DEVICE             The device connected is not an NRF52.
+ */
+nrfjprogdll_err_t NRFJPROG_hard_reset_inst(nrfjprog_inst_t instance);
+nrfjprogdll_err_t NRFJPROG_hard_reset(void);
 
 /**
  * @brief   Disables BPROT.
@@ -1975,8 +2084,11 @@ nrfjprogdll_err_t NRFJPROG_rtt_read_channel_info(uint32_t channel_index, rtt_dir
 /**
  * @brief   Checks if the QSPI peripheral is initialized.
  *
- * @details Checks if the NRFJPROG_qspi_init() function has been called since the last call to NRFJPROG_qspi_uninit() or since the loading of this dll. If the device does not
- *          have a QSPI peripheral, false is returned.
+ * @details Checks if the NRFJPROG_qspi_init() function has been called since the last call to NRFJPROG_qspi_uninit() or since the loading of this dll.
+ *          The physical state of the QSPI peripheral is also read from the device to check if it has been reset/uninitialized by an external source. For example,
+ *          resetting the device will also reset the QSPI peripheral, and any configuration applied in NRFJPROG_qspi_init() will be lost.
+ *
+ *          If the device does not have a QSPI peripheral, false is returned.
  *
  * @pre     Before the execution of this function, the dll must be open. To open the dll, see NRFJPROG_open_dll() function.
  *
@@ -1986,6 +2098,12 @@ nrfjprogdll_err_t NRFJPROG_rtt_read_channel_info(uint32_t channel_index, rtt_dir
  * @retval  SUCCESS
  * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
  * @retval  INVALID_PARAMETER                   The initialized parameter is null.
+ * @retval  INVALID_DEVICE_FOR_OPERATION        The version of the connected device does not support this operation.
+ * @retval  WRONG_FAMILY_FOR_DEVICE             The device connected is not an NRF53 device.
+ * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback protection.
+ * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
  */
 nrfjprogdll_err_t NRFJPROG_is_qspi_init_inst(nrfjprog_inst_t instance, bool * initialized);
 nrfjprogdll_err_t NRFJPROG_is_qspi_init(bool * initialized);

@@ -13,6 +13,7 @@ class NrfjprogdllErr(enum.IntEnum):
 
     """
     SUCCESS                                     =    0
+    
     OUT_OF_MEMORY                               =   -1
     INVALID_OPERATION                           =   -2
     INVALID_PARAMETER                           =   -3
@@ -52,15 +53,19 @@ class NrfjprogdllErr(enum.IntEnum):
     NRFJPROG_SUB_DLL_NOT_FOUND                  = -150
     NRFJPROG_SUB_DLL_COULD_NOT_BE_OPENED        = -151
     NRFJPROG_SUB_DLL_COULD_NOT_LOAD_FUNCTIONS   = -152
+    NRFJPROG_HOST_EXE_NOT_FOUND                 = -153
 
     VERIFY_ERROR                                = -160
     RAM_IS_OFF_ERROR                            = -161
-    FILE_OPERATION_FAILED                       = -162
 
+    FILE_OPERATION_FAILED                       = -162
     FILE_PARSING_ERROR                          = -170
     FILE_UNKNOWN_FORMAT_ERROR                   = -171
     FILE_INVALID_ERROR                          = -172
     UNKNOWN_MEMORY_ERROR                        = -173
+    CONFIG_TYPE_ERROR                           = -174
+    CONFIG_SYNTAX_ERROR                         = -175
+    CONFIG_PROPERTY_MISSING_ERROR               = -176
 
     PYTHON_ALREADY_INSTANTIATED_ERROR           = -200
 

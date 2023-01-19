@@ -13,47 +13,37 @@ typedef enum
     IPCEVENT_FAULT,
     IPCEVENT_COMMAND,
     IPCEVENT_DATA
-}nrfdfu_ipc_event_t;
+} nrfdfu_ipc_event_t;
 
 typedef struct
 {
     uint32_t id[10];
-}ipc_dfu_id_t;
-
-typedef struct
-{
-    union
-    {
-        uint8_t bytes[32];
-        uint32_t words[8];
-    };
-}digest_buffer_t;
+} ipc_dfu_id_t;
 
 /* Old definition kept for backwards compatibility. */
 typedef nrfjprog_inst_t connection_handle_t;
-
 
 /**
  * @brief   Deprecated, use nrfjprog.dll
  *
  * @retval  NOT_IMPLEMENTED_ERROR
  */
-nrfjprogdll_err_t NRFDFU_connect_to_ipc_target(nrfjprog_inst_t * handle,
-                                               const char * jlink_path_cstr,
-                                               device_family_t family,
-                                               coprocessor_t coprocessor,
-                                               uint32_t snr,
-                                               uint32_t swd_frequency,
-                                               msg_callback_ex * callback,
-                                               void * param,
-                                               void * prog_cb);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_connect_to_ipc_target(nrfjprog_inst_t * handle,
+                                                            const char * jlink_path_cstr,
+                                                            device_family_t family,
+                                                            coprocessor_t coprocessor,
+                                                            uint32_t snr,
+                                                            uint32_t swd_frequency,
+                                                            msg_callback_ex * callback,
+                                                            void * param,
+                                                            void * prog_cb);
 
 /**
  * @brief   Initialize MCUBoot DFU connection.
  *
  * @details Initializes connection and starts the DFU session with the device.
  *
- * @post    After the execution of this function, the initial settings for the DFU will be activated.
+ * @post    The initial settings for the DFU will be activated.
  *
  * @param   handle                              Pointer to connection handle to initialize
  * @param   serial_port                         Serial port to connect to.
@@ -70,20 +60,20 @@ nrfjprogdll_err_t NRFDFU_connect_to_ipc_target(nrfjprog_inst_t * handle,
  * @retval  FILE_OPERATION_FAILED               Failed to make temporary files.
  * @retval  TIME_OUT                            The operation timed out.
  */
-nrfjprogdll_err_t NRFDFU_connect_to_mcuboot_target(nrfjprog_inst_t * handle,
-                                                   const char * serial_port,
-                                                   const uint32_t baud_rate,
-                                                   const uint32_t response_timeout,
-                                                   msg_callback_ex * callback,
-                                                   void * param,
-                                                   void * prog_cb);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_connect_to_mcuboot_target(nrfjprog_inst_t * handle,
+                                                                const char * serial_port,
+                                                                const uint32_t baud_rate,
+                                                                const uint32_t response_timeout,
+                                                                msg_callback_ex * callback,
+                                                                void * param,
+                                                                void * prog_cb);
 
 /**
  * @brief   Initialize Modem UART DFU connection.
  *
  * @details Initializes connection and starts the DFU session with the device.
  *
- * @post    After the execution of this function, the initial settings for the DFU will be activated.
+ * @post    The initial settings for the DFU will be activated.
  *
  * @param   handle                              Pointer to connection handle to initialize
  * @param   serial_port                         Serial port to connect to.
@@ -100,13 +90,13 @@ nrfjprogdll_err_t NRFDFU_connect_to_mcuboot_target(nrfjprog_inst_t * handle,
  * @retval  SERIAL_PORT_RESOURCE_ERROR          Unable to open serial port.
  * @retval  TIME_OUT                            The operation timed out.
  */
-nrfjprogdll_err_t NRFDFU_connect_to_modemdfu_target(nrfjprog_inst_t * handle,
-                                                    const char * serial_port,
-                                                    const uint32_t baud_rate,
-                                                    const uint32_t response_timeout,
-                                                    msg_callback_ex * callback,
-                                                    void * param,
-                                                    void * prog_cb);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_connect_to_modemdfu_target(nrfjprog_inst_t * handle,
+                                                                 const char * serial_port,
+                                                                 const uint32_t baud_rate,
+                                                                 const uint32_t response_timeout,
+                                                                 msg_callback_ex * callback,
+                                                                 void * param,
+                                                                 void * prog_cb);
 
 /**
  * @brief   Closes the connection to the underlying DLLs.
@@ -117,12 +107,12 @@ nrfjprogdll_err_t NRFDFU_connect_to_modemdfu_target(nrfjprog_inst_t * handle,
  *
  * @param   handle                              An initialized connection handle
  *
- * @post    After the execution of this function, connection will be closed and 
+ * @post    The connection will be closed, and the handle invalidated.
  *
  * @retval  SUCCESS
  * @retval  INVALID_PARAMETER                   The handle parameter is NULL.
  */
-nrfjprogdll_err_t NRFDFU_close_connection(nrfjprog_inst_t * handle);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_close_connection(nrfjprog_inst_t * handle);
 
 /**
  * @brief   Programs the provided zip file
@@ -141,7 +131,7 @@ nrfjprogdll_err_t NRFDFU_close_connection(nrfjprog_inst_t * handle);
  * @retval                                      The package_path points to a file without reading rights.
  * @retval  FILE_OPERATION_FAILED               Failed to make temporary files.
  */
-nrfjprogdll_err_t NRFDFU_program_package(nrfjprog_inst_t handle, const char * package_path);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_program_package(nrfjprog_inst_t handle, const char * package_path);
 
 /**
  * @brief   Programs using the list of files provided
@@ -160,7 +150,7 @@ nrfjprogdll_err_t NRFDFU_program_package(nrfjprog_inst_t handle, const char * pa
  * @retval                                      The paths points to a file without reading rights.
  * @retval  FILE_OPERATION_FAILED               Failed to make temporary files.
  */
-nrfjprogdll_err_t NRFDFU_program_files(nrfjprog_inst_t handle, const char ** paths, uint32_t num_files);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_program_files(nrfjprog_inst_t handle, const char ** paths, uint32_t num_files);
 
 /**
  * @brief   Verifies target firmware.
@@ -179,7 +169,7 @@ nrfjprogdll_err_t NRFDFU_program_files(nrfjprog_inst_t handle, const char ** pat
  * @retval                                      The package_path points to a file without reading rights.
  * @retval  FILE_OPERATION_FAILED               Failed to make temporary files.
  */
-nrfjprogdll_err_t NRFDFU_verify_package(nrfjprog_inst_t handle, const char * package_path);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_verify_package(nrfjprog_inst_t handle, const char * package_path);
 
 /**
  * @brief   Updates, and verifies target.
@@ -198,7 +188,7 @@ nrfjprogdll_err_t NRFDFU_verify_package(nrfjprog_inst_t handle, const char * pac
  * @retval                                      The paths points to a file without reading rights.
  * @retval  FILE_OPERATION_FAILED               Failed to make temporary files.
  */
-nrfjprogdll_err_t NRFDFU_verify_files(nrfjprog_inst_t handle, const char ** paths, uint32_t num_files);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_verify_files(nrfjprog_inst_t handle, const char ** paths, uint32_t num_files);
 
 /**
  * @brief   Read part of the target firmware to a buffer.
@@ -217,40 +207,40 @@ nrfjprogdll_err_t NRFDFU_verify_files(nrfjprog_inst_t handle, const char ** path
  * @retval                                      The length parameter is not larger than 0.
  * @retval                                      The length parameter is not a multiple of 4.
  */
-nrfjprogdll_err_t NRFDFU_read(nrfjprog_inst_t handle, uint32_t address, uint8_t * buffer, uint32_t length);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_read(nrfjprog_inst_t handle, uint32_t address, uint8_t * buffer, uint32_t length);
 
 /**
  * @brief   Deprecated
  *
  * @retval  INVALID_OPERATION
  */
-nrfjprogdll_err_t NRFDFU_IPC_get_event_status(nrfjprog_inst_t handle, nrfdfu_ipc_event_t event, bool * status);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_IPC_get_event_status(nrfjprog_inst_t handle,
+                                                           nrfdfu_ipc_event_t event,
+                                                           bool * status);
 
 /**
  * @brief   Deprecated
  *
  * @retval  INVALID_OPERATION
  */
-nrfjprogdll_err_t NRFDFU_IPC_acknowledge_event(nrfjprog_inst_t handle, nrfdfu_ipc_event_t event);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_IPC_acknowledge_event(nrfjprog_inst_t handle, nrfdfu_ipc_event_t event);
 
 /**
  * @brief   Deprecated
  *
  * @retval  INVALID_OPERATION
  */
-nrfjprogdll_err_t NRFDFU_IPC_read_id(nrfjprog_inst_t handle, ipc_dfu_id_t * id);
-
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_IPC_read_id(nrfjprog_inst_t handle, ipc_dfu_id_t * id);
 
 /**
  * @brief   Deprecated
  *
  * @retval  INVALID_OPERATION
  */
-nrfjprogdll_err_t NRFDFU_IPC_read_digest(nrfjprog_inst_t handle, digest_buffer_t * digest);
+NRFJPROG_API nrfjprogdll_err_t NRFDFU_IPC_read_digest(nrfjprog_inst_t handle, void * digest);
 
 #if defined(__cplusplus)
 }
 #endif
 
 #endif /* NRFDFU_H */
-

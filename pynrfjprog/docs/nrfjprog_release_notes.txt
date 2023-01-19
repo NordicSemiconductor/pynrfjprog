@@ -1,3 +1,232 @@
+Release 10.18.0
+Changelog
+--------------------------------------
+- (Release) Update J-Link installers to v7.80c
+- (Release) nRF Command Line Tools for Linux now target GLIBC version 2.31 and up.
+- (Release) Linux installer - Fixed issue where installer prerm script would fail if no nrf command line tools install existed beforehand.
+- (Release) Segger J-Link installation may be skipped during Windows installation by passing NoSegger=1 as a parameter to the install executable.
+            Example: "nRF-Command-Line-Tools-10.18.0-x64.exe NoSegger=1"
+
+- (WindowsRelease) Moved the order of package installation so that VCRedist installation is performed last in order to prevent reboot in the middle of installation.
+- (WindowsRelease) 32-bit package renamed to "nRF-Command-Line-Tools (32-bit)" to make the package distinguishable from 64-bit installs.
+
+- (MacOSRelease) Fix issue where nrf-command-line-tools .pkg installer required people to install Rosetta2 on Arm Macs.
+
+- (nrfjprog.exe) nrfjprog.exe now prints progress bars for longer operations.
+- (nrfjprog.exe) On Windows, fix issue where debug probe selector pop up did not appear when multiple debug probes were present and --snr was not specified. Introduced in 10.17.0.
+
+- (nrfjprogdll) Fixed issue where connecting to a debug probe that is not connected to a device would always fail.
+- (nrfjprogdll) Improve progress logging. Longer operations like NRFJPROG_program_file, NRFJPROG_erase_file etc. will now log json datagrams containing progress information at the info level.
+- (nrfjprogdll) Add support for callback-based asynchronous rtt handling through new methods NRFJPROG_rtt_async_start(), 
+                    NRFJPROG_rtt_async_stop(), NRFJPROG_rtt_async_flush(), NRFJPROG_rtt_async_write().
+- (nrfjprogdll) Add configuration option to control NRFJPROG_rtt_stop behavior. 
+                Setting "invalidate_control_block_on_stop=false" via NRFJPROG_configure allows rtt sessions to be started and stopped without resetting the target device, 
+                but may cause issues in cases where rtt control block is moved between sessions. 
+- (nrfjprogdll) It's now possible to call NRFJPROG_rtt_set_control_block_address when an rtt session is already started. 
+                As a side effect, the address set by NRFJPROG_rtt_set_control_block_address applies until the next time NRFJPROG_disconect_from_device is called. 
+                Previously the value was cleared on NRFJPROG_rtt_stop() and NRFJPROG_disconect_from_device().
+- (nrfjprogdll) On Windows, fix issue where debug probe selector pop up did not appear when executing NRFJPROG_connect_to_emu_without_snr with multiple debug probes present. Introduced in 10.17.0.
+- (nrfjprogdll) nRF5340 xxAA rev1 and engd are now identified as rev1 rather than engd.
+- (nrfjprogdll) Added function NRFJPROG_read_cpu_architecture_inst for getting architecture of currently selected coprocessor.
+
+- (pynrfjprog) Add support for asyncio stream-based RTT handling with module RTTAsyncIO.py.
+- (pynrfjprog) Add example code for synchronous, asynchronous, and asyncio-based RTT functionality.
+- (pynrfjprog) Clean up all example code to use best practices relating to creating apis and programming files.
+- (pynrfjprog) Due to new asyncio dependencies, pynrfjprog is no longer guaranteed to support python 3.6.
+- (pynrfjprog) Added function read_cpu_architecture for getting architecture of currently selected coprocessor.
+
+Release 10.17.3
+Changelog
+--------------------------------------
+- (pynrfjprog) Fixed bug where NRFJPROG_read_cpu_register(), and NRFJPROG_write_cpu_register() would always fail.
+
+- (nrfjprog.exe) Fixed bug where updating modem FW for nrf91 would always time out
+
+Release 10.17.2
+Changelog
+--------------------------------------
+- (Release) Removed J-Link install from post-install script.
+
+
+Release 10.17.1
+Changelog
+--------------------------------------
+- (nrfjprog.dll) Fix issue for nRF52 series with hardened AP-protect, where AP-protect would not stay disabled when requested.
+
+
+Release 10.17.0
+Changelog
+--------------------------------------
+- (Release) Remove jlinkarm_nrf51_nrfjprogdll.h, jlinkarm_nrf52_nrfjprogdll.h, jlinkarm_nrf53_nrfjprogdll.h, and jlinkarm_nrf91_nrfjprogdll.h. 
+            The information contained in these headers is now combined in nrfjprogdll.h.
+- (Release) Deprecate jlinkarm_nrf51_nrfjprogdll, jlinkarm_nrf52_nrfjprogdll, jlinkarm_nrf53_nrfjprogdll, and jlinkarm_nrf91_nrfjprogdll shared libraries.
+            These libraries have been limited duplicates of nrfjprogdll.h for some time, and will be removed in a future version of nrfjprog.
+            No further family-specific shared libraries will be made.
+
+- (pynrfjprog) setup.py includes a post-install script to ensure the jlinkarm_nrf_worker is executable
+
+- (nrfjprog.exe) Add support for toml configuration files. These files combine the properties currently found in nrfjprog.ini and QspiDefault.ini.
+- (nrfjprog.exe) Deprecate .ini config files.
+- (nrfjprog.exe) Add --storeconfig <path_to_toml_file>, which stores the currently loaded configuration to the selected file in toml format. 
+                    Use this to translate your existing custom .ini files if needed.
+- (nrfjprog.exe) Allow user to configure log behavior through toml configuration file.
+- (nrfjprog.exe) Add support for setting readback protection types SECURE and BOTH with --rbp.
+
+- (nrfjprog.dll) Introduce configuration options approtect.write_uicr_approtect, approtect.verify_uicr_approtect, and approtect.install_unlock_image. 
+                    See share/nrfjrpog.toml in your install directory for usage instructions.
+- (nrfjprog.dll) Introduce NRFJPROG_configure(). This method allows the user to configure internal behavior using a toml-formatted configuration file.
+- (nrfjprog.dll) Allow user to configure log behavior through toml configuration file.
+- (nrfjprog.dll) When calling NRFJPROG_connect_to_emu_without_snr() in a headless environment the J-Link library could get stuck trying to show the 
+                    debug probe selection dialog. nrfjprog will try to detect this condition and select the first available debug probe instead.
+                    nrfjprog considers the environment headless if neither DISPLAY or WAYLAND_DISPLAY environment variables are set in a unix operating system.
+- (nrfjprog.dll) Corrected return value for NRFJPROG_readback_protect() from INVALID_PARAMETER to INVALID_DEVICE_FOR_OPERATION when an invalid readback protection status is provided.
+- (nrfjprog.dll) NRFJPROG_erase_page no longer returns NOT_AVAILABLE_BECAUSE_BPROT in case bprot mechanisms are enabled, instead it disables the bprot and continues.
+- (nrfjprog.dll) Fix issue where NRFJPROG_is_bprot_enabled did not correctly detect MPU protection in some cases.
+
+
+Release 10.16.0
+Changelog
+--------------------------------------
+- (Release) Update J-Link installers to v7.66a
+- (Release) Changed architecture of RPM installer from amd64 to x86_64.
+
+- (nrfjprog.exe) Added missing registers in readregs command for Cortex-M33 and Cortex-M4 targets.
+- (nrfjprog.exe) Add support for specifying register(s) to read in readregs command.
+- (nrfjprog.exe) Fix issue where devices with updated approtect failed in --verify if hex file covered UICR->APPROTECT or UICR->SECUREAPPROTECT.
+- (nrfjprog.exe) Fix issue where --qspisectorerase did not erase pages from the external memory.
+- (nrfjprog.exe) Fixed issue where nRF51 recover could become stuck and fail when using J-Link version v7.58e and newer.
+- (nrfjprog.exe) Changed minimum allowed value of --clockspeed argument from 125kHz to 4kHz.
+- (nrfjprog.exe) Fix issue where generated .bin files became too large.
+
+- (nrfjprog.dll) Added missing register enumerators for cpu_registers_t enumerator.
+- (nrfjprog.dll) Support new registers in NRFJPROG_read_cpu_register and NRFJPROG_write_cpu_register methods.
+- (nrfjprog.dll) Fix issue where devices with updated approtect failed in verify_file if hex file covered UICR->APPROTECT or UICR->SECUREAPPROTECT.
+- (nrfjprog.dll) Check device voltage when connecting to device instead of when connecting to debug probe.
+                 This fixes an issue where some methods would fail when connecting to a debug probe with no connected device.
+- (nrfjprog.dll) Fix issue where NRFJPROG_pin_reset() could lead to a fault state where no further commands succeeded on nRF51
+                 devices with J-Link version 7.58e and newer.
+- (nrfjprog.dll) Fixed issue where NRFJPROG_erase_file did not erase external memory with qspi_erase_mode set to ERASE_PAGES.
+- (nrfjprog.dll) Fixed issue where nRF51 recover could become stuck and fail when using J-Link version v7.58e and newer.
+- (nrfjprog.dll) Changed JLINKARM_SWD_MIN_SPEED_KHZ from 125kHz to 4kHz in DllCommonDefinitions.h
+
+- (pynrfjprog) In Lowlevel API, support new registers in read_cpu_register and write_cpu_register methods.
+- (pynrfjprog) In Lowlevel API, fixed erase_file not erasing external memory when using qspi erase mode set to ERASE_SECTOR.
+- (pynrfjprog) Fixed issue where pynrfjprog did not bundle the nrfdfu shared library.
+- (pynrfjprog) Fixed issue where nRF51 recover could become stuck and fail when using J-Link version v7.58e and newer.
+- (pynrfjprog) Parameters.py: Added values from DllCommonDefinitions.h: JLINKARM_SWD_MIN_SPEED_KHZ, JLINKARM_SWD_DEFAULT_SPEED_KHZ, and JLINKARM_SWD_MAX_SPEED_KHZ.
+
+- (highleveldll) Fixed issue where NRFJPROG_get_connected_probes may return wrong serial number.
+- (highleveldll) Fixed issue where NRFJPROG_program did not erase external memory when using program option ERASE_PAGES for qspi_erase_mode.
+- (highleveldll) Fixed issue where nRF51 recover could become stuck and fail when using J-Link version v7.58e and newer.
+
+- (WindowsRelease) Fixed issue where J-Link installer was not always triggered when needed.
+
+Release 10.15.4
+Changelog
+--------------------------------------
+- (pynrfjprog) Fixed issue introduced in 10.15.3 where pynrjfprog did not install shared libraries for some architectures.
+
+- (nrfjprog.dll) Fixed issue where NRF52833_xxAA_REV2 weren't correctly identified.
+- (nrfjprog.dll) Fixed issue where the program to keep hardened ap-protect devices open after recover was not working as intended.
+
+Release 10.15.3
+Changelog
+--------------------------------------
+- (Release) Provide support for Linux ARM64.
+- (Release) Include JLink installers with the RPM file type for x86_64 architecture.
+
+- (nrfjprog.dll) Added logging of the progress of modem updates in nrf91 family devices.
+- (nrfjprog.dll) Fixed issue where NRF52810_xxAA_REV3, NRF52811_xxAA_REV2, NRF52805_xxAA_REV2, and NRF52820_xxAA_REV3 weren't correctly identified.
+- (nrfjprog.dll) Fixed issue where certain nrf52 devices weren't treated as having hardened ap-protect when identified as revision FUTURE.
+- (nrfjprog.dll) Optimized QSPI reading algorithm.
+
+- (pynrfjprog) Fixed issue where logging handles were not closed when the API was closed.
+
+- (pynrfjprog) Fixed bug where all log messages from different instances of the same API were written to the log files of all of the instances.
+
+Release 10.15.2
+Changelog
+--------------------------------------
+- (nrfjprog.exe) Fixed issue where --program printed "Verified OK" even if no verification was requested.
+- (nrfjprog.exe) Updated bundled modem UART DFU firmware for Thingy:91 board to "nrf9160_pca20035_firmware_upgrade_app_0.1.1.hex".
+                    The updated fixes a compatibility issue where the app would not work with bootloaders built with NCS 1.5.0 and newer.
+
+- (pynrfjprog) Updated bundled modem UART DFU firmware for Thingy:91 board to "nrf9160_pca20035_firmware_upgrade_app_0.1.1.hex".
+                The updated fixes a compatibility issue where the app would not work with bootloaders built with NCS 1.5.0 and newer.
+
+Release 10.15.1
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v7.58b
+
+- (nrfjprog.exe) Fixed wrong values displayed in error log message after hex file verification failure (with --log).
+- (nrfjprog.exe) Fixed issue where a simultaneous --recover and --program would fail if device was protected.
+- (nrfjprog.exe) Fixed issue where some error messages would display the chosen coprocessor as a number instead of a string.
+
+- (nrfjprog.dll) Fixed wrong values displayed in error log message after hex file verification failure.
+- (nrfjprog.dll) On Windows, a cmd popup will no longer appear when using the DLL from a GUI program.
+
+- (highleveldll) Fixed wrong values displayed in error log message after hex file verification failure.
+- (highleveldll) On Windows, a cmd popup will no longer appear when using the DLL from a GUI program.
+
+- (pynrfjprog) Fixed wrong values displayed in error log message after hex file verification failure.
+- (pynrfjprog) Added armhf libraries.
+
+Release 10.15.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v7.56a
+
+- (OSXRelease) Fixed issue where "J-Link installer for Mac M1" link in .dmg installed Intel version.
+- (OSXRelease) Fixed broken J-Link installer for Mac M1.
+- (OSXRelease) Notarized .dmg files to prevent Gatekeeper from blocking install.
+- (OSXRelease) Log a warning when nRFJProg tries to load the JLink library in Rosetta 2 mode.
+
+- (nrfjprog.exe) Added option "--ip" and "--port" for connecting to a network enabled debugger.
+- (nrfjprog.exe) Added option "--iface" that can be used to specify which interface to use search for debuggers (IP and/or USB).
+- (nrfjprog.exe) Added option "--expand" that will make "--ids" print additional information. This option can be used to find
+                 the IP and MAC address of network discovered debuggers/emulators.
+- (nrfjprog.exe) Added option "--force" to skip confirmation questions.
+- (nrfjprog.exe) Added option "--hardreset" for NRF52 family devices to reset the device using the watchdog timer. 
+                 This option can be used to protect devices with hardened AP protect without using pin reset.
+- (nrfjprog.exe) Fixed issue where external memory (QSPI) programming algorithms did not check to see if bprot / spu protections were enabled for the read / write buffers located in RAM.
+- (nrfjprog.exe) Fixed issue where --pinresetenable wrote the wrong value to UICR->PSELRESET for some device revisions.
+- (nrfjprog.exe) Bug where --verify cast an exception if given a .bin file, fixed.
+- (nrfjprog.exe) Fixed issue where not all sections were included when parsing an elf file.
+- (nrfjprog.exe) For OSX M1 machines, fixed bug where in some cases QSPI operations would stall.
+- (nrfjprog.exe) FlashNotErasedError will no longer be raised when writing to non-empty addresses.
+                 nRFJProg will serve a prompt to ask for confirmation to continue writing to a non-empty address.
+                 The prompt may be skipped using the "--force" option.
+
+- (nrfjprog.dll) Added function NRFJPROG_connect_to_emu_with_ip() for connecting to a network enabled debugger.
+- (nrfjprog.dll) Added function NRFJPROG_enum_emu_con_info() for getting a list of emulators discovered by J-Link DLL.
+- (nrfjprog.dll) Added definition for NRFJPROG_INVALID_EMU_SNR to DllCommonDefinitions.h, that defines an invalid debugger/emulator serial number.
+- (nrfjprog.dll) Added definition for types emu_con_info_t and emu_connection_t to DllCommonDefinitions.h. These are used with the new function NRFJPROG_enum_emu_con_info().
+- (nrfjprog.dll) Added function NRFJPROG_hard_reset() to perform a hard reset without using pin reset for NRF52 family devices.
+- (nrfjprog.dll) Fixed issue where external memory (QSPI) programming algorithms did not check to see if bprot / spu protections were enabled for the read / write buffers located in RAM.
+- (nrfjprog.dll) Updated function NRFJPROG_is_qspi_init() to also check the state of the QSPI peripheral of the connected device.
+- (nrfjprog.dll) Bug where verify_file() cast an exception if given a .bin file, fixed.
+- (nrfjprog.dll) Fixed issue where not all sections were included when parsing an elf file.
+- (nrfjprog.dll) For OSX M1 machines, fixed bug where in some cases QSPI operations would stall.
+
+- (pynrfjprog) LowLevel.py: Added function connect_to_emu_with_ip for connecting to a network enabled debugger.
+- (pynrfjprog) LowLevel.py: Added function hard_reset to perform a hard reset without using pin reset for NRF52 family devices.
+- (pynrfjprog) LowLevel.py: Added function enum_emu_con_info for getting a list of emulators discovered by J-Link DLL.
+- (pynrfjprog) LowLevel.py: Updated function is_qspi_init() to also check the state of the QSPI peripheral of the connected device.
+- (pynrfjprog) HighLevel.py: Added a new reset action RESET_HARD to perform a hard reset for NRF52 family devices.
+- (pynrfjprog) HighLevel.py: InvalidOperationError will no longer be raised when writing to non-empty addresses.
+- (pynrfjprog) Parameters.py: Added definitions for NRFJPROG_INVALID_EMU_SNR, EMUConnection, and EMUConInfo to reflect changes in DllCommonDefinitions.h.
+- (pynrfjprog) Fixed issue where not all sections were included when parsing an elf file.
+- (pynrfjprog) For OSX M1 machines, fixed bug where in some cases QSPI operations would stall.
+- (pynrfjprog) Fixed search order in highlevel_program example.
+- (pynrfjprog) Fixed search order in program example.
+
+- (highleveldll) Fixed issue where sending a zip file to program() while using ModemUARTDFUProbe, would fail.
+- (highleveldll) Fixed issue where external memory (QSPI) programming algorithms did not check to see if bprot / spu protections were enabled for the read / write buffers located in RAM.
+- (highleveldll) For OSX M1 machines, fixed bug where in some cases QSPI operations would stall.
+- (highleveldll) InvalidOperationError will no longer be raised when writing to non-empty addresses.
+
+
 Release 10.14.0
 Changelog
 --------------------------------------

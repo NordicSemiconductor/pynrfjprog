@@ -58,8 +58,10 @@ import os
 # Import pynrfjprog HighLevel API module
 try:
     from .. import HighLevel
-except Exception:
+except ImportError:
     from pynrfjprog import HighLevel
+
+from . import hex_files
 
 
 def run(serial_device_name_uart0, serial_device_name_uart1, nrf9160_modem_firmware_zip_location):
@@ -72,16 +74,16 @@ def run(serial_device_name_uart0, serial_device_name_uart1, nrf9160_modem_firmwa
     """
     # Verify that the firmware zip exists
     if not os.path.exists(nrf9160_modem_firmware_zip_location):
-        raise Exception("Invalid path to modem firmware zip file provided. Skipping nrf9160 modem device firmware upgrade example.")
+        raise FileNotFoundError(
+            "Invalid path to modem firmware zip file provided. Skipping nrf9160 modem device firmware upgrade example."
+        )
 
-    print('# nrf9160 modem firmware upgrade over serial port example started...')
+    print("# nrf9160 modem firmware upgrade over serial port example started...")
 
     # Configure logging to see HighLevel API output
     logging.basicConfig(level=logging.INFO, format="%(message)s")
 
-    # Find the hex file to flash. It should be located in the same directory as this example file.
-    module_dir, _ = os.path.split(__file__)
-    hex_file_path = os.path.join(os.path.abspath(module_dir), r"nrf9160_pca20035_firmware_upgrade_app_0.1.0.hex")
+    hex_file_path = hex_files.find_thingy91_modem_update_hex()
 
     # Create our API instance
     with HighLevel.API() as api:
@@ -101,14 +103,13 @@ def run(serial_device_name_uart0, serial_device_name_uart1, nrf9160_modem_firmwa
         print("------------------------------------------------------------")
         print("The operation took {0:.2f} seconds ".format(time.time() - start_time))
 
-    print('# Example done...')
+    print("# Example done...")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("uart0", default=None, help="Serial device name for Thingy:91 UART0 (mcuboot@115200 baud)")
     parser.add_argument("uart1", default=None, help="Serial device name for Thingy:91 UART1")
     parser.add_argument("firmware", default=None, help="Path to nrf9160 modem firmware zip folder")
     args = parser.parse_args()
     run(args.uart0, args.uart1, args.firmware)
-

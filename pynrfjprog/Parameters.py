@@ -11,6 +11,7 @@ import codecs
 import sys
 import os
 import platform
+import ipaddress
 import datetime
 
 
@@ -19,7 +20,11 @@ NRFJPROG_STRING_LENGTH = 256
 NRFJPROG_COM_PER_JLINK = 10
 NRFJPROG_INVALID_ADDRESS = 0xFFFFFFFF
 NRFJPROG_INVALID_RESET_PIN = 0xFFFFFFFF
+NRFJPROG_INVALID_EMU_SNR = 0xFFFFFFFF
 
+JLINKARM_SWD_MIN_SPEED_KHZ = 4
+JLINKARM_SWD_DEFAULT_SPEED_KHZ = 2000
+JLINKARM_SWD_MAX_SPEED_KHZ = 50000
 
 def find_lib_dir():
     this_dir = os.path.dirname(__file__)
@@ -28,6 +33,8 @@ def find_lib_dir():
 
     if platform.machine().startswith('arm') and not os_name.startswith('dar'):
         nrfjprog_dll_folder = 'lib_armhf'
+    elif platform.machine().startswith('aarch') and not os_name.startswith('dar'):
+        nrfjprog_dll_folder = 'lib_arm64'
     else:
         if sys.maxsize > 2 ** 32:
             nrfjprog_dll_folder = 'lib_x64'
@@ -50,6 +57,7 @@ def decode_string(string):
 #                                                                                 #
 ###################################################################################
 
+
 class CallbackHandler(logging.Handler):
     def __init__(self, callback):
         super(CallbackHandler, self).__init__()
@@ -57,6 +65,7 @@ class CallbackHandler(logging.Handler):
 
     def emit(self, record):
         self.callback(record)
+
 
 class ErrorHandler(logging.Handler):
     def __init__(self):
@@ -74,7 +83,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         Setup API's debug output logging mechanism.
 
         """
-        super(LoggerAdapter, self).__init__(logger, id)
+        super(LoggerAdapter, self).__init__(logger, {'id': id})
 
         self.log_cb = None
         self.error_handler = ErrorHandler()
@@ -82,29 +91,30 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         # Enable logging by default
         self.logger.disabled = False
+        
+        def log_filter(record):
+            if self.extra['id'] is None:
+                return False
+            return self.extra['id'] == record.id
+        
+        handlers = []
 
         if log_str_cb is not None:
-            handler = CallbackHandler(log_str_cb)
-            handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
-            self.logger.addHandler(handler)
+            handlers.append(CallbackHandler(log_str_cb))
         if log_stringio is not None:
-            handler = logging.StreamHandler(log_stringio)
-            handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
-            self.logger.addHandler(handler)
-        elif log_file_path is not None:
-            handler = logging.FileHandler(log_file_path)
-            handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
-            self.logger.addHandler(handler)
-        elif not log:
+            handlers.append(logging.StreamHandler(log_stringio))
+        if log_file_path is not None:
+            handlers.append(logging.FileHandler(log_file_path))
+
+        if not log and not handlers:
             # No logging requested, disable log.
             self.logger.disabled = True
 
         if not self.logger.disabled:
-            if log_str is not None:
-                log_str += "%(message)s"
-                formatter = logging.Formatter(log_str)
-                for handler in self.logger.handlers:
-                    handler.setFormatter(formatter)
+            for handler in handlers:
+                handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+                handler.addFilter(log_filter)
+                self.logger.addHandler(handler)
 
             self.log_cb = ctypes.CFUNCTYPE(None, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_void_p)\
                 (
@@ -113,15 +123,16 @@ class LoggerAdapter(logging.LoggerAdapter):
                 )
 
     def set_id(self, id):
-        self.extra = id
+        self.extra['id'] = id
 
     def log_function(self, logger_name, level, msg_str):
         msg = f"[{logger_name}] {msg_str}"
         self.log(NrfjrpogdllLogLevel.get_level_from_value(level), msg)
 
     def process(self, msg, kwargs):
-        if self.extra is not None:
-            return '[%s] %s' % (self.extra, msg), kwargs
+        msg, kwargs = super().process(msg, kwargs)
+        if self.extra['id'] is not None:
+            return '[%s] %s' % (self.extra['id'], msg), kwargs
         else:
             return msg, kwargs
 
@@ -138,8 +149,15 @@ class LoggerAdapter(logging.LoggerAdapter):
 ###################################################################################
 
 # Helper functions for validating data types
+def is_pointer(value):
+    return value is None or (isinstance(value, int) and ctypes.c_void_p(value).value == ctypes.size_t(value).value)
+
 def is_u32(value):
     return isinstance(value, int) and 0 <= value <= 0xFFFFFFFF
+
+
+def is_u16(value):
+    return isinstance(value, int) and 0 <= value <= 0xFFFF
 
 
 def is_u8(value):
@@ -196,6 +214,97 @@ def decode_enum(param, enum_type):
         return param
 
 
+NRFJPROG_ENUM_INFO_IP_LEN = 16
+NRFJPROG_ENUM_INFO_IPV4_LEN = 4
+NRFJPROG_ENUM_INFO_MAC_LEN = 6
+NRFJPROG_ENUM_INFO_PROD_NAME_STR_LEN = 32
+NRFJPROG_ENUM_INFO_NICKNAME_STR_LEN = 32
+NRFJPROG_ENUM_INFO_FW_STR_LEN = 112
+
+
+@enum.unique
+class EMUConnection(enum.IntEnum):
+    """
+    Wraps emu_connection_t values from DllCommonDefinitions.h
+
+    """
+    USB = 1
+    IP  = 2
+
+
+class EMUConInfoStruct(ctypes.Structure):
+    _fields_ = [("serial_number",       ctypes.c_uint32),
+                ("connection_type",     ctypes.c_int),
+                ("ip_addr",             ctypes.c_uint8 * NRFJPROG_ENUM_INFO_IP_LEN),
+                ("hardware_revision",   ctypes.c_uint32),
+                ("mac_addr",            ctypes.c_uint8 * NRFJPROG_ENUM_INFO_MAC_LEN),
+                ("product_name",        ctypes.c_char * (NRFJPROG_ENUM_INFO_PROD_NAME_STR_LEN + 1)),
+                ("nickname",            ctypes.c_char * (NRFJPROG_ENUM_INFO_NICKNAME_STR_LEN + 1)),
+                ("firmware_string",     ctypes.c_char * (NRFJPROG_ENUM_INFO_FW_STR_LEN + 1)),
+                ("num_ip_connections",  ctypes.c_int8),
+                ("_reserved",           ctypes.c_uint32 * 8)]
+
+class EMUConInfo(object):
+    """
+    Wraps emu_con_info_t struct from DllCommonDefinitions.h
+
+    """
+    def __init__(self, emu_con_info):
+        self.serial_number = emu_con_info.serial_number
+        self.connection_type = EMUConnection(emu_con_info.connection_type)
+
+        if self.connection_type == EMUConnection.IP:
+            if self._is_ipv4(emu_con_info.ip_addr):
+                self.ip_addr = ipaddress.ip_address('.'.join('{}'.format(x) for x in emu_con_info.ip_addr[:NRFJPROG_ENUM_INFO_IPV4_LEN]))
+            else:
+                self.ip_addr = ipaddress.ip_address(':'.join('{:02x}{:02x}'.format(x[0], x[1]) for x in zip(*[iter(emu_con_info.ip_addr)]*2)))
+            self.hardware_revision = emu_con_info.hardware_revision
+            self.mac_addr = ':'.join('{:02x}'.format(x) for x in emu_con_info.mac_addr)
+            self.product_name = emu_con_info.product_name.decode("utf-8")
+            self.nickname = emu_con_info.nickname.decode("utf-8")
+            self.fw_string = emu_con_info.firmware_string.decode("utf-8")
+            self.num_ip_connections = emu_con_info.num_ip_connections
+        else:
+            self.ip_addr = None
+            self.hardware_revision = None
+            self.mac_addr = None
+            self.product_name = None
+            self.nickname = None
+            self.fw_string = None
+            self.num_ip_connections = None
+
+    @staticmethod
+    def _is_ipv4(ipv4_bin_arr):
+        # If all except first four bytes are 0, assume IPv4
+        return sum(ipv4_bin_arr[NRFJPROG_ENUM_INFO_IPV4_LEN:]) == 0
+
+    def __repr__(self):
+        sep = "\n"
+        result = f"Serial number:   {self.serial_number}{sep}" + \
+                 f"Connection type: {self.connection_type.name}"
+        if self.connection_type == EMUConnection.IP:
+            num_ip_connections_str = "N/A" if self.num_ip_connections < 0 else str(self.num_ip_connections)
+            result += sep + \
+                 f"IP address:      {self.ip_addr}{sep}" + \
+                 f"Hardware rev:    {self.hardware_revision}{sep}" + \
+                 f"MAC:             {self.mac_addr}{sep}" + \
+                 f"Product name:    {self.product_name}{sep}" + \
+                 f"Nickname:        {self.nickname}{sep}" + \
+                 f"Firmware:        {self.fw_string}{sep}" + \
+                 f"IP connections:  {num_ip_connections_str}"
+        return result
+        
+
+@enum.unique
+class FileInputType(enum.IntEnum):
+    """
+    Wraps file_input_type_t values from DllCommonDefinitions.h
+
+    """
+    FILE_INPUT_PATH   = 0,
+    FILE_INPUT_BUFFER = 1
+
+
 @enum.unique
 class DeviceFamily(enum.IntEnum):
     """
@@ -227,17 +336,22 @@ class DeviceVersion(enum.IntEnum):
     NRF51801_xxAB_REV3      = 17
 
     NRF52805_xxAA_REV1      = 0x05280500
+    NRF52805_xxAA_REV2      = 0x05280501
     NRF52805_xxAA_FUTURE    = 0x052805FF
 
     NRF52810_xxAA_REV1      = 13
     NRF52810_xxAA_REV2      = 0x05281001
+    NRF52810_xxAA_REV3      = 0x05281002
     NRF52810_xxAA_FUTURE    = 14
 
     NRF52811_xxAA_REV1      = 0x05281100
+    NRF52811_xxAA_REV2      = 0x05281101
     NRF52811_xxAA_FUTURE    = 0x052811FF
 
+    NRF52820_xxAA_ENGB      = 0x05282003
     NRF52820_xxAA_REV1      = 0x05282000
     NRF52820_xxAA_REV2      = 0x05282001
+    NRF52820_xxAA_REV3      = 0x05282002
     NRF52820_xxAA_FUTURE    = 0x052820FF
 
     NRF52832_xxAA_ENGA      = 7
@@ -249,10 +363,14 @@ class DeviceVersion(enum.IntEnum):
 
     NRF52832_xxAB_REV1      = 15
     NRF52832_xxAB_REV2      = 20
+    NRF52832_xxAB_REV3      = 0x5283211
     NRF52832_xxAB_FUTURE    = 16
 
     NRF52833_xxAA_REV1      = 0x05283300
+    NRF52833_xxAA_REV2      = 0x05283301
+    NRF52833_xxAA_REV3      = 0x05283302
     NRF52833_xxAA_FUTURE    = 0x052833FF
+    
 
     NRF52840_xxAA_ENGA      = 10
     NRF52840_xxAA_ENGB      = 21
@@ -264,6 +382,7 @@ class DeviceVersion(enum.IntEnum):
     NRF5340_xxAA_ENGA       = 0x05340000
     NRF5340_xxAA_ENGB       = 0x05340001
     NRF5340_xxAA_ENGC       = 0x05340002
+    NRF5340_xxAA_REV1       = 0x05340003
     NRF5340_xxAA_ENGD       = 0x05340003
     NRF5340_xxAA_FUTURE     = 0x053400FF
 
@@ -291,7 +410,6 @@ class DeviceName(enum.IntEnum):
     NRF52840 = 0x05284000
 
     NRF5340 = 0x05340000
-
     NRF9160 = 0x09160000
 
 
@@ -321,6 +439,17 @@ class CoProcessor(enum.IntEnum):
     CP_APPLICATION = 0
     CP_MODEM = 1
     CP_NETWORK = 2
+
+
+@enum.unique
+class Architecture(enum.IntEnum):
+    """
+    Wraps architecture_t values from DllCommonDefinitions.h
+    """
+    ARM_CM0 = 0x00
+    ARM_CM4 = 0x04
+    ARM_CM33 = 0x33
+
 
 @enum.unique
 class Region0Source(enum.IntEnum):
@@ -757,6 +886,7 @@ class ResetAction(enum.IntEnum):
     RESET_SYSTEM            = 1
     RESET_DEBUG             = 2
     RESET_PIN               = 3
+    RESET_HARD              = 4
 
 
 @enum.unique
