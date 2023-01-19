@@ -1501,6 +1501,23 @@ class API(object):
 
         return is_control_block_found.value
 
+    def rtt_get_control_block_info(self):
+        """
+        Checks if RTT control block has been found, and at what address.
+
+        @return (boolean, uint32): A tuple containing a boolean indicating if the control block was found, and the address of the control block.
+        """
+        is_found = ctypes.c_bool()
+        address = ctypes.c_uint32()
+
+        result = self._lib.NRFJPROG_rtt_get_control_block_info_inst(
+            self._handle, ctypes.byref(is_found), ctypes.byref(address)
+        )
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result, error_data=self.get_errors())
+
+        return is_found.value, address.value
+
     def rtt_stop(self):
         """
         Stops RTT.

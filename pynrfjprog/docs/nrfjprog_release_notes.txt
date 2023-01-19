@@ -1,3 +1,12 @@
+Release 10.18.2
+Changelog
+--------------------------------------
+- (nrfjprogdll) Fixed issue where NRFJPROG_rtt_set_control_block_address caused NRFJPROG_rtt_start to return INVALID_OPERATION. Introduced in 10.18.1.
+- (nrfjprogdll) Added function NRFJPROG_rtt_get_control_block_info for getting the address and status of the RTT control block.
+
+- (pynrfjprog) LowLevel.py: Added function rtt_get_control_block_info for getting the address and status of the RTT control block.
+- (nrfjprogdll) NRFJPROG_rtt_is_control_block_found now returns false with SUCCESS rather than failing with INVALID_OPERATION if rtt is not started. 
+
 Release 10.18.1
 Changelog
 --------------------------------------

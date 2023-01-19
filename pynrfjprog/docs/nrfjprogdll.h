@@ -2277,8 +2277,9 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_rtt_async_flush_inst(nrfjprog_inst_t ins
  *
  * @details Checks if RTT control block has been found. Can be used to make sure RTT is ready to be used before calling NRFJPROG_rtt_read() and NRFJPROG_rtt_write() functions.
  *
+ *          If RTT is not started, the method returns successfully with is_control_block_found = 0.
+ *
  * @pre     The dll must be open. To open the dll, see NRFJPROG_open_dll() function.
- * @pre     RTT must be started. To start RTT, see NRFJPROG_rtt_start() function.
  * @pre     A connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
  * @pre     A connection to the device must be established. To establish a connection, see NRFJPROG_connect_to_device() and NRFJPROG_rtt_start() functions.
  *
@@ -2297,6 +2298,39 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_rtt_async_flush_inst(nrfjprog_inst_t ins
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_rtt_is_control_block_found_inst(nrfjprog_inst_t instance,
                                                                         bool * is_control_block_found);
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_rtt_is_control_block_found(bool * is_control_block_found);
+
+/**
+ * @brief   Checks if RTT control block has been found, and what address it was found at.
+ *
+ * @details Checks if RTT control block has been found, and what address it was found at.
+ *          Can be used to make sure RTT is ready to be used before calling NRFJPROG_rtt_read() and NRFJPROG_rtt_write()
+ *          functions. Can also be used to improve startup speed of subsequent rtt sessions by caching the rtt control
+ *          block address and setting it with NRFJPROG_rtt_set_control_block_address.
+ *
+ *          If RTT is not started, the method returns successfully with is_found = 0.
+ *
+ * @pre     The dll must be open. To open the dll, see NRFJPROG_open_dll() function.
+ * @pre     A connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     A connection to the device must be established. To establish a connection, see NRFJPROG_connect_to_device() and NRFJPROG_rtt_start() functions.
+ *
+ * @param   instance                            A handle to an open nrfjprog instance.
+ * @param   is_found                            Pointer of the location of a variable that will indicate if the control block has been detected yet.
+ * @param   address                             Pointer of the location of a variable that will indicate the address of the control block if found. If is_found is false,
+ *                                              the content of this variable is undefined.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ *                                              There is no connection between the emulator and the device.
+ *                                              The NRFJPROG_rtt_start() function has not been called.
+ * @retval  INVALID_PARAMETER                   The is_found parameter is null.
+ *                                              The address parameter is null.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
+ */
+NRFJPROG_API nrfjprogdll_err_t NRFJPROG_rtt_get_control_block_info_inst(nrfjprog_inst_t instance,
+                                                                        bool * is_found,
+                                                                        uint32_t * address);
 
 /**
  * @brief   Stops RTT.

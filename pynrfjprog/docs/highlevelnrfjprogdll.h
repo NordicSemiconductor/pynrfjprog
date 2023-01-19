@@ -45,7 +45,7 @@
 
 #define major_version (10) 
 #define minor_version (18) 
-#define micro_version (1) 
+#define micro_version (2) 
 
 #define FIRMWARE_STRING_LENGTH NRFJPROG_STRING_LENGTH
 
