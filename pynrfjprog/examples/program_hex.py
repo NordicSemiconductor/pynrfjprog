@@ -13,7 +13,7 @@
         examples.program_hex.run()
     
     Program flow:
-        0. An API object is instantiated with UNKNOWN family to read the device family.
+        0. An API object is instantiated with AUTO family to read the device family.
         1. An API object is instantiated with the read family. A connection to the debug probe is established.
         2. Flash memory is erased.
         3. A hex file is parsed and programmed into memory.
@@ -41,10 +41,10 @@ def run(snr=None):
     """
     print("# Hex file programming example using pynrfjprog started...")
 
-    # We will detect the device family of your device. Initialize an API object with UNKNOWN family.
-    print("# Opening API with device family UNKNOWN, reading the device family.")
+    # We will detect the device family of your device. Initialize an API object with AUTO family.
+    print("# Opening API with device family AUTO, reading the device family.")
 
-    with LowLevel.API(LowLevel.DeviceFamily.UNKNOWN) as api:
+    with LowLevel.API() as api:
         if snr is not None:
             api.connect_to_emu_with_snr(snr)
         else:
@@ -53,8 +53,6 @@ def run(snr=None):
         # Read the device's family.
         # This step is performed so this example can be run in all devices without customer input.
         device_family = api.read_device_family()
-        api.select_family(device_family)
-
         device_version = api.read_device_version()
 
         hex_file_path = hex_files.find_blinky_hex(device_family, device_version)

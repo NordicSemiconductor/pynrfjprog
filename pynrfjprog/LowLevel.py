@@ -22,12 +22,10 @@ import json
 import tomli_w
 
 try:
-    from . import JLink
     from .Parameters import *
     from .APIError import *
     from . import RTTAsyncIO
 except Exception:
-    import JLink
     from Parameters import *
     from APIError import *
     import RTTAsyncIO
@@ -55,7 +53,7 @@ class API(object):
 
     def __init__(
         self,
-        device_family,
+        device_family=DeviceFamily.AUTO,
         jlink_arm_dll_path=None,
         log_str_cb=None,
         log=False,
@@ -80,6 +78,7 @@ class API(object):
 
         self._rtt_callbacks = dict()  # Used to store rtt callbacks so they do not go out of scope.
 
+        self._logger = None
         self._log = log
         self._log_str_cb = log_str_cb
         self._log_str = log_str
@@ -133,6 +132,26 @@ class API(object):
     nrfjprog.DLL functions.
 
     """
+
+    def version(self):
+        """
+        Returns the nrfjprogdll version.
+        Note the pynrfjprog python package exports the __version__ variable that will tell you the version of the python API.
+
+        @return (int,int,int): Tuple containing major, minor, and micro revision of the nrfjprog dll.
+        """
+        major = ctypes.c_uint32()
+        minor = ctypes.c_uint32()
+        micro = ctypes.c_uint32()
+
+        result = self._lib.NRFJPROG_version(
+            ctypes.byref(major),
+            ctypes.byref(minor),
+            ctypes.byref(micro),
+        )
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result)
+        return major.value, minor.value, micro.value
 
     def dll_version(self):
         """
@@ -229,7 +248,7 @@ class API(object):
         """
         self._lib.NRFJPROG_close_dll_inst(ctypes.byref(self._handle))
 
-        if hasattr(self, "_logger"):
+        if self._logger is not None:
             handlers = self._logger.logger.handlers[:]
             for handler in handlers:
                 handler.close()
@@ -264,7 +283,7 @@ class API(object):
 
         @Return list of error strings.
         """
-        return self._logger.get_errors()
+        return self._logger.get_errors() if self._logger is not None else ""
 
     def enum_emu_com_ports(self, serial_number):
         """
@@ -394,14 +413,14 @@ class API(object):
         if not is_u32(jlink_speed_khz):
             raise ValueError("The jlink_speed_khz parameter must be an unsigned 32-bit value.")
 
-        self._logger.set_id(serial_number)
+        self._set_logger_id(serial_number)
 
         serial_number = ctypes.c_uint32(serial_number)
         jlink_speed_khz = ctypes.c_uint32(jlink_speed_khz)
 
         result = self._lib.NRFJPROG_connect_to_emu_with_snr_inst(self._handle, serial_number, jlink_speed_khz)
         if result != NrfjprogdllErr.SUCCESS:
-            self._logger.set_id(None)
+            self._set_logger_id(None)
             raise APIError(result, error_data=self.get_errors())
 
     def connect_to_emu_with_ip(
@@ -435,7 +454,7 @@ class API(object):
             self._handle, hostname, port, serial_number, jlink_speed_khz
         )
         if result != NrfjprogdllErr.SUCCESS:
-            self._logger.set_id(None)
+            self._set_logger_id(None)
             raise APIError(result, error_data=self.get_errors())
 
     def connect_to_emu_without_snr(self, jlink_speed_khz=_DEFAULT_JLINK_SPEED_KHZ):
@@ -453,7 +472,7 @@ class API(object):
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
-        self._logger.set_id(self.read_connected_emu_snr())
+        self._set_logger_id(self.read_connected_emu_snr())
 
     def reset_connected_emu(self):
         """
@@ -1125,9 +1144,10 @@ class API(object):
         @return int: Value read.
         """
         if not is_u32(register_name):
-            register_name = decode_enum(register_name, CpuRegister).value
-            if register_name is None:
+            register_enum = decode_enum(register_name, CpuRegister)
+            if register_enum is None:
                 raise ValueError("Parameter register_name must be of type uint, str, or CpuRegister enumeration.")
+            register_name = register_enum.value
 
         register_name = ctypes.c_int(register_name)
         value = ctypes.c_uint32()
@@ -1149,9 +1169,10 @@ class API(object):
             raise ValueError("The value parameter must be an unsigned 32-bit value.")
 
         if not is_u32(register_name):
-            register_name = decode_enum(register_name, CpuRegister).value
-            if register_name is None:
+            register_enum = decode_enum(register_name, CpuRegister)
+            if register_enum is None:
                 raise ValueError("Parameter register_name must be of type uint, str, or CpuRegister enumeration.")
+            register_name = register_enum.value
 
         register_name = ctypes.c_int(register_name)
         value = ctypes.c_uint32(value)
@@ -1213,7 +1234,7 @@ class API(object):
 
     def read_device_family(self):
         """
-        Reads the family of the device connected to the emulator. Only if API class has been instantiated with UNKNOWN family.
+        Reads the family of the device connected to the emulator. Only if API class has been instantiated with AUTO family.
 
         @return str: Family of the target device.
         """
@@ -2171,6 +2192,10 @@ class API(object):
             )
         except (ValueError, OSError):
             pass
+
+    def _set_logger_id(self, id):
+        if self._logger is not None:
+            self._logger.set_id(id)
 
 
     def __enter__(self):

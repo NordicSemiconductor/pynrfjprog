@@ -47,8 +47,7 @@ pynrfjprog
   ├── LICENSE
   ├── README.md
   ├── requirements.txt
-  ├── setup.cfg
-  └── setup.py
+  └── pyproject.toml
   
   
     
@@ -59,9 +58,9 @@ To install latest release from PyPI:
 ```
 pip install pynrfjprog
 ```
-To install from source navigate to pynrfjprog\:
+To install from source\:
 ```
-python setup.py install
+python -m pip install path_to_unzipped_pynrfjprog
 ```
 Open the Python interpreter and connect nRF device to PC:
 ```

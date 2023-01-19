@@ -12,7 +12,7 @@
         examples.memory_read_write.run()
     
     Program flow:
-        0. An API object is instantiated with UNKNOWN family to read the device family.
+        0. An API object is instantiated with AUTO family to read the device family.
         1. An API object is instantiated with the read family. A connection to the debug probe is established.
         2. Flash memory is erased.
         3. 0xDEADBEEF is written to address 0x0.
@@ -38,16 +38,14 @@ def run(snr=None):
     """
     print("# Memory read and write example using pynrfjprog started...")
 
-    print("# Opening API with device family UNKNOWN, reading the device family.")
+    print("# Opening API with device family AUTO, reading the device family.")
 
-    # Detect the device family of your device. Initialize an API object with UNKNOWN family and read the device's family. This step is performed so this example can be run in all devices without customer input.
-    with LowLevel.API(LowLevel.DeviceFamily.UNKNOWN) as api:
+    # Use auto-detection of device family by using the default API initializer.
+    with LowLevel.API() as api:
         if snr is not None:
             api.connect_to_emu_with_snr(snr)
         else:
             api.connect_to_emu_without_snr()
-
-        api.select_family(api.read_device_family())
 
         # Erase all the flash of the device.
         print("# Erasing all flash in the microcontroller.")

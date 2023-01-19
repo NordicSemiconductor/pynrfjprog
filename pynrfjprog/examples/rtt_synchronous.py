@@ -11,7 +11,7 @@
         examples.rtt_synchronous.run(682000044)
     
     Program flow:
-        0. An API object is instantiated with UNKNOWN family to read the device family.
+        0. An API object is instantiated with AUTO family to read the device family.
         1. A connection to the debug probe is established.
         2. The detected family is loaded using select_family()
         3. An exapmle rtt application is programmed
@@ -42,7 +42,7 @@ def run(snr=None):
     """
     print("# Synchronous RTT example using pynrfjprog started...")
 
-    with LowLevel.API(LowLevel.DeviceFamily.UNKNOWN) as api:
+    with LowLevel.API() as api:
         # Connect to and identify device
         if snr is None:
             api.connect_to_emu_without_snr()
@@ -50,8 +50,6 @@ def run(snr=None):
             api.connect_to_emu_with_snr(snr)
 
         family = api.read_device_family()
-        api.select_family(family)
-
         device_version = api.read_device_version()
 
         # Program and start RTT firmware

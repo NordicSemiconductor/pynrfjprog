@@ -47,6 +47,20 @@ extern "C" {
 #endif
 
 /**
+ * @brief   Returns the nrfjprog DLL version.
+ *
+ * @param   major                               Pointer for storing dll major version.
+ * @param   minor                               Pointer for storing dll minor version.
+ * @param   micro                               Pointer for storing dll micro version.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_PARAMETER                   The major parameter is NULL.
+ *                                              The minor parameter is NULL.
+ *                                              The micro parameter is NULL.
+ */
+NRFJPROG_API nrfjprogdll_err_t NRFJPROG_version(uint32_t * major, uint32_t * minor, uint32_t * micro);
+
+/**
  * @brief   Returns the JLinkARM DLL version.
  *
  * @details Returns the JLinkARM DLL version that has been opened in with the NRFJPROG_open_dll() function.

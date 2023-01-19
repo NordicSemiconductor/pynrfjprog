@@ -13,7 +13,7 @@
         examples.program_hex.run()
     
     Program flow:
-        0. An API object is instantiated with UNKNOWN family to read the device family.
+        0. An API object is instantiated with AUTO family to read the device family.
         1. An API object is instantiated with the read family. A connection to the debug probe is established.
         2. Flash memory is erased.
         3. A hex file is parsed and programmed into memory.

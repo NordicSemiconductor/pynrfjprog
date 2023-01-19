@@ -317,6 +317,7 @@ class DeviceFamily(enum.IntEnum):
     NRF53              = 53
     NRF91              = 91
     UNKNOWN            = 99
+    AUTO               = 255
 
 
 class DeviceVersion(enum.IntEnum):
@@ -386,6 +387,7 @@ class DeviceVersion(enum.IntEnum):
     NRF5340_xxAA_ENGD       = 0x05340003
     NRF5340_xxAA_FUTURE     = 0x053400FF
 
+
     NRF9160_xxAA_REV1       = 0x09160000
     NRF9160_xxAA_REV2       = 0x09160001
     NRF9160_xxAA_FUTURE     = 0x091600FF
@@ -411,6 +413,7 @@ class DeviceName(enum.IntEnum):
 
     NRF5340 = 0x05340000
     NRF9160 = 0x09160000
+
 
 
 class DeviceMemory(enum.IntEnum):

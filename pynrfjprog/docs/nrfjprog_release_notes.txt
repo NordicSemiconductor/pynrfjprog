@@ -1,3 +1,24 @@
+Release 10.19.0
+Changelog
+--------------------------------------
+- (nrfjprogdll) Add support for fast verify on all nRF SOCs.
+- (nrfjprogdll) Fixed unable to program or verify zip files with unicode characters.
+- (nrfjprogdll) Implemented autodetection of family when NRFJPROG_open_dll() is called with device family AUTO_FAMILY.
+- (nrfjprogdll) Automatic update of J-Link debug probe fw can now be disabled using the jlink.auto_update_fw configuration value. 
+                    This option must be configured before any call to an NRFJPROG_connect_to_emu_with*() method to be effective.
+- (nrfjprogdll) Fixed issue where QSPI clock frequency was off by a factor of 2 on nRF5340 when using external memory.
+- (nrfjprogdll) Fixed issue where .toml / .ini file parser failed to parse QSPI clock frequency specifiers M96 and M64.
+- (nrfjprogdll) Added function NRFJPROG_version for getting nrfjprog DLL version.
+
+- (pynrfjprog) Changed default family parameter from UNKNOWN to AUTO.
+- (pynrfjprog) Fixed unable to program or verify zip files with unicode characters.
+- (pynrfjprog) LowLevel: Added function version() for getting the loaded nrfjprog DLL version.
+
+- (nrfjprog.exe) Fixed unable to program or verify zip files with unicode characters.
+- (nrfjprog.exe) Changed family value from UNKNOWN to AUTO.
+- (nrfjprog.exe) --deviceversion now prints the version of all connected devices if --snr is not provided.
+- (nrfjprog.exe) Fix issue where error log messages ignored the --quiet / -q flag. 
+
 Release 10.18.2
 Changelog
 --------------------------------------
