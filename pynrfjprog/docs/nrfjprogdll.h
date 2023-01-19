@@ -1880,7 +1880,6 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_read_cpu_register_inst(nrfjprog_inst_t i
                                                                uint32_t * register_value);
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_read_cpu_register(int register_name, uint32_t * register_value);
 
-
 /**
  * @brief   Reads the device architecture of the target coprocessor.
  *
@@ -1894,7 +1893,6 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_read_cpu_register(int register_name, uin
  * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
  */
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_read_cpu_architecture_inst(nrfjprog_inst_t instance, cpu_architecture_t * arch);
-
 
 /**
  * @brief   Writes a CPU register.
@@ -2159,7 +2157,8 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_is_rtt_started(bool * started);
  *
  * @details Indicates to the dll the location of the RTT control block in the device memory, to accelerate the discovery of the RTT control block.
  *          If the RTT control block is not located at the address given, NRFJPROG_rtt_start() will never locate the RTT
- *          control block.
+ *          control block. If address is NRFJPROG_INVALID_ADDRESS any previously set address is cleared, and the dll
+ *          reverts to auto-detection.
  *
  * @pre     The dll must be open. To open the dll, see NRFJPROG_open_dll() function.
  *

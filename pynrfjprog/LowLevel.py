@@ -1125,11 +1125,9 @@ class API(object):
         @return int: Value read.
         """
         if not is_u32(register_name):
-            if not is_enum(register_name, CpuRegister):
-                raise ValueError("Parameter register_name must be of type uint, str or CpuRegister enumeration.")
             register_name = decode_enum(register_name, CpuRegister).value
             if register_name is None:
-                raise ValueError("Parameter register_name must be of type uint, str or CpuRegister enumeration.")
+                raise ValueError("Parameter register_name must be of type uint, str, or CpuRegister enumeration.")
 
         register_name = ctypes.c_int(register_name)
         value = ctypes.c_uint32()
@@ -1151,11 +1149,9 @@ class API(object):
             raise ValueError("The value parameter must be an unsigned 32-bit value.")
 
         if not is_u32(register_name):
-            if not is_enum(register_name, CpuRegister):
-                raise ValueError("Parameter register_name must be of type uint, str or CpuRegister enumeration.")
             register_name = decode_enum(register_name, CpuRegister).value
             if register_name is None:
-                raise ValueError("Parameter register_name must be of type uint, str or CpuRegister enumeration.")
+                raise ValueError("Parameter register_name must be of type uint, str, or CpuRegister enumeration.")
 
         register_name = ctypes.c_int(register_name)
         value = ctypes.c_uint32(value)
@@ -1214,7 +1210,6 @@ class API(object):
             raise APIError(result, error_data=self.get_errors())
 
         return Architecture(arch.value)
-
 
     def read_device_family(self):
         """

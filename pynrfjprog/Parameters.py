@@ -523,7 +523,23 @@ class CpuRegister(enum.IntEnum):
     XPSR                    = 16
     MSP                     = 17
     PSP                     = 18
-
+    RAZ                     = 19
+    CFBP                    = 20
+    APSR                    = 21
+    EPSR                    = 22
+    IPSR                    = 23
+    MSP_NS                  = 24
+    PSP_NS                  = 25
+    MSP_S                   = 26
+    PSP_S                   = 27
+    MSPLIM_S                = 28
+    PSPLIM_S                = 29
+    MSPLIM_NS               = 30
+    PSPLIM_NS               = 31
+    CFBP_S                  = 32
+    CFBP_NS                 = 33
+    MSPLIM                  = 34
+    PSPLIM                  = 35
 
 @enum.unique
 class NrfjrpogdllLogLevel(enum.IntEnum):

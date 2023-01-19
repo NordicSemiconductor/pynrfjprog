@@ -1,3 +1,15 @@
+Release 10.18.1
+Changelog
+--------------------------------------
+- (nrfjprog.exe) Fix issue where nrfjprog.exe could not be executed on linux / macOS due to a missing symbol. Introduced in 10.18.0.
+
+- (nrfjprogdll) Fixed issue where NRFJPROG_rtt_set_control_block_address had no effect. Introduced in 10.18.0.
+- (nrfjprogdll) Setting RTT cb address to 0xFFFFFFFF with NRFJPROG_rtt_set_control_block_address now reverts cb detection mechanism to auto-detection.
+- (nrfjprogdll) Added function NRFJPROG_read_cpu_architecture_inst for getting architecture of currently selected coprocessor.
+
+- (pynrfjprog) Add missing cpu register definitions from dllcommondefinitions.
+- (pynrfjprog) Added function read_cpu_architecture for getting architecture of currently selected coprocessor.
+
 Release 10.18.0
 Changelog
 --------------------------------------
@@ -27,13 +39,11 @@ Changelog
                 Previously the value was cleared on NRFJPROG_rtt_stop() and NRFJPROG_disconect_from_device().
 - (nrfjprogdll) On Windows, fix issue where debug probe selector pop up did not appear when executing NRFJPROG_connect_to_emu_without_snr with multiple debug probes present. Introduced in 10.17.0.
 - (nrfjprogdll) nRF5340 xxAA rev1 and engd are now identified as rev1 rather than engd.
-- (nrfjprogdll) Added function NRFJPROG_read_cpu_architecture_inst for getting architecture of currently selected coprocessor.
 
 - (pynrfjprog) Add support for asyncio stream-based RTT handling with module RTTAsyncIO.py.
 - (pynrfjprog) Add example code for synchronous, asynchronous, and asyncio-based RTT functionality.
 - (pynrfjprog) Clean up all example code to use best practices relating to creating apis and programming files.
 - (pynrfjprog) Due to new asyncio dependencies, pynrfjprog is no longer guaranteed to support python 3.6.
-- (pynrfjprog) Added function read_cpu_architecture for getting architecture of currently selected coprocessor.
 
 Release 10.17.3
 Changelog
