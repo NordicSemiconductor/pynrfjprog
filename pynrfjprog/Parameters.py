@@ -36,15 +36,15 @@ def find_lib_dir():
     elif platform.machine().startswith('aarch') and not os_name.startswith('dar'):
         nrfjprog_dll_folder = 'lib_arm64'
     else:
-        if sys.maxsize > 2 ** 32:
+        if sys.maxsize > 2**32:
             nrfjprog_dll_folder = 'lib_x64'
         else:
             nrfjprog_dll_folder = 'lib_x86'
-    
+
     return os.path.abspath(os.path.join(this_dir, nrfjprog_dll_folder))
 
 def decode_string(string):
-    """ This function ensures that string output from ctypes is normalized to the local string type. """
+    """This function ensures that string output from ctypes is normalized to the local string type."""
     if sys.version_info[0] == 2 or isinstance(string, str):
         return string
     else:
@@ -91,12 +91,12 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         # Enable logging by default
         self.logger.disabled = False
-        
+
         def log_filter(record):
             if self.extra['id'] is None:
                 return False
             return self.extra['id'] == record.id
-        
+
         handlers = []
 
         if log_str_cb is not None:
@@ -120,7 +120,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 (
                     lambda logger_name, level, msg_str, instance:
                         self.log_function(decode_string(logger_name).strip(), level, decode_string(msg_str).strip())
-                )
+            )
 
     def set_id(self, id):
         self.extra['id'] = id
@@ -229,19 +229,19 @@ class EMUConnection(enum.IntEnum):
 
     """
     USB = 1
-    IP  = 2
+    IP = 2
 
 
 class EMUConInfoStruct(ctypes.Structure):
     _fields_ = [("serial_number",       ctypes.c_uint32),
-                ("connection_type",     ctypes.c_int),
-                ("ip_addr",             ctypes.c_uint8 * NRFJPROG_ENUM_INFO_IP_LEN),
-                ("hardware_revision",   ctypes.c_uint32),
-                ("mac_addr",            ctypes.c_uint8 * NRFJPROG_ENUM_INFO_MAC_LEN),
-                ("product_name",        ctypes.c_char * (NRFJPROG_ENUM_INFO_PROD_NAME_STR_LEN + 1)),
-                ("nickname",            ctypes.c_char * (NRFJPROG_ENUM_INFO_NICKNAME_STR_LEN + 1)),
-                ("firmware_string",     ctypes.c_char * (NRFJPROG_ENUM_INFO_FW_STR_LEN + 1)),
-                ("num_ip_connections",  ctypes.c_int8),
+        ("connection_type", ctypes.c_int),
+        ("ip_addr", ctypes.c_uint8 * NRFJPROG_ENUM_INFO_IP_LEN),
+        ("hardware_revision", ctypes.c_uint32),
+        ("mac_addr", ctypes.c_uint8 * NRFJPROG_ENUM_INFO_MAC_LEN),
+        ("product_name", ctypes.c_char * (NRFJPROG_ENUM_INFO_PROD_NAME_STR_LEN + 1)),
+        ("nickname", ctypes.c_char * (NRFJPROG_ENUM_INFO_NICKNAME_STR_LEN + 1)),
+        ("firmware_string", ctypes.c_char * (NRFJPROG_ENUM_INFO_FW_STR_LEN + 1)),
+        ("num_ip_connections", ctypes.c_int8),
                 ("_reserved",           ctypes.c_uint32 * 8)]
 
 class EMUConInfo(object):
@@ -293,7 +293,7 @@ class EMUConInfo(object):
                  f"Firmware:        {self.fw_string}{sep}" + \
                  f"IP connections:  {num_ip_connections_str}"
         return result
-        
+
 
 @enum.unique
 class FileInputType(enum.IntEnum):
@@ -312,85 +312,85 @@ class DeviceFamily(enum.IntEnum):
 
     """
 
-    NRF51              = 0
-    NRF52              = 1
-    NRF53              = 53
-    NRF91              = 91
-    UNKNOWN            = 99
-    AUTO               = 255
+    NRF51 = 0
+    NRF52 = 1
+    NRF53 = 53
+    NRF91 = 91
+    UNKNOWN = 99
+    AUTO = 255
 
 
 class DeviceVersion(enum.IntEnum):
     """
-    Wraps device_version_t values from DllCommonDefinitions.h
+        Wraps device_version_t values from DllCommonDefinitions.h
 
     """
 
-    UNKNOWN                 = 0
+    UNKNOWN = 0
 
-    NRF51xxx_xxAA_REV1      = 1
-    NRF51xxx_xxAA_REV2      = 2
-    NRF51xxx_xxAA_REV3      = 3
-    NRF51xxx_xxAB_REV3      = 4
-    NRF51xxx_xxAC_REV3      = 5
-    NRF51802_xxAA_REV3      = 6
-    NRF51801_xxAB_REV3      = 17
+    NRF51xxx_xxAA_REV1 = 1
+    NRF51xxx_xxAA_REV2 = 2
+    NRF51xxx_xxAA_REV3 = 3
+    NRF51xxx_xxAB_REV3 = 4
+    NRF51xxx_xxAC_REV3 = 5
+    NRF51802_xxAA_REV3 = 6
+    NRF51801_xxAB_REV3 = 17
 
-    NRF52805_xxAA_REV1      = 0x05280500
-    NRF52805_xxAA_REV2      = 0x05280501
-    NRF52805_xxAA_FUTURE    = 0x052805FF
+    NRF52805_xxAA_REV1 = 0x05280500
+    NRF52805_xxAA_REV2 = 0x05280501
+    NRF52805_xxAA_FUTURE = 0x052805FF
 
-    NRF52810_xxAA_REV1      = 13
-    NRF52810_xxAA_REV2      = 0x05281001
-    NRF52810_xxAA_REV3      = 0x05281002
-    NRF52810_xxAA_FUTURE    = 14
+    NRF52810_xxAA_REV1 = 13
+    NRF52810_xxAA_REV2 = 0x05281001
+    NRF52810_xxAA_REV3 = 0x05281002
+    NRF52810_xxAA_FUTURE = 14
 
-    NRF52811_xxAA_REV1      = 0x05281100
-    NRF52811_xxAA_REV2      = 0x05281101
-    NRF52811_xxAA_FUTURE    = 0x052811FF
+    NRF52811_xxAA_REV1 = 0x05281100
+    NRF52811_xxAA_REV2 = 0x05281101
+    NRF52811_xxAA_FUTURE = 0x052811FF
 
-    NRF52820_xxAA_ENGB      = 0x05282003
-    NRF52820_xxAA_REV1      = 0x05282000
-    NRF52820_xxAA_REV2      = 0x05282001
-    NRF52820_xxAA_REV3      = 0x05282002
-    NRF52820_xxAA_FUTURE    = 0x052820FF
+    NRF52820_xxAA_ENGB = 0x05282003
+    NRF52820_xxAA_REV1 = 0x05282000
+    NRF52820_xxAA_REV2 = 0x05282001
+    NRF52820_xxAA_REV3 = 0x05282002
+    NRF52820_xxAA_FUTURE = 0x052820FF
 
-    NRF52832_xxAA_ENGA      = 7
-    NRF52832_xxAA_ENGB      = 8
-    NRF52832_xxAA_REV1      = 9
-    NRF52832_xxAA_REV2      = 19
-    NRF52832_xxAA_REV3      = 0x5283201
-    NRF52832_xxAA_FUTURE    = 11
+    NRF52832_xxAA_ENGA = 7
+    NRF52832_xxAA_ENGB = 8
+    NRF52832_xxAA_REV1 = 9
+    NRF52832_xxAA_REV2 = 19
+    NRF52832_xxAA_REV3 = 0x5283201
+    NRF52832_xxAA_FUTURE = 11
 
-    NRF52832_xxAB_REV1      = 15
-    NRF52832_xxAB_REV2      = 20
-    NRF52832_xxAB_REV3      = 0x5283211
-    NRF52832_xxAB_FUTURE    = 16
+    NRF52832_xxAB_REV1 = 15
+    NRF52832_xxAB_REV2 = 20
+    NRF52832_xxAB_REV3 = 0x5283211
+    NRF52832_xxAB_FUTURE = 16
 
-    NRF52833_xxAA_REV1      = 0x05283300
-    NRF52833_xxAA_REV2      = 0x05283301
-    NRF52833_xxAA_REV3      = 0x05283302
-    NRF52833_xxAA_FUTURE    = 0x052833FF
-    
-
-    NRF52840_xxAA_ENGA      = 10
-    NRF52840_xxAA_ENGB      = 21
-    NRF52840_xxAA_REV1      = 18
-    NRF52840_xxAA_REV2      = 0x05284003
-    NRF52840_xxAA_REV3      = 0x05284004
-    NRF52840_xxAA_FUTURE    = 12
-    
-    NRF5340_xxAA_ENGA       = 0x05340000
-    NRF5340_xxAA_ENGB       = 0x05340001
-    NRF5340_xxAA_ENGC       = 0x05340002
-    NRF5340_xxAA_REV1       = 0x05340003
-    NRF5340_xxAA_ENGD       = 0x05340003
-    NRF5340_xxAA_FUTURE     = 0x053400FF
+    NRF52833_xxAA_REV1 = 0x05283300
+    NRF52833_xxAA_REV2 = 0x05283301
+    NRF52833_xxAA_REV3 = 0x05283302
+    NRF52833_xxAA_FUTURE = 0x052833FF
 
 
-    NRF9160_xxAA_REV1       = 0x09160000
-    NRF9160_xxAA_REV2       = 0x09160001
-    NRF9160_xxAA_FUTURE     = 0x091600FF
+    NRF52840_xxAA_ENGA = 10
+    NRF52840_xxAA_ENGB = 21
+    NRF52840_xxAA_REV1 = 18
+    NRF52840_xxAA_REV2 = 0x05284003
+    NRF52840_xxAA_REV3 = 0x05284004
+    NRF52840_xxAA_FUTURE = 12
+
+    NRF5340_xxAA_ENGA = 0x05340000
+    NRF5340_xxAA_ENGB = 0x05340001
+    NRF5340_xxAA_ENGC = 0x05340002
+    NRF5340_xxAA_REV1 = 0x05340003
+    NRF5340_xxAA_ENGD = 0x05340003
+    NRF5340_xxAA_FUTURE = 0x053400FF
+
+
+    NRF9160_xxAA_REV1 = 0x09160000
+    NRF9160_xxAA_REV2 = 0x09160001
+    NRF9160_xxAA_FUTURE = 0x091600FF
 
 
 
@@ -418,21 +418,21 @@ class DeviceName(enum.IntEnum):
 
 class DeviceMemory(enum.IntEnum):
 
-    UNKNOWN_MEM     = 0
-    AA              = 1
-    AB              = 2
-    AC              = 3
+    UNKNOWN_MEM = 0
+    AA = 1
+    AB = 2
+    AC = 3
 
 
 class DeviceRevision(enum.IntEnum):
 
-    UNKNOWN_REV     = 0
-    ENGA            = 10
-    ENGB            = 11
-    REV1            = 20
-    REV2            = 21
-    REV3            = 22
-    FUTURE          = 30
+    UNKNOWN_REV = 0
+    ENGA = 10
+    ENGB = 11
+    REV1 = 20
+    REV2 = 21
+    REV3 = 22
+    FUTURE = 30
 
 @enum.unique
 class CoProcessor(enum.IntEnum):
@@ -460,9 +460,9 @@ class Region0Source(enum.IntEnum):
     Wraps region_0_source_t values from DllCommonDefinitions.h
 
     """
-    NO_REGION_0             = 0
-    FACTORY                 = 1
-    USER                    = 2
+    NO_REGION_0 = 0
+    FACTORY = 1
+    USER = 2
 
 
 @enum.unique
@@ -471,8 +471,8 @@ class RamPower(enum.IntEnum):
     Wraps ram_power_status_t values from DllCommonDefinitions.h
 
     """
-    OFF                     = 0
-    ON                      = 1
+    OFF = 0
+    ON = 1
 
 
 @enum.unique
@@ -481,8 +481,8 @@ class RTTChannelDirection(enum.IntEnum):
     Wraps rtt_direction_t values from DllCommonDefinitions.h
 
     """
-    UP_DIRECTION            = 0
-    DOWN_DIRECTION          = 1
+    UP_DIRECTION = 0
+    DOWN_DIRECTION = 1
 
 
 @enum.unique
@@ -492,11 +492,11 @@ class ReadbackProtection(enum.IntEnum):
     Some modes are not available in all devices.
 
     """
-    NONE                    = 0
-    REGION_0                = 1
-    ALL                     = 2
-    BOTH                    = 3
-    SECURE                  = 4
+    NONE = 0
+    REGION_0 = 1
+    ALL = 2
+    BOTH = 3
+    SECURE = 4
 
 
 class CpuRegister(enum.IntEnum):
@@ -504,45 +504,45 @@ class CpuRegister(enum.IntEnum):
     Wraps cpu_registers_t values from DllCommonDefinitions.h
 
     """
-    R0                      = 0
-    R1                      = 1
-    R2                      = 2
-    R3                      = 3
-    R4                      = 4
-    R5                      = 5
-    R6                      = 6
-    R7                      = 7
-    R8                      = 8
-    R9                      = 9
-    R10                     = 10
-    R11                     = 11
-    R12                     = 12
-    R13                     = 13
-    SP                      = 13
-    R14                     = 14
-    LR                      = 14
-    R15                     = 15
-    PC                      = 15
-    XPSR                    = 16
-    MSP                     = 17
-    PSP                     = 18
-    RAZ                     = 19
-    CFBP                    = 20
-    APSR                    = 21
-    EPSR                    = 22
-    IPSR                    = 23
-    MSP_NS                  = 24
-    PSP_NS                  = 25
-    MSP_S                   = 26
-    PSP_S                   = 27
-    MSPLIM_S                = 28
-    PSPLIM_S                = 29
-    MSPLIM_NS               = 30
-    PSPLIM_NS               = 31
-    CFBP_S                  = 32
-    CFBP_NS                 = 33
-    MSPLIM                  = 34
-    PSPLIM                  = 35
+    R0 = 0
+    R1 = 1
+    R2 = 2
+    R3 = 3
+    R4 = 4
+    R5 = 5
+    R6 = 6
+    R7 = 7
+    R8 = 8
+    R9 = 9
+    R10 = 10
+    R11 = 11
+    R12 = 12
+    R13 = 13
+    SP = 13
+    R14 = 14
+    LR = 14
+    R15 = 15
+    PC = 15
+    XPSR = 16
+    MSP = 17
+    PSP = 18
+    RAZ = 19
+    CFBP = 20
+    APSR = 21
+    EPSR = 22
+    IPSR = 23
+    MSP_NS = 24
+    PSP_NS = 25
+    MSP_S = 26
+    PSP_S = 27
+    MSPLIM_S = 28
+    PSPLIM_S = 29
+    MSPLIM_NS = 30
+    PSPLIM_NS = 31
+    CFBP_S = 32
+    CFBP_NS = 33
+    MSPLIM = 34
+    PSPLIM = 35
 
 @enum.unique
 class NrfjrpogdllLogLevel(enum.IntEnum):
@@ -550,12 +550,12 @@ class NrfjrpogdllLogLevel(enum.IntEnum):
     Values for nrfjprogdll_log_level from DllCommonDefinitions.h
     """
     critical = 60
-    error    = 50
-    warning  = 40
-    info     = 30
-    debug    = 20
-    trace    = 10
-    none     = 0
+    error = 50
+    warning = 40
+    info = 30
+    debug = 20
+    trace = 10
+    none = 0
 
     @staticmethod
     def get_name_from_value(level):
@@ -597,10 +597,10 @@ class QSPIEraseLen(enum.IntEnum):
     Wraps qspi_erase_len_t values from DllCommonDefinitions.h
 
     """
-    ERASE4KB        = 0
-    ERASE32KB       = 3
-    ERASE64KB       = 1
-    ERASEALL        = 2
+    ERASE4KB = 0
+    ERASE32KB = 3
+    ERASE64KB = 1
+    ERASEALL = 2
 
 
 @enum.unique
@@ -609,11 +609,11 @@ class QSPIReadMode(enum.IntEnum):
     Wraps qspi_read_mode_t values from DllCommonDefinitions.h
 
     """
-    FASTREAD        = 0
-    READ2O          = 1
-    READ2IO         = 2
-    READ4O          = 3
-    READ4IO         = 4
+    FASTREAD = 0
+    READ2O = 1
+    READ2IO = 2
+    READ4O = 3
+    READ4IO = 4
 
 
 @enum.unique
@@ -622,10 +622,10 @@ class QSPIWriteMode(enum.IntEnum):
     Wraps qspi_write_mode_t values from DllCommonDefinitions.h
 
     """
-    PP              = 0
-    PP2O            = 1
-    PP4O            = 2
-    PP4IO           = 3
+    PP = 0
+    PP2O = 1
+    PP4O = 2
+    PP4IO = 3
 
 
 @enum.unique
@@ -634,8 +634,8 @@ class QSPIAddressMode(enum.IntEnum):
     Wraps qspi_address_mode_t values from DllCommonDefinitions.h
 
     """
-    BIT24           = 0
-    BIT32           = 1
+    BIT24 = 0
+    BIT32 = 1
 
 
 @enum.unique
@@ -644,13 +644,13 @@ class QSPIFrequency(enum.IntEnum):
     Wraps qspi_frequency_t values from DllCommonDefinitions.h
 
     """
-    M2              =  15
-    M4              =  7
-    M8              =  3
-    M16             =  1
-    M32             =  0
-    M64             = -1
-    M96             = -2
+    M2 = 15
+    M4 = 7
+    M8 = 3
+    M16 = 1
+    M32 = 0
+    M64 = -1
+    M96 = -2
 
 
 @enum.unique
@@ -658,8 +658,8 @@ class QSPISpiMode(enum.IntEnum):
     """
     Wraps qspi_spi_mode_t values from DllCommonDefinitions.h
     """
-    MODE0           = 0
-    MODE3           = 1
+    MODE0 = 0
+    MODE3 = 1
 
 
 @enum.unique
@@ -667,8 +667,8 @@ class QSPILevelIO(enum.IntEnum):
     """
     Wraps qspi_custom_level_t values from DllCommonDefinitions.h
     """
-    LEVEL_HIGH      = 1
-    LEVEL_LOW       = 0
+    LEVEL_HIGH = 1
+    LEVEL_LOW = 0
 
 
 @enum.unique
@@ -676,96 +676,96 @@ class QSPIPPSize(enum.IntEnum):
     """
     Wraps qspi_custom_level_t values from DllCommonDefinitions.h
     """
-    PAGE256         = 0
-    PAGE512         = 1
+    PAGE256 = 0
+    PAGE512 = 1
 
 
 class QSPIInitParams(ctypes.Structure):
     _fields_ = [("read_mode",                    ctypes.c_int),
-                ("write_mode",                   ctypes.c_int),
-                ("address_mode",                 ctypes.c_int),
-                ("frequency",                    ctypes.c_int),
-                ("spi_mode",                     ctypes.c_int),
-                ("sck_delay",                    ctypes.c_uint32),
-                ("custom_instruction_io2_level", ctypes.c_int),
-                ("custom_instruction_io3_level", ctypes.c_int),
-                ("CSN_pin",                      ctypes.c_uint32),
-                ("CSN_port",                     ctypes.c_uint32),
-                ("SCK_pin",                      ctypes.c_uint32),
-                ("SCK_port",                     ctypes.c_uint32),
-                ("DIO0_pin",                     ctypes.c_uint32),
-                ("DIO0_port",                    ctypes.c_uint32),
-                ("DIO1_pin",                     ctypes.c_uint32),
-                ("DIO1_port",                    ctypes.c_uint32),
-                ("DIO2_pin",                     ctypes.c_uint32),
-                ("DIO2_port",                    ctypes.c_uint32),
-                ("DIO3_pin",                     ctypes.c_uint32),
-                ("DIO3_port",                    ctypes.c_uint32),
-                ("WIP_index",                    ctypes.c_uint32),
+        ("write_mode", ctypes.c_int),
+        ("address_mode", ctypes.c_int),
+        ("frequency", ctypes.c_int),
+        ("spi_mode", ctypes.c_int),
+        ("sck_delay", ctypes.c_uint32),
+        ("custom_instruction_io2_level", ctypes.c_int),
+        ("custom_instruction_io3_level", ctypes.c_int),
+        ("CSN_pin", ctypes.c_uint32),
+        ("CSN_port", ctypes.c_uint32),
+        ("SCK_pin", ctypes.c_uint32),
+        ("SCK_port", ctypes.c_uint32),
+        ("DIO0_pin", ctypes.c_uint32),
+        ("DIO0_port", ctypes.c_uint32),
+        ("DIO1_pin", ctypes.c_uint32),
+        ("DIO1_port", ctypes.c_uint32),
+        ("DIO2_pin", ctypes.c_uint32),
+        ("DIO2_port", ctypes.c_uint32),
+        ("DIO3_pin", ctypes.c_uint32),
+        ("DIO3_port", ctypes.c_uint32),
+        ("WIP_index", ctypes.c_uint32),
                 ("pp_size",                      ctypes.c_int)]
 
     def __init__(self,
-                 read_mode=QSPIReadMode.READ4IO,
-                 write_mode=QSPIWriteMode.PP4IO,
-                 address_mode=QSPIAddressMode.BIT24,
-                 frequency=QSPIFrequency.M16,
-                 spi_mode=QSPISpiMode.MODE0,
-                 sck_delay=0x80,
-                 custom_instruction_io2_level=QSPILevelIO.LEVEL_LOW,
-                 custom_instruction_io3_level=QSPILevelIO.LEVEL_HIGH,
-                 CSN_pin=17,
-                 CSN_port=0,
-                 SCK_pin=19,
-                 SCK_port=0,
-                 DIO0_pin=20,
-                 DIO0_port=0,
-                 DIO1_pin=21,
-                 DIO1_port=0,
-                 DIO2_pin=22,
-                 DIO2_port=0,
-                 DIO3_pin=23,
-                 DIO3_port=0,
-                 WIP_index=0,
+        read_mode=QSPIReadMode.READ4IO,
+        write_mode=QSPIWriteMode.PP4IO,
+        address_mode=QSPIAddressMode.BIT24,
+        frequency=QSPIFrequency.M16,
+        spi_mode=QSPISpiMode.MODE0,
+        sck_delay=0x80,
+        custom_instruction_io2_level=QSPILevelIO.LEVEL_LOW,
+        custom_instruction_io3_level=QSPILevelIO.LEVEL_HIGH,
+        CSN_pin=17,
+        CSN_port=0,
+        SCK_pin=19,
+        SCK_port=0,
+        DIO0_pin=20,
+        DIO0_port=0,
+        DIO1_pin=21,
+        DIO1_port=0,
+        DIO2_pin=22,
+        DIO2_port=0,
+        DIO3_pin=23,
+        DIO3_port=0,
+        WIP_index=0,
                  pp_size=QSPIPPSize.PAGE256):
 
         ctypes.Structure.__init__(self)
-        self.read_mode                    = read_mode
-        self.write_mode                   = write_mode
-        self.address_mode                 = address_mode
-        self.frequency                    = frequency
-        self.spi_mode                     = spi_mode
-        self.sck_delay                    = sck_delay
+        self.read_mode = read_mode
+        self.write_mode = write_mode
+        self.address_mode = address_mode
+        self.frequency = frequency
+        self.spi_mode = spi_mode
+        self.sck_delay = sck_delay
         self.custom_instruction_io2_level = custom_instruction_io2_level
         self.custom_instruction_io3_level = custom_instruction_io3_level
-        self.CSN_pin                      = CSN_pin
-        self.CSN_port                     = CSN_port
-        self.SCK_pin                      = SCK_pin
-        self.SCK_port                     = SCK_port
-        self.DIO0_pin                     = DIO0_pin
-        self.DIO0_port                    = DIO0_port
-        self.DIO1_pin                     = DIO1_pin
-        self.DIO1_port                    = DIO1_port
-        self.DIO2_pin                     = DIO2_pin
-        self.DIO2_port                    = DIO2_port
-        self.DIO3_pin                     = DIO3_pin
-        self.DIO3_port                    = DIO3_port
-        self.WIP_index                    = WIP_index
-        self.pp_size                      = pp_size
+        self.CSN_pin = CSN_pin
+        self.CSN_port = CSN_port
+        self.SCK_pin = SCK_pin
+        self.SCK_port = SCK_port
+        self.DIO0_pin = DIO0_pin
+        self.DIO0_port = DIO0_port
+        self.DIO1_pin = DIO1_pin
+        self.DIO1_port = DIO1_port
+        self.DIO2_pin = DIO2_pin
+        self.DIO2_port = DIO2_port
+        self.DIO3_pin = DIO3_pin
+        self.DIO3_port = DIO3_port
+        self.WIP_index = WIP_index
+        self.pp_size = pp_size
 
 
 class ComPortInfoStruct(ctypes.Structure):
     _fields_ =[("path",             ctypes.c_char * NRFJPROG_MAX_PATH),
-               ("vcom",             ctypes.c_uint32),
+        ("vcom", ctypes.c_uint32),
                ("serial_number",    ctypes.c_uint32)]
 
 
 class ComPortInfo(object):
 
     def __init__(self, probe_info):
-        """ Info about a COM port. """
-        self.path           = decode_string(probe_info.path)
-        self.vcom           = probe_info.vcom
-        self.serial_number  = probe_info.serial_number
+        """Info about a COM port."""
+        self.path = decode_string(probe_info.path)
+        self.vcom = probe_info.vcom
+        self.serial_number = probe_info.serial_number
 
     def __repr__(self):
         return "ComPortInfoStruct({}, {}, {})".format(self.path, self.vcom, self.serial_number)
@@ -776,12 +776,12 @@ class MemoryType(enum.IntEnum):
     """
     Wraps memory_type_t values from DllCommonDefinitions.h
     """
-    CODE     = 0
+    CODE = 0
     DATA_RAM = 1
     CODE_RAM = 2
-    FICR     = 3
-    UICR     = 4
-    XIP      = 5
+    FICR = 3
+    UICR = 4
+    XIP = 5
 
 
 @enum.unique
@@ -801,14 +801,14 @@ class MemoryDescriptionStruct(ctypes.Structure):
     Wraps memory_description_t values from DllCommonDefinitions.h
     """
     _fields_ = [("start",                   ctypes.c_uint32),
-                ("size",                    ctypes.c_uint32),
-                ("num_pages",               ctypes.c_uint32),
-                ("type",                    ctypes.c_int),
-                ("access_flags",            ctypes.c_int),
-                ("has_trustzone_alias",     ctypes.c_bool),
-                ("is_runtime_configurable", ctypes.c_bool),
-                ("_id",                     ctypes.c_uint32),
-                ("label",                   (ctypes.c_char * 33)),
+        ("size", ctypes.c_uint32),
+        ("num_pages", ctypes.c_uint32),
+        ("type", ctypes.c_int),
+        ("access_flags", ctypes.c_int),
+        ("has_trustzone_alias", ctypes.c_bool),
+        ("is_runtime_configurable", ctypes.c_bool),
+        ("_id", ctypes.c_uint32),
+        ("label", (ctypes.c_char * 33)),
                 ("_reserved",               (ctypes.c_uint32 * 8))]
 
 
@@ -889,10 +889,11 @@ class EraseAction(enum.IntEnum):
     Available erase processes during programming.
 
     """
-    ERASE_NONE              = 0
-    ERASE_ALL               = 1
-    ERASE_SECTOR            = 2
-    ERASE_SECTOR_AND_UICR   = 3
+    ERASE_NONE = 0
+    ERASE_ALL = 1
+    ERASE_SECTOR = 2
+    ERASE_SECTOR_AND_UICR = 3
+    ERASE_CTRL_AP         = 5
 
 
 @enum.unique
@@ -901,11 +902,11 @@ class ResetAction(enum.IntEnum):
     Available reset modes.
 
     """
-    RESET_NONE              = 0
-    RESET_SYSTEM            = 1
-    RESET_DEBUG             = 2
-    RESET_PIN               = 3
-    RESET_HARD              = 4
+    RESET_NONE = 0
+    RESET_SYSTEM = 1
+    RESET_DEBUG = 2
+    RESET_PIN = 3
+    RESET_HARD = 4
 
 
 @enum.unique
@@ -914,15 +915,15 @@ class VerifyAction(enum.IntEnum):
     Available verify processes during programming.
 
     """
-    VERIFY_NONE             = 0
-    VERIFY_READ             = 1
-    VERIFY_HASH             = 2
+    VERIFY_NONE = 0
+    VERIFY_READ = 1
+    VERIFY_HASH = 2
 
 
 class ProgramOptions(ctypes.Structure):
     _fields_ = [("verify",            ctypes.c_int),
-                ("erase_action",      ctypes.c_int),
-                ("qspi_erase_action", ctypes.c_int),
+        ("erase_action", ctypes.c_int),
+        ("qspi_erase_action", ctypes.c_int),
                 ("reset",             ctypes.c_int)]
 
     def __init__(self, verify=VerifyAction.VERIFY_NONE, erase_action=EraseAction.ERASE_ALL, qspi_erase_action=EraseAction.ERASE_NONE, reset=ResetAction.RESET_SYSTEM):
@@ -943,10 +944,10 @@ class ProgramOptions(ctypes.Structure):
 
 class ReadOptions(ctypes.Structure):
     _fields_ = [("readram",  ctypes.c_bool),
-                ("readcode", ctypes.c_bool),
-                ("readuicr", ctypes.c_bool),
-                ("readficr", ctypes.c_bool),
-                ("readqspi", ctypes.c_bool),
+        ("readcode", ctypes.c_bool),
+        ("readuicr", ctypes.c_bool),
+        ("readficr", ctypes.c_bool),
+        ("readqspi", ctypes.c_bool),
                 ("reserved", ctypes.c_bool * 3)]
 
     def __init__(self, readram=False, readcode=False, readuicr=False, readficr=False, readqspi=False):
@@ -969,65 +970,65 @@ class ReadOptions(ctypes.Structure):
 
 class DeviceInfoStruct(ctypes.Structure):
     _fields_ = [
-        ("device_family",          ctypes.c_int),
-        ("device_type",            ctypes.c_int),
+        ("device_family", ctypes.c_int),
+        ("device_type", ctypes.c_int),
 
-        ("code_address",           ctypes.c_uint32),
-        ("code_page_size",         ctypes.c_uint32),
-        ("code_size",              ctypes.c_uint32),
+        ("code_address", ctypes.c_uint32),
+        ("code_page_size", ctypes.c_uint32),
+        ("code_size", ctypes.c_uint32),
 
-        ("uicr_address",           ctypes.c_uint32),
-        ("info_page_size",         ctypes.c_uint32),
+        ("uicr_address", ctypes.c_uint32),
+        ("info_page_size", ctypes.c_uint32),
 
-        ("code_ram_present",       ctypes.c_bool),
-        ("code_ram_address",       ctypes.c_uint32),
-        ("data_ram_address",       ctypes.c_uint32),
-        ("ram_size",               ctypes.c_uint32),
+        ("code_ram_present", ctypes.c_bool),
+        ("code_ram_address", ctypes.c_uint32),
+        ("data_ram_address", ctypes.c_uint32),
+        ("ram_size", ctypes.c_uint32),
 
-        ("qspi_present",           ctypes.c_bool),
-        ("xip_address",            ctypes.c_uint32),
-        ("xip_size",               ctypes.c_uint32),
+        ("qspi_present", ctypes.c_bool),
+        ("xip_address", ctypes.c_uint32),
+        ("xip_size", ctypes.c_uint32),
 
         ("pin_reset_pin",          ctypes.c_uint32)]
 
 
 class DeviceInfo(object):
     def __init__(self, device_info, dll_ret_code=None):
-        """ Info about an nRF device. """
-        self.device_type         = DeviceVersion(device_info.device_type)
-        self.device_family       = DeviceFamily(device_info.device_family)
-        self.code_address        = device_info.code_address
-        self.code_page_size      = device_info.code_page_size
-        self.code_size           = device_info.code_size
-        self.uicr_address        = device_info.uicr_address
-        self.info_page_size      = device_info.info_page_size
-        self.code_ram_present    = device_info.code_ram_present
-        self.code_ram_address    = device_info.code_ram_address
-        self.data_ram_address    = device_info.data_ram_address
-        self.ram_size            = device_info.ram_size
-        self.qspi_present        = device_info.qspi_present
-        self.xip_address         = device_info.xip_address
-        self.xip_size            = device_info.xip_size
-        self.pin_reset_pin       = device_info.pin_reset_pin
+        """Info about an nRF device."""
+        self.device_type = DeviceVersion(device_info.device_type)
+        self.device_family = DeviceFamily(device_info.device_family)
+        self.code_address = device_info.code_address
+        self.code_page_size = device_info.code_page_size
+        self.code_size = device_info.code_size
+        self.uicr_address = device_info.uicr_address
+        self.info_page_size = device_info.info_page_size
+        self.code_ram_present = device_info.code_ram_present
+        self.code_ram_address = device_info.code_ram_address
+        self.data_ram_address = device_info.data_ram_address
+        self.ram_size = device_info.ram_size
+        self.qspi_present = device_info.qspi_present
+        self.xip_address = device_info.xip_address
+        self.xip_size = device_info.xip_size
+        self.pin_reset_pin = device_info.pin_reset_pin
 
         # Return code from HighLevel DLL when this struct was read.
-        self.dll_ret_code       = dll_ret_code
+        self.dll_ret_code = dll_ret_code
 
 
 class ProbeInfoStruct(ctypes.Structure):
     _fields_ = [
-        ("serial_number",          ctypes.c_uint32),
-        ("clockspeed_khz",         ctypes.c_uint32),
-        ("firmware_string",        ctypes.c_char * NRFJPROG_STRING_LENGTH),
-        ("num_com_ports",          ctypes.c_uint32),
+        ("serial_number", ctypes.c_uint32),
+        ("clockspeed_khz", ctypes.c_uint32),
+        ("firmware_string", ctypes.c_char * NRFJPROG_STRING_LENGTH),
+        ("num_com_ports", ctypes.c_uint32),
         ("com_ports",              ComPortInfoStruct * NRFJPROG_COM_PER_JLINK)]
 
 
 class ProbeInfo(object):
     def __init__(self, probe_info):
-        """ Info about a debug probe. """
-        self.serial_number       = probe_info.serial_number
-        self.clockspeed_khz      = probe_info.clockspeed_khz
+        """Info about a debug probe."""
+        self.serial_number = probe_info.serial_number
+        self.clockspeed_khz = probe_info.clockspeed_khz
 
         self.firmware_string = decode_string(probe_info.firmware_string)
 
@@ -1046,17 +1047,17 @@ class ProbeInfo(object):
 
 class LibraryInfoStruct(ctypes.Structure):
     _fields_ = [
-        ("version_major",          ctypes.c_uint32),
-        ("version_minor",          ctypes.c_uint32),
-        ("version_revision",       ctypes.c_char),
+        ("version_major", ctypes.c_uint32),
+        ("version_minor", ctypes.c_uint32),
+        ("version_revision", ctypes.c_char),
         ("file_path",              ctypes.c_char * NRFJPROG_MAX_PATH)]
 
 
 class LibraryInfo(object):
     def __init__(self, library_info):
-        """ Info about an interface library, like JLinkARMDLL. """
-        self.version_major          = library_info.version_major
-        self.version_minor          = library_info.version_minor
+        """Info about an interface library, like JLinkARMDLL."""
+        self.version_major = library_info.version_major
+        self.version_minor = library_info.version_minor
 
         self.version_revision = decode_string(library_info.version_revision)
         self.file_path = decode_string(library_info.file_path)
@@ -1068,5 +1069,4 @@ class LibraryInfo(object):
             self.version_revision,
             self.file_path
         )
-
 

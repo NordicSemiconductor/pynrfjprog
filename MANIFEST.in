@@ -1,0 +1,12 @@
+include MANIFEST.in
+include README.md
+include LICENSE
+include pynrfjprog/docs/*.h
+include pynrfjprog/docs/nrfjprog_release_notes*.txt
+include pynrfjprog/config.toml
+include pynrfjprog/QspiDefault.ini
+recursive-include pynrfjprog/lib_* *.dll
+recursive-include pynrfjprog/lib_* *.so*
+recursive-include pynrfjprog/lib_* *.dylib*
+recursive-include pynrfjprog/lib_* jlinkarm_nrf_worker*
+recursive-include pynrfjprog/examples/* *

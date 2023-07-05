@@ -14,6 +14,7 @@ try:
     from . import rtt_callback
     from . import rtt_synchronous
 
+
     from .hex_files import *
 
 except Exception:
@@ -26,5 +27,6 @@ except Exception:
     import rtt_asyncio
     import rtt_callback
     import rtt_synchronous
+
 
     from .hex_files import *

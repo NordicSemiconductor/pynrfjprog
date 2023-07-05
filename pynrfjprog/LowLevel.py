@@ -25,10 +25,12 @@ try:
     from .Parameters import *
     from .APIError import *
     from . import RTTAsyncIO
+
 except Exception:
     from Parameters import *
     from APIError import *
     import RTTAsyncIO
+
 
 
 def logger_cb(msg, logger):
@@ -39,6 +41,9 @@ def logger_cb(msg, logger):
 Deprecated: Do not use, use log parameter in API constructor instead.
 """
 DEBUG_OUTPUT = False
+# Superset of settings that also contains QSPI config
+ConfigFile = Path(__file__).parent / "config.toml"
+# Kept for backwards compatability. Use ConfigFile instead
 QSPIIniFile = Path(__file__).parent / "QspiDefault.ini"
 
 
@@ -76,7 +81,8 @@ class API(object):
         self._jlink_arm_dll_path = None
         self._handle = ctypes.c_void_p(None)
 
-        self._rtt_callbacks = dict()  # Used to store rtt callbacks so they do not go out of scope.
+        # Used to store rtt callbacks so they do not go out of scope.
+        self._rtt_callbacks = dict()
 
         self._logger = None
         self._log = log
@@ -90,13 +96,17 @@ class API(object):
 
         self._device_family = decode_enum(device_family, DeviceFamily)
         if self._device_family is None:
-            raise ValueError("Parameter device_family must be of type int, str or DeviceFamily enumeration.")
+            raise ValueError(
+                "Parameter device_family must be of type int, str or DeviceFamily enumeration."
+            )
 
-        if not isinstance(jlink_arm_dll_path, str) and not jlink_arm_dll_path is None:
+        if not isinstance(jlink_arm_dll_path, str) and jlink_arm_dll_path is not None:
             raise ValueError("Parameter jlink_arm_dll_path must be a string.")
 
         self._jlink_arm_dll_path = (
-            os.path.abspath(jlink_arm_dll_path).encode("ascii") if jlink_arm_dll_path is not None else None
+            os.path.abspath(jlink_arm_dll_path).encode("ascii")
+            if jlink_arm_dll_path is not None
+            else None
         )
 
         # Redirect writeable log endpoints to log_stringio
@@ -121,12 +131,14 @@ class API(object):
             try:
                 self._lib = ctypes.cdll.LoadLibrary(nrfjprog_dll_path)
             except Exception as error:
-                raise RuntimeError("Could not load the NRFJPROG DLL: '{}'.".format(error))
+                raise RuntimeError(f"Could not load the NRFJPROG DLL: '{error}'.")
         else:
             try:
                 self._lib = ctypes.cdll.LoadLibrary(nrfjprog_dll_name)
             except Exception as error:
-                raise RuntimeError("Failed to load the NRFJPROG DLL by name: '{}.'".format(error))
+                raise RuntimeError(
+                    f"Failed to load the NRFJPROG DLL by name: '{error}.'"
+                )
 
     """
     nrfjprog.DLL functions.
@@ -185,12 +197,16 @@ class API(object):
         @return (str): Path to JLink shared library.
         """
         buffer_len = ctypes.c_uint32(0)
-        result = self._lib.NRFJPROG_find_jlink_path(None, ctypes.c_uint32(0), ctypes.byref(buffer_len))
+        result = self._lib.NRFJPROG_find_jlink_path(
+            None, ctypes.c_uint32(0), ctypes.byref(buffer_len)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
         buffer = (ctypes.c_char * buffer_len.value)(0)
-        result = self._lib.NRFJPROG_find_jlink_path(buffer, buffer_len, ctypes.byref(buffer_len))
+        result = self._lib.NRFJPROG_find_jlink_path(
+            buffer, buffer_len, ctypes.byref(buffer_len)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
         return buffer.value.decode("utf-8")
@@ -216,6 +232,9 @@ class API(object):
         # No need to encode self._jlink_arm_dll_path since it is an ASCII string and that is what is expected by ctypes.
         # Function self._log_str_cb has already been encoded in __init__() function.
         device_family = ctypes.c_int(self._device_family.value)
+
+        if self._handle.value != None:
+            raise RuntimeError("API instance is already opened.")
 
         _logger = logging.getLogger(__name__)
         self._logger = Parameters.LoggerAdapter(
@@ -246,7 +265,9 @@ class API(object):
         Closes and frees the JLinkARM DLL.
 
         """
-        self._lib.NRFJPROG_close_dll_inst(ctypes.byref(self._handle))
+
+        if self._handle.value != None:
+            self._lib.NRFJPROG_close_dll_inst(ctypes.byref(self._handle))
 
         if self._logger is not None:
             handlers = self._logger.logger.handlers[:]
@@ -257,7 +278,9 @@ class API(object):
         # Disable the api finalizer, as it's no longer necessary when the api is closed.
         self._finalizer.detach()
 
-    def configure(self, configuration, config_type=FileInputType.FILE_INPUT_PATH):
+    def configure(
+        self, configuration=ConfigFile, config_type=FileInputType.FILE_INPUT_PATH
+    ):
         """
         Configures nrfjprogdll using the provided configuration file or dict.
 
@@ -272,7 +295,9 @@ class API(object):
         configuration = str(configuration).encode("utf-8")
         config_type = ctypes.c_int(config_type)
 
-        result = self._lib.NRFJPROG_configure_inst(self._handle, configuration, config_type)
+        result = self._lib.NRFJPROG_configure_inst(
+            self._handle, configuration, config_type
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -295,7 +320,9 @@ class API(object):
         """
 
         if not is_u32(serial_number):
-            raise ValueError("The serial_number parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The serial_number parameter must be an unsigned 32-bit value."
+            )
 
         serial_number = ctypes.c_uint32(serial_number)
         com_ports_len = ctypes.c_uint32(NRFJPROG_COM_PER_JLINK)
@@ -333,7 +360,10 @@ class API(object):
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
-        snr = [int(serial_numbers[i]) for i in range(0, min(num_available.value, serial_numbers_len.value))]
+        snr = [
+            int(serial_numbers[i])
+            for i in range(0, min(num_available.value, serial_numbers_len.value))
+        ]
 
         if len(snr) == 0:
             return None
@@ -380,7 +410,10 @@ class API(object):
                 break
             read_size = num_available.value
 
-        result = [EMUConInfo(emu_info) for emu_info in emu_infos[0 : min(num_available.value, emu_infos_len.value)]]
+        result = [
+            EMUConInfo(emu_info)
+            for emu_info in emu_infos[0 : min(num_available.value, emu_infos_len.value)]
+        ]
         if len(result) == 0:
             return None
         else:
@@ -394,13 +427,17 @@ class API(object):
         """
         is_connected_to_emu = ctypes.c_bool()
 
-        result = self._lib.NRFJPROG_is_connected_to_emu_inst(self._handle, ctypes.byref(is_connected_to_emu))
+        result = self._lib.NRFJPROG_is_connected_to_emu_inst(
+            self._handle, ctypes.byref(is_connected_to_emu)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
         return is_connected_to_emu.value
 
-    def connect_to_emu_with_snr(self, serial_number, jlink_speed_khz=_DEFAULT_JLINK_SPEED_KHZ):
+    def connect_to_emu_with_snr(
+        self, serial_number, jlink_speed_khz=_DEFAULT_JLINK_SPEED_KHZ
+    ):
         """
         Connects to a given emulator/debugger.
 
@@ -408,17 +445,23 @@ class API(object):
         @param int jlink_speed_khz: SWDCLK speed [kHz].
         """
         if not is_u32(serial_number):
-            raise ValueError("The serial_number parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The serial_number parameter must be an unsigned 32-bit value."
+            )
 
         if not is_u32(jlink_speed_khz):
-            raise ValueError("The jlink_speed_khz parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The jlink_speed_khz parameter must be an unsigned 32-bit value."
+            )
 
         self._set_logger_id(serial_number)
 
         serial_number = ctypes.c_uint32(serial_number)
         jlink_speed_khz = ctypes.c_uint32(jlink_speed_khz)
 
-        result = self._lib.NRFJPROG_connect_to_emu_with_snr_inst(self._handle, serial_number, jlink_speed_khz)
+        result = self._lib.NRFJPROG_connect_to_emu_with_snr_inst(
+            self._handle, serial_number, jlink_speed_khz
+        )
         if result != NrfjprogdllErr.SUCCESS:
             self._set_logger_id(None)
             raise APIError(result, error_data=self.get_errors())
@@ -439,11 +482,17 @@ class API(object):
         @param int jlink_speed_khz: SWDCLK speed [kHz].
         """
         if not is_u32(jlink_speed_khz):
-            raise ValueError("The jlink_speed_khz parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The jlink_speed_khz parameter must be an unsigned 32-bit value."
+            )
         if not is_u32(serial_number):
-            raise ValueError("The serial_number parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The serial_number parameter must be an unsigned 32-bit value."
+            )
         if not is_u16(port):
-            raise ValueError("The serial_number parameter must be an unsigned 16-bit value.")
+            raise ValueError(
+                "The serial_number parameter must be an unsigned 16-bit value."
+            )
 
         hostname = ctypes.c_char_p(hostname.encode("utf-8"))
         port = ctypes.c_uint16(port)
@@ -464,11 +513,15 @@ class API(object):
         @param int jlink_speed_khz: SWDCLK speed [kHz].
         """
         if not is_u32(jlink_speed_khz):
-            raise ValueError("The jlink_speed_khz parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The jlink_speed_khz parameter must be an unsigned 32-bit value."
+            )
 
         jlink_speed_khz = ctypes.c_uint32(jlink_speed_khz)
 
-        result = self._lib.NRFJPROG_connect_to_emu_without_snr_inst(self._handle, jlink_speed_khz)
+        result = self._lib.NRFJPROG_connect_to_emu_without_snr_inst(
+            self._handle, jlink_speed_khz
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -498,7 +551,9 @@ class API(object):
         """
         snr = ctypes.c_uint32()
 
-        result = self._lib.NRFJPROG_read_connected_emu_snr_inst(self._handle, ctypes.byref(snr))
+        result = self._lib.NRFJPROG_read_connected_emu_snr_inst(
+            self._handle, ctypes.byref(snr)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -513,7 +568,9 @@ class API(object):
         buffer_size = ctypes.c_uint32(255)
         fwstr = ctypes.create_string_buffer(buffer_size.value)
 
-        result = self._lib.NRFJPROG_read_connected_emu_fwstr_inst(self._handle, fwstr, buffer_size)
+        result = self._lib.NRFJPROG_read_connected_emu_fwstr_inst(
+            self._handle, fwstr, buffer_size
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -534,7 +591,9 @@ class API(object):
         @param DeviceFamily family: Target family for further api calls.
         """
         if not is_enum(family, DeviceFamily):
-            raise ValueError("family Parameter must be of type int, str or DeviceFamily enumeration.")
+            raise ValueError(
+                "family Parameter must be of type int, str or DeviceFamily enumeration."
+            )
 
         family = decode_enum(family, DeviceFamily)
         family = ctypes.c_int(family)
@@ -550,14 +609,18 @@ class API(object):
         @return bool: True if held in reset.
         """
         if not is_enum(coprocessor, CoProcessor):
-            raise ValueError("CoProcessor Parameter must be of type int, str or CoProcessor enumeration.")
+            raise ValueError(
+                "CoProcessor Parameter must be of type int, str or CoProcessor enumeration."
+            )
 
         coprocessor = decode_enum(coprocessor, CoProcessor)
         coprocessor = ctypes.c_int(coprocessor)
 
         held = ctypes.c_bool()
 
-        result = self._lib.NRFJPROG_is_coprocessor_enabled_inst(self._handle, coprocessor, ctypes.byref(held))
+        result = self._lib.NRFJPROG_is_coprocessor_enabled_inst(
+            self._handle, coprocessor, ctypes.byref(held)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -569,7 +632,9 @@ class API(object):
         @param CoProcessor coprocessor: Target coprocessor for connect_to_device() call.
         """
         if not is_enum(coprocessor, CoProcessor):
-            raise ValueError("CoProcessor Parameter must be of type int, str or CoProcessor enumeration.")
+            raise ValueError(
+                "CoProcessor Parameter must be of type int, str or CoProcessor enumeration."
+            )
 
         coprocessor = decode_enum(coprocessor, CoProcessor)
         coprocessor = ctypes.c_int(coprocessor)
@@ -584,7 +649,9 @@ class API(object):
         @param CoProcessor coprocessor: Target coprocessor for connect_to_device() call.
         """
         if not is_enum(coprocessor, CoProcessor):
-            raise ValueError("CoProcessor Parameter must be of type int, str or CoProcessor enumeration.")
+            raise ValueError(
+                "CoProcessor Parameter must be of type int, str or CoProcessor enumeration."
+            )
 
         coprocessor = decode_enum(coprocessor, CoProcessor)
         coprocessor = ctypes.c_int(coprocessor)
@@ -599,7 +666,9 @@ class API(object):
         @param CoProcessor coprocessor: Target coprocessor for connect_to_device() call.
         """
         if not is_enum(coprocessor, CoProcessor):
-            raise ValueError("CoProcessor Parameter must be of type int, str or CoProcessor enumeration.")
+            raise ValueError(
+                "CoProcessor Parameter must be of type int, str or CoProcessor enumeration."
+            )
 
         coprocessor = decode_enum(coprocessor, CoProcessor)
         coprocessor = ctypes.c_int(coprocessor)
@@ -625,7 +694,9 @@ class API(object):
         """
         is_connected_to_device = ctypes.c_bool()
 
-        result = self._lib.NRFJPROG_is_connected_to_device_inst(self._handle, ctypes.byref(is_connected_to_device))
+        result = self._lib.NRFJPROG_is_connected_to_device_inst(
+            self._handle, ctypes.byref(is_connected_to_device)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -660,7 +731,9 @@ class API(object):
                 "Parameter desired_protection_level must be of type int, str or ReadbackProtection enumeration."
             )
 
-        desired_protection_level = decode_enum(desired_protection_level, ReadbackProtection)
+        desired_protection_level = decode_enum(
+            desired_protection_level, ReadbackProtection
+        )
         if desired_protection_level is None:
             raise ValueError(
                 "Parameter desired_protection_level must be of type int, str or ReadbackProtection enumeration."
@@ -668,7 +741,9 @@ class API(object):
 
         desired_protection_level = ctypes.c_int(desired_protection_level.value)
 
-        result = self._lib.NRFJPROG_readback_protect_inst(self._handle, desired_protection_level)
+        result = self._lib.NRFJPROG_readback_protect_inst(
+            self._handle, desired_protection_level
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -680,7 +755,9 @@ class API(object):
         """
         status = ctypes.c_int()
 
-        result = self._lib.NRFJPROG_readback_status_inst(self._handle, ctypes.byref(status))
+        result = self._lib.NRFJPROG_readback_status_inst(
+            self._handle, ctypes.byref(status)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -702,7 +779,9 @@ class API(object):
         """
         status = ctypes.c_bool()
 
-        result = self._lib.NRFJPROG_is_eraseprotect_enabled_inst(self._handle, ctypes.byref(status))
+        result = self._lib.NRFJPROG_is_eraseprotect_enabled_inst(
+            self._handle, ctypes.byref(status)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -772,7 +851,9 @@ class API(object):
         @return boolean: True if bprot is enabled for address range.
         """
         if not is_u32(address_start):
-            raise ValueError("The address_start parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The address_start parameter must be an unsigned 32-bit value."
+            )
 
         if not is_u32(length):
             raise ValueError("The length parameter must be an unsigned 32-bit value.")
@@ -822,6 +903,43 @@ class API(object):
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
+    def erase_range(self, addr, length):
+        """
+        Erases code memory in the given range with the finest available granularity. Typically, this means a series of page erases is used for erasing.
+        The erased area is then returned as a tuple containing the start address and number of bytes erased.
+
+        This function can target both internal and external (QSPI/XiP) code memory. In the case of external memory, the address must include the offset to the external memory.
+        For example nRF53 Application XiP memory starts at address 0x10000000.
+
+        An error will be raised if the target address does not map to a memory accessible by the target coprocessor, or if the target memory is not a code memory.
+        For erasing UICR see the erase_uicr() function.
+
+        @param int addr: Range start address
+        @param int length: Number of bytes to erase
+        @return tuple(int,int): A tuple containing start address and number of bytes that were erased
+        """
+        if not is_u32(addr):
+            raise ValueError("The addr parameter must be an unsigned 32-bit value.")
+
+        if not is_u32(length):
+            raise ValueError("The data parameter must be an unsigned 32-bit value.")
+
+        addr = ctypes.c_uint32(addr)
+        length = ctypes.c_uint32(length)
+        erased_addr = ctypes.c_uint32()
+        erased_len = ctypes.c_uint32()
+
+        result = self._lib.NRFJPROG_erase_range_inst(
+            self._handle,
+            addr,
+            length,
+            ctypes.byref(erased_addr),
+            ctypes.byref(erased_len),
+        )
+        if result != NrfjprogdllErr.SUCCESS:
+            raise APIError(result, error_data=self.get_errors())
+        return (erased_addr.value, erased_len.value)
+
     def erase_uicr(self):
         """
         Erases UICR info page.
@@ -869,7 +987,9 @@ class API(object):
         addr = ctypes.c_uint32(addr)
         data = ctypes.c_uint32()
 
-        result = self._lib.NRFJPROG_read_u32_inst(self._handle, addr, ctypes.byref(data))
+        result = self._lib.NRFJPROG_read_u32_inst(
+            self._handle, addr, ctypes.byref(data)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -887,7 +1007,9 @@ class API(object):
             raise ValueError("The addr parameter must be an unsigned 32-bit value.")
 
         if not is_valid_buf(data):
-            raise ValueError("The data parameter must be a sequence type with at least one item.")
+            raise ValueError(
+                "The data parameter must be a sequence type with at least one item."
+            )
 
         if not is_bool(control):
             raise ValueError("The control parameter must be a boolean value.")
@@ -897,7 +1019,9 @@ class API(object):
         data = (ctypes.c_uint8 * data_len.value)(*data)
         control = ctypes.c_bool(control)
 
-        result = self._lib.NRFJPROG_write_inst(self._handle, addr, ctypes.byref(data), data_len, control)
+        result = self._lib.NRFJPROG_write_inst(
+            self._handle, addr, ctypes.byref(data), data_len, control
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -919,7 +1043,9 @@ class API(object):
         data_len = ctypes.c_uint32(data_len)
         data = (ctypes.c_uint8 * data_len.value)()
 
-        result = self._lib.NRFJPROG_read_inst(self._handle, addr, ctypes.byref(data), data_len)
+        result = self._lib.NRFJPROG_read_inst(
+            self._handle, addr, ctypes.byref(data), data_len
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -933,7 +1059,9 @@ class API(object):
         """
         is_halted = ctypes.c_bool()
 
-        result = self._lib.NRFJPROG_is_halted_inst(self._handle, ctypes.byref(is_halted))
+        result = self._lib.NRFJPROG_is_halted_inst(
+            self._handle, ctypes.byref(is_halted)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -994,7 +1122,9 @@ class API(object):
         """
         count = ctypes.c_uint32()
 
-        result = self._lib.NRFJPROG_read_ram_sections_count_inst(self._handle, ctypes.byref(count))
+        result = self._lib.NRFJPROG_read_ram_sections_count_inst(
+            self._handle, ctypes.byref(count)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1026,7 +1156,9 @@ class API(object):
         status_size = ctypes.c_uint32(self.read_ram_sections_count())
         status = (ctypes.c_uint32 * status_size.value)()
 
-        result = self._lib.NRFJPROG_read_ram_sections_power_status_inst(self._handle, ctypes.byref(status), status_size)
+        result = self._lib.NRFJPROG_read_ram_sections_power_status_inst(
+            self._handle, ctypes.byref(status), status_size
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1048,11 +1180,15 @@ class API(object):
         @param int section_index: RAM block index to power off.
         """
         if not is_u32(section_index):
-            raise ValueError("The section_index parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The section_index parameter must be an unsigned 32-bit value."
+            )
 
         section_index = ctypes.c_uint32(section_index)
 
-        result = self._lib.NRFJPROG_unpower_ram_section_inst(self._handle, section_index)
+        result = self._lib.NRFJPROG_unpower_ram_section_inst(
+            self._handle, section_index
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1087,11 +1223,14 @@ class API(object):
             raise APIError(result)
 
         result = [
-            MemoryDescription(mem_description) for mem_description in memory_description_arr[0 : num_available.value]
+            MemoryDescription(mem_description)
+            for mem_description in memory_description_arr[0 : num_available.value]
         ]
         if read_page_sizes:
             for memory_description in result:
-                memory_description.page_repetitions = self.read_page_sizes(memory_description)
+                memory_description.page_repetitions = self.read_page_sizes(
+                    memory_description
+                )
         return result
 
     def read_page_sizes(self, memory_description):
@@ -1104,7 +1243,9 @@ class API(object):
         @return: list of Parameters.PageRepetitions: Page repetitions read.
         """
         if not is_right_class(memory_description, MemoryDescription):
-            raise ValueError("Parameter memory_description must be of type MemoryDescription.")
+            raise ValueError(
+                "Parameter memory_description must be of type MemoryDescription."
+            )
 
         # Start by obtaining the number of memories available
         num_available = ctypes.c_uint32()
@@ -1134,7 +1275,10 @@ class API(object):
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result)
 
-        return [PageRepetitions(page_rep) for page_rep in page_repetitions_arr[0 : num_available.value]]
+        return [
+            PageRepetitions(page_rep)
+            for page_rep in page_repetitions_arr[0 : num_available.value]
+        ]
 
     def read_cpu_register(self, register_name):
         """
@@ -1146,13 +1290,17 @@ class API(object):
         if not is_u32(register_name):
             register_enum = decode_enum(register_name, CpuRegister)
             if register_enum is None:
-                raise ValueError("Parameter register_name must be of type uint, str, or CpuRegister enumeration.")
+                raise ValueError(
+                    "Parameter register_name must be of type uint, str, or CpuRegister enumeration."
+                )
             register_name = register_enum.value
 
         register_name = ctypes.c_int(register_name)
         value = ctypes.c_uint32()
 
-        result = self._lib.NRFJPROG_read_cpu_register_inst(self._handle, register_name, ctypes.byref(value))
+        result = self._lib.NRFJPROG_read_cpu_register_inst(
+            self._handle, register_name, ctypes.byref(value)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1171,13 +1319,17 @@ class API(object):
         if not is_u32(register_name):
             register_enum = decode_enum(register_name, CpuRegister)
             if register_enum is None:
-                raise ValueError("Parameter register_name must be of type uint, str, or CpuRegister enumeration.")
+                raise ValueError(
+                    "Parameter register_name must be of type uint, str, or CpuRegister enumeration."
+                )
             register_name = register_enum.value
 
         register_name = ctypes.c_int(register_name)
         value = ctypes.c_uint32(value)
 
-        result = self._lib.NRFJPROG_write_cpu_register_inst(self._handle, register_name, value)
+        result = self._lib.NRFJPROG_write_cpu_register_inst(
+            self._handle, register_name, value
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1189,7 +1341,9 @@ class API(object):
         """
         version = ctypes.c_int()
 
-        result = self._lib.NRFJPROG_read_device_version_inst(self._handle, ctypes.byref(version))
+        result = self._lib.NRFJPROG_read_device_version_inst(
+            self._handle, ctypes.byref(version)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1226,7 +1380,9 @@ class API(object):
         """
 
         arch = ctypes.c_int()
-        result = self._lib.NRFJPROG_read_cpu_architecture_inst(self._handle, ctypes.byref(arch))
+        result = self._lib.NRFJPROG_read_cpu_architecture_inst(
+            self._handle, ctypes.byref(arch)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1240,7 +1396,9 @@ class API(object):
         """
         family = ctypes.c_int()
 
-        result = self._lib.NRFJPROG_read_device_family_inst(self._handle, ctypes.byref(family))
+        result = self._lib.NRFJPROG_read_device_family_inst(
+            self._handle, ctypes.byref(family)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1259,7 +1417,9 @@ class API(object):
         addr = ctypes.c_uint8(addr)
         data = ctypes.c_uint32()
 
-        result = self._lib.NRFJPROG_read_debug_port_register_inst(self._handle, addr, ctypes.byref(data))
+        result = self._lib.NRFJPROG_read_debug_port_register_inst(
+            self._handle, addr, ctypes.byref(data)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1281,7 +1441,9 @@ class API(object):
         addr = ctypes.c_uint8(addr)
         data = ctypes.c_uint32(data)
 
-        result = self._lib.NRFJPROG_write_debug_port_register_inst(self._handle, addr, data)
+        result = self._lib.NRFJPROG_write_debug_port_register_inst(
+            self._handle, addr, data
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1303,7 +1465,9 @@ class API(object):
         addr = ctypes.c_uint8(addr)
         data = ctypes.c_uint32()
 
-        result = self._lib.NRFJPROG_read_access_port_register_inst(self._handle, ap_index, addr, ctypes.byref(data))
+        result = self._lib.NRFJPROG_read_access_port_register_inst(
+            self._handle, ap_index, addr, ctypes.byref(data)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1330,7 +1494,9 @@ class API(object):
         addr = ctypes.c_uint8(addr)
         data = ctypes.c_uint32(data)
 
-        result = self._lib.NRFJPROG_write_access_port_register_inst(self._handle, ap_index, addr, data)
+        result = self._lib.NRFJPROG_write_access_port_register_inst(
+            self._handle, ap_index, addr, data
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1342,7 +1508,9 @@ class API(object):
         """
         started = ctypes.c_bool()
 
-        result = self._lib.NRFJPROG_is_rtt_started_inst(self._handle, ctypes.byref(started))
+        result = self._lib.NRFJPROG_is_rtt_started_inst(
+            self._handle, ctypes.byref(started)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1359,7 +1527,9 @@ class API(object):
 
         addr = ctypes.c_uint32(addr)
 
-        result = self._lib.NRFJPROG_rtt_set_control_block_address_inst(self._handle, addr)
+        result = self._lib.NRFJPROG_rtt_set_control_block_address_inst(
+            self._handle, addr
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1373,7 +1543,11 @@ class API(object):
             raise APIError(result, error_data=self.get_errors())
 
     async def rtt_asyncio_create_connection(
-        self, protocol_factory, channel_index=0, max_read_data_len=64 * 1024, encoding="utf-8"
+        self,
+        protocol_factory,
+        channel_index=0,
+        max_read_data_len=64 * 1024,
+        encoding="utf-8",
     ):
         """
         Create a streaming transport connection to a given RTT channel
@@ -1386,7 +1560,9 @@ class API(object):
         """
         loop = asyncio.get_event_loop()
         protocol = protocol_factory()
-        transport = RTTAsyncIO.RTTTransport(protocol, loop, self, channel_index, encoding)
+        transport = RTTAsyncIO.RTTTransport(
+            protocol, loop, self, channel_index, encoding
+        )
 
         # rtt_async_callback_start is blocking
         await loop.run_in_executor(
@@ -1401,7 +1577,9 @@ class API(object):
 
         return transport, protocol
 
-    async def rtt_asyncio_open_connection(self, channel_index=0, max_read_data_len=64 * 1024, encoding="utf-8"):
+    async def rtt_asyncio_open_connection(
+        self, channel_index=0, max_read_data_len=64 * 1024, encoding="utf-8"
+    ):
         """
         A wrapper for rtt_asyncio_create_connection() returning a (reader, writer) pair.
 
@@ -1456,30 +1634,44 @@ class API(object):
         """
 
         if not is_u32(channel_index):
-            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The channel_index parameter must be an unsigned 32-bit value."
+            )
         if not is_u32(max_read_data_len):
-            raise ValueError("The max_read_data_len parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The max_read_data_len parameter must be an unsigned 32-bit value."
+            )
         if not is_pointer(callback_param):
-            raise ValueError("The callback_param parameter must be an integer value or None.")
+            raise ValueError(
+                "The callback_param parameter must be an integer value or None."
+            )
 
         read_callback = ctypes.c_void_p(None)
         write_callback = ctypes.c_void_p(None)
 
         if read_callback_func is not None:
-            read_callback = lambda up_channel_index, data_len, data, param: read_callback_func(
-                up_channel_index, data[:data_len], param
+            read_callback = (
+                lambda up_channel_index, data_len, data, param: read_callback_func(
+                    up_channel_index, data[:data_len], param
+                )
             )
             read_callback = ctypes.CFUNCTYPE(
-                None, ctypes.c_uint32, ctypes.c_uint32, ctypes.POINTER(ctypes.c_char), ctypes.c_void_p
+                None,
+                ctypes.c_uint32,
+                ctypes.c_uint32,
+                ctypes.POINTER(ctypes.c_char),
+                ctypes.c_void_p,
             )(read_callback)
 
         if write_callback_func is not None:
-            write_callback = lambda down_channel_index, data_len, result, param: write_callback_func(
-                down_channel_index, data_len, NrfjprogdllErr(result), param
+            write_callback = (
+                lambda down_channel_index, data_len, result, param: write_callback_func(
+                    down_channel_index, data_len, NrfjprogdllErr(result), param
+                )
             )
-            write_callback = ctypes.CFUNCTYPE(None, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_int, ctypes.c_void_p)(
-                write_callback
-            )
+            write_callback = ctypes.CFUNCTYPE(
+                None, ctypes.c_uint32, ctypes.c_uint32, ctypes.c_int, ctypes.c_void_p
+            )(write_callback)
 
         callback_param = ctypes.c_void_p(callback_param)
 
@@ -1516,7 +1708,9 @@ class API(object):
         """
         is_control_block_found = ctypes.c_bool()
 
-        result = self._lib.NRFJPROG_rtt_is_control_block_found_inst(self._handle, ctypes.byref(is_control_block_found))
+        result = self._lib.NRFJPROG_rtt_is_control_block_found_inst(
+            self._handle, ctypes.byref(is_control_block_found)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1557,9 +1751,13 @@ class API(object):
         @param int channel_index: RTT channel to stop.
         """
         if not is_u32(channel_index):
-            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The channel_index parameter must be an unsigned 32-bit value."
+            )
 
-        result = self._lib.NRFJPROG_rtt_async_stop_inst(self._handle, ctypes.c_uint32(channel_index))
+        result = self._lib.NRFJPROG_rtt_async_stop_inst(
+            self._handle, ctypes.c_uint32(channel_index)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1575,13 +1773,17 @@ class API(object):
         @return str or bytearray: Data read. Return type depends on encoding optional parameter. If an encoding is given, the return type will be Python version's native string type. If None is given, a bytearray will be returned.
         """
         if not is_u32(channel_index):
-            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The channel_index parameter must be an unsigned 32-bit value."
+            )
 
         if not is_u32(length):
             raise ValueError("The length parameter must be an unsigned 32-bit value.")
 
         if encoding is not None and not is_valid_encoding(encoding):
-            raise ValueError("The encoding parameter must be either None or a standard encoding in python.")
+            raise ValueError(
+                "The encoding parameter must be either None or a standard encoding in python."
+            )
 
         channel_index = ctypes.c_uint32(channel_index)
         length = ctypes.c_uint32(length)
@@ -1602,7 +1804,11 @@ class API(object):
             return bytearray(data[0 : data_read.value])
         else:
             if sys.version_info[0] == 2:
-                return bytearray(data[0 : data_read.value]).decode(encoding).encode("utf-8")
+                return (
+                    bytearray(data[0 : data_read.value])
+                    .decode(encoding)
+                    .encode("utf-8")
+                )
             else:
                 return bytearray(data[0 : data_read.value]).decode(encoding)
 
@@ -1616,10 +1822,14 @@ class API(object):
         @return int: Number of bytes written.  Note that if non-'latin-1' characters are used, the number of bytes written depends on the encoding parameter given.
         """
         if not is_u32(channel_index):
-            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The channel_index parameter must be an unsigned 32-bit value."
+            )
 
         if encoding is not None and not is_valid_encoding(encoding):
-            raise ValueError("The encoding parameter must be either None or a standard encoding in python.")
+            raise ValueError(
+                "The encoding parameter must be either None or a standard encoding in python."
+            )
 
         if isinstance(msg, str):
             msg = bytearray(msg, encoding)
@@ -1627,7 +1837,9 @@ class API(object):
             msg = bytearray(msg)
 
         if not is_valid_buf(msg):
-            raise ValueError("The msg parameter must be a sequence type with at least one item.")
+            raise ValueError(
+                "The msg parameter must be a sequence type with at least one item."
+            )
 
         channel_index = ctypes.c_uint32(channel_index)
         length = ctypes.c_uint32(len(msg))
@@ -1658,10 +1870,14 @@ class API(object):
         @param (optional) str or None encoding: Encoding of the msg to write. Default value 'utf-8'.
         """
         if not is_u32(channel_index):
-            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The channel_index parameter must be an unsigned 32-bit value."
+            )
 
         if encoding is not None and not is_valid_encoding(encoding):
-            raise ValueError("The encoding parameter must be either None or a standard encoding in python.")
+            raise ValueError(
+                "The encoding parameter must be either None or a standard encoding in python."
+            )
 
         if isinstance(msg, str):
             msg = bytearray(msg, encoding)
@@ -1669,13 +1885,17 @@ class API(object):
             msg = bytearray(msg)
 
         if not is_valid_buf(msg):
-            raise ValueError("The msg parameter must be a sequence type with at least one item.")
+            raise ValueError(
+                "The msg parameter must be a sequence type with at least one item."
+            )
 
         channel_index = ctypes.c_uint32(channel_index)
         length = ctypes.c_uint32(len(msg))
         data = (ctypes.c_uint8 * length.value)(*msg)
 
-        result = self._lib.NRFJPROG_rtt_async_write_inst(self._handle, channel_index, ctypes.byref(data), length)
+        result = self._lib.NRFJPROG_rtt_async_write_inst(
+            self._handle, channel_index, ctypes.byref(data), length
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1707,14 +1927,20 @@ class API(object):
         @return (str, int): Tuple containing the channel name and the size of channel buffer.
         """
         if not is_u32(channel_index):
-            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
+            raise ValueError(
+                "The channel_index parameter must be an unsigned 32-bit value."
+            )
 
         if not is_enum(direction, RTTChannelDirection):
-            raise ValueError("Parameter direction must be of type int, str or RTTChannelDirection enumeration.")
+            raise ValueError(
+                "Parameter direction must be of type int, str or RTTChannelDirection enumeration."
+            )
 
         direction = decode_enum(direction, RTTChannelDirection)
         if direction is None:
-            raise ValueError("Parameter direction must be of type int, str or RTTChannelDirection enumeration.")
+            raise ValueError(
+                "Parameter direction must be of type int, str or RTTChannelDirection enumeration."
+            )
 
         channel_index = ctypes.c_uint32(channel_index)
         direction = ctypes.c_int(direction.value)
@@ -1743,7 +1969,9 @@ class API(object):
         """
         initialized = ctypes.c_bool()
 
-        result = self._lib.NRFJPROG_is_qspi_init_inst(self._handle, ctypes.byref(initialized))
+        result = self._lib.NRFJPROG_is_qspi_init_inst(
+            self._handle, ctypes.byref(initialized)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -1787,7 +2015,9 @@ class API(object):
             raise ValueError("The retain_ram parameter must be a boolean value.")
 
         if not is_right_class(init_params, QSPIInitParams) and init_params is not None:
-            raise ValueError("The init_params parameter must be an instance of class QSPIInitParams.")
+            raise ValueError(
+                "The init_params parameter must be an instance of class QSPIInitParams."
+            )
 
         if init_params is None:
             init_params = QSPIInitParams()
@@ -1818,11 +2048,13 @@ class API(object):
             init_params.pp_size,
         )
 
-        result = self._lib.NRFJPROG_qspi_init_inst(self._handle, retain_ram, ctypes.byref(qspi_init_params))
+        result = self._lib.NRFJPROG_qspi_init_inst(
+            self._handle, retain_ram, ctypes.byref(qspi_init_params)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
-    def qspi_init_ini(self, ini_path=QSPIIniFile):
+    def qspi_init_ini(self, ini_path=ConfigFile):
         """
         Configures and initializes the QSPI peripheral using the specified ini config file. If no ini_path is specified, the default
         settings file QspiDefault.ini will be used.
@@ -1882,7 +2114,9 @@ class API(object):
             raise ValueError("The retain_ram parameter must be a boolean value.")
 
         if not is_right_class(init_params, QSPIInitParams) and init_params is not None:
-            raise ValueError("The init_params parameter must be an instance of class QSPIInitParams.")
+            raise ValueError(
+                "The init_params parameter must be an instance of class QSPIInitParams."
+            )
 
         if init_params is None:
             init_params = QSPIInitParams()
@@ -1913,11 +2147,13 @@ class API(object):
             init_params.pp_size,
         )
 
-        result = self._lib.NRFJPROG_qspi_configure_inst(self._handle, retain_ram, ctypes.byref(qspi_init_params))
+        result = self._lib.NRFJPROG_qspi_configure_inst(
+            self._handle, retain_ram, ctypes.byref(qspi_init_params)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
-    def qspi_configure_ini(self, ini_path=QSPIIniFile):
+    def qspi_configure_ini(self, ini_path=ConfigFile):
         """
         Configures the QSPI peripheral using the specified ini config file. If no ini_path is specified, the default
         settings file QspiDefault.ini will be used.
@@ -1997,7 +2233,9 @@ class API(object):
         length = ctypes.c_uint32(length)
         data = (ctypes.c_uint8 * length.value)()
 
-        result = self._lib.NRFJPROG_qspi_read_inst(self._handle, addr, ctypes.byref(data), length)
+        result = self._lib.NRFJPROG_qspi_read_inst(
+            self._handle, addr, ctypes.byref(data), length
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -2014,13 +2252,17 @@ class API(object):
             raise ValueError("The addr parameter must be an unsigned 32-bit value.")
 
         if not is_valid_buf(data):
-            raise ValueError("The data parameter must be a sequence type with at least one item.")
+            raise ValueError(
+                "The data parameter must be a sequence type with at least one item."
+            )
 
         addr = ctypes.c_uint32(addr)
         data_len = ctypes.c_uint32(len(data))
         data = (ctypes.c_uint8 * data_len.value)(*data)
 
-        result = self._lib.NRFJPROG_qspi_write_inst(self._handle, addr, ctypes.byref(data), data_len)
+        result = self._lib.NRFJPROG_qspi_write_inst(
+            self._handle, addr, ctypes.byref(data), data_len
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -2035,11 +2277,15 @@ class API(object):
             raise ValueError("The addr parameter must be an unsigned 32-bit value.")
 
         if not is_enum(length, QSPIEraseLen):
-            raise ValueError("Parameter length must be of type int, str or QSPIEraseLen enumeration.")
+            raise ValueError(
+                "Parameter length must be of type int, str or QSPIEraseLen enumeration."
+            )
 
         length = decode_enum(length, QSPIEraseLen)
         if length is None:
-            raise ValueError("Parameter length must be of type int, str or QSPIEraseLen enumeration.")
+            raise ValueError(
+                "Parameter length must be of type int, str or QSPIEraseLen enumeration."
+            )
 
         addr = ctypes.c_uint32(addr)
         length = ctypes.c_int(length)
@@ -2065,14 +2311,20 @@ class API(object):
             raise ValueError("The length parameter must be an unsigned 32-bit value.")
 
         if not is_valid_buf(data_in) and data_in is not None:
-            raise ValueError("The data_in parameter must be a sequence type with at least one item.")
+            raise ValueError(
+                "The data_in parameter must be a sequence type with at least one item."
+            )
 
         if not is_bool(output):
             raise ValueError("The output parameter must be a boolean value.")
 
         code = ctypes.c_uint8(code)
         length = ctypes.c_uint32(length)
-        data_in = (ctypes.c_uint8 * (length.value - 1))(*data_in) if data_in is not None else None
+        data_in = (
+            (ctypes.c_uint8 * (length.value - 1))(*data_in)
+            if data_in is not None
+            else None
+        )
         data_out = (ctypes.c_uint8 * (length.value - 1))() if output else None
 
         result = self._lib.NRFJPROG_qspi_custom_inst(
@@ -2119,9 +2371,13 @@ class API(object):
         if read_options is None:
             read_options = Parameters.ReadOptions(readcode=True)
         if not isinstance(read_options, ReadOptions):
-            raise TypeError("The program_options parameter must be an instance of class ReadOptions.")
+            raise TypeError(
+                "The program_options parameter must be an instance of class ReadOptions."
+            )
 
-        result = self._lib.NRFJPROG_read_to_file_inst(self._handle, file_path, read_options)
+        result = self._lib.NRFJPROG_read_to_file_inst(
+            self._handle, file_path, read_options
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -2135,13 +2391,17 @@ class API(object):
         @param Parameters.VerifyAction verify_action: Type of verify operation.
         """
         if not isinstance(verify_action, VerifyAction):
-            raise TypeError("Parameter verify_action must be of type int, str or VerifyAction enumeration.")
+            raise TypeError(
+                "Parameter verify_action must be of type int, str or VerifyAction enumeration."
+            )
 
         verify_action = ctypes.c_int(decode_enum(verify_action, VerifyAction))
 
         file_path = str(file_path).encode("utf-8")
 
-        result = self._lib.NRFJPROG_verify_file_inst(self._handle, file_path, verify_action)
+        result = self._lib.NRFJPROG_verify_file_inst(
+            self._handle, file_path, verify_action
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 
@@ -2161,15 +2421,21 @@ class API(object):
         @param Parameters.EraseAction qspi_erase_mode: Erase method for external memory.
         """
         if not isinstance(chip_erase_mode, EraseAction):
-            raise TypeError("Parameter erase_action must be of type int, str or EraseAction enumeration.")
+            raise TypeError(
+                "Parameter erase_action must be of type int, str or EraseAction enumeration."
+            )
         if not isinstance(qspi_erase_mode, EraseAction):
-            raise TypeError("Parameter erase_action must be of type int, str or EraseAction enumeration.")
+            raise TypeError(
+                "Parameter erase_action must be of type int, str or EraseAction enumeration."
+            )
 
         file_path = str(file_path).encode("utf-8")
         chip_erase_mode = ctypes.c_int(decode_enum(chip_erase_mode, EraseAction))
         qspi_erase_mode = ctypes.c_int(decode_enum(qspi_erase_mode, EraseAction))
 
-        result = self._lib.NRFJPROG_erase_file_inst(self._handle, file_path, chip_erase_mode, qspi_erase_mode)
+        result = self._lib.NRFJPROG_erase_file_inst(
+            self._handle, file_path, chip_erase_mode, qspi_erase_mode
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors())
 

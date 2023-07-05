@@ -6,6 +6,12 @@ Note: Please look at the highlevelnrfjprogdll.h file provided with in the folder
 
 from __future__ import print_function
 
+import warnings
+
+warnings.warn(
+    "The HighLevel module will be deprecated in version 11, use LowLevel module instead.", PendingDeprecationWarning
+)
+
 import ctypes
 import os
 import platform
@@ -55,24 +61,30 @@ class API(object):
 
         os_name = sys.platform.lower()
 
-        if os_name.startswith('win'):
-            highlevel_nrfjprog_dll_name = 'highlevelnrfjprog.dll'
-        elif os_name.startswith('lin'):
-            highlevel_nrfjprog_dll_name = 'libhighlevelnrfjprog.so'
-        elif os_name.startswith('dar'):
-            highlevel_nrfjprog_dll_name = 'libhighlevelnrfjprog.dylib'
+        if os_name.startswith("win"):
+            highlevel_nrfjprog_dll_name = "highlevelnrfjprog.dll"
+        elif os_name.startswith("lin"):
+            highlevel_nrfjprog_dll_name = "libhighlevelnrfjprog.so"
+        elif os_name.startswith("dar"):
+            highlevel_nrfjprog_dll_name = "libhighlevelnrfjprog.dylib"
         else:
-            raise Exception('Unsupported operating system!')
+            raise Exception("Unsupported operating system!")
 
         highlevel_nrfjprog_dll_path = os.path.join(find_lib_dir(), highlevel_nrfjprog_dll_name)
 
         if not os.path.exists(highlevel_nrfjprog_dll_path):
-            raise APIError(NrfjprogdllErr.NRFJPROG_SUB_DLL_NOT_FOUND, highlevel_nrfjprog_dll_path, log=self._logger.error)
+            raise APIError(
+                NrfjprogdllErr.NRFJPROG_SUB_DLL_NOT_FOUND, highlevel_nrfjprog_dll_path, log=self._logger.error
+            )
 
         try:
             self.lib = ctypes.cdll.LoadLibrary(highlevel_nrfjprog_dll_path)
         except Exception as ex:
-            raise APIError(NrfjprogdllErr.NRFJPROG_SUB_DLL_COULD_NOT_BE_OPENED, 'Got error {} for library at {}'.format(repr(ex), highlevel_nrfjprog_dll_path), log=self._logger.error)
+            raise APIError(
+                NrfjprogdllErr.NRFJPROG_SUB_DLL_COULD_NOT_BE_OPENED,
+                "Got error {} for library at {}".format(repr(ex), highlevel_nrfjprog_dll_path),
+                log=self._logger.error,
+            )
 
         # Make a default "dead" finalizer. We'll initialize this later.
         self._finalizer = weakref.finalize(self, lambda: None)()
@@ -118,7 +130,7 @@ class API(object):
         result = self.lib.NRFJPROG_find_jlink_path(buffer, buffer_len, ctypes.byref(buffer_len))
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
-        return buffer.value.decode('utf-8')
+        return buffer.value.decode("utf-8")
 
     def open(self):
         result = self.lib.NRFJPROG_dll_open_ex(None, self._logger.log_cb, None)
@@ -161,7 +173,9 @@ class API(object):
         serial_numbers = (ctypes.c_uint32 * serial_numbers_len.value)(0)
         num_available = ctypes.c_uint32(0)
 
-        result = self.lib.NRFJPROG_get_connected_probes(ctypes.byref(serial_numbers), serial_numbers_len, ctypes.byref(num_available))
+        result = self.lib.NRFJPROG_get_connected_probes(
+            ctypes.byref(serial_numbers), serial_numbers_len, ctypes.byref(num_available)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
@@ -285,9 +299,9 @@ class Probe(object):
         """
 
         if not isinstance(qspi_ini_params, QSPIInitParams):
-            raise TypeError('The qspi_ini_params parameter must be an instance of class QSPIInitParams.')
+            raise TypeError("The qspi_ini_params parameter must be an instance of class QSPIInitParams.")
         if not is_u32(memory_size):
-            raise TypeError('The memory_size parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The memory_size parameter must fit an unsigned 32-bit value.")
 
         memory_size = ctypes.c_uint32(memory_size)
 
@@ -302,7 +316,7 @@ class Probe(object):
         @param Path ini_path: Path to ini file containing qspi setup.
         """
 
-        ini_path = str(ini_path).encode('utf-8')
+        ini_path = str(ini_path).encode("utf-8")
         result = self._api.lib.NRFJPROG_probe_setup_qspi_ini(self._handle, ini_path)
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
@@ -313,7 +327,7 @@ class Probe(object):
         @param CoProcessor coprocessor: Target coprocessor.
         """
         if not is_enum(coprocessor, CoProcessor):
-            raise TypeError('Parameter coprocessor must be of type int, str or CoProcessor enumeration.')
+            raise TypeError("Parameter coprocessor must be of type int, str or CoProcessor enumeration.")
 
         coprocessor = ctypes.c_int(decode_enum(coprocessor, CoProcessor))
 
@@ -341,7 +355,11 @@ class Probe(object):
         device_info = DeviceInfoStruct(0)
         result = self._api.lib.NRFJPROG_get_device_info(self._handle, ctypes.byref(device_info))
         if result != NrfjprogdllErr.SUCCESS:
-            self._logger.warning("get_device_info returned returned with error {}. DeviceInfo struct will have missing information.".format(result))
+            self._logger.warning(
+                "get_device_info returned returned with error {}. DeviceInfo struct will have missing information.".format(
+                    result
+                )
+            )
         return DeviceInfo(device_info, result)
 
     def get_readback_protection(self):
@@ -354,7 +372,7 @@ class Probe(object):
 
     def readback_protect(self, protection_status=ReadbackProtection.ALL):
         if not isinstance(protection_status, ReadbackProtection):
-            raise TypeError('Parameter protection_status must be of type int, str or ReadbackProtection enumeration.')
+            raise TypeError("Parameter protection_status must be of type int, str or ReadbackProtection enumeration.")
 
         protection_status = ctypes.c_int(decode_enum(protection_status, ReadbackProtection))
 
@@ -375,26 +393,26 @@ class Probe(object):
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
     def program(self, hex_path, program_options=None):
-        hex_path = str(hex_path).encode('utf-8')
+        hex_path = str(hex_path).encode("utf-8")
 
         if program_options is None:
             result = self._api.lib.NRFJPROG_program(self._handle, hex_path, self._program_options)
         else:
             if not isinstance(program_options, ProgramOptions):
-                raise TypeError('The program_options parameter must be an instance of class ProgramOptions.')
+                raise TypeError("The program_options parameter must be an instance of class ProgramOptions.")
 
             result = self._api.lib.NRFJPROG_program(self._handle, hex_path, program_options)
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
     def read_to_file(self, hex_path, read_options=None):
-        hex_path = str(hex_path).encode('utf-8')
+        hex_path = str(hex_path).encode("utf-8")
 
         if read_options is None:
             result = self._api.lib.NRFJPROG_read_to_file(self._handle, hex_path, self._read_options)
         else:
             if not isinstance(read_options, ReadOptions):
-                raise TypeError('The program_options parameter must be an instance of class ProgramOptions.')
+                raise TypeError("The program_options parameter must be an instance of class ProgramOptions.")
 
             result = self._api.lib.NRFJPROG_read_to_file(self._handle, hex_path, read_options)
         if result != NrfjprogdllErr.SUCCESS:
@@ -402,11 +420,11 @@ class Probe(object):
 
     def verify(self, hex_path, verify_action=VerifyAction.VERIFY_READ):
         if not isinstance(verify_action, VerifyAction):
-            raise TypeError('Parameter verify_action must be of type int, str or VerifyAction enumeration.')
+            raise TypeError("Parameter verify_action must be of type int, str or VerifyAction enumeration.")
 
         verify_action = ctypes.c_int(decode_enum(verify_action, VerifyAction))
 
-        hex_path = str(hex_path).encode('utf-8')
+        hex_path = str(hex_path).encode("utf-8")
 
         result = self._api.lib.NRFJPROG_verify(self._handle, hex_path, verify_action)
         if result != NrfjprogdllErr.SUCCESS:
@@ -414,11 +432,11 @@ class Probe(object):
 
     def erase(self, erase_action=EraseAction.ERASE_ALL, start_address=0, end_address=0):
         if not isinstance(erase_action, EraseAction):
-            raise TypeError('Parameter erase_action must be of type int, str or EraseAction enumeration.')
+            raise TypeError("Parameter erase_action must be of type int, str or EraseAction enumeration.")
         if not is_u32(start_address):
-            raise TypeError('The start_address parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The start_address parameter must fit an unsigned 32-bit value.")
         if not is_u32(end_address):
-            raise TypeError('The end_address parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The end_address parameter must fit an unsigned 32-bit value.")
 
         erase_action = ctypes.c_int(decode_enum(erase_action, EraseAction))
         start_address = ctypes.c_uint32(start_address)
@@ -435,10 +453,10 @@ class Probe(object):
 
     def read(self, address, data_len=4):
         if not is_u32(address):
-            raise TypeError('The address parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The address parameter must fit an unsigned 32-bit value.")
 
         if not is_u32(data_len):
-            raise TypeError('The data_len parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The data_len parameter must fit an unsigned 32-bit value.")
 
         address = ctypes.c_uint32(address)
         data_len = ctypes.c_uint32(data_len)
@@ -464,7 +482,7 @@ class Probe(object):
     def write(self, address, data):
 
         if not is_u32(address):
-            raise ValueError('The address parameter must be an unsigned 32-bit value.')
+            raise ValueError("The address parameter must be an unsigned 32-bit value.")
 
         address = ctypes.c_uint32(address)
 
@@ -485,11 +503,13 @@ class Probe(object):
             if result != NrfjprogdllErr.SUCCESS:
                 raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
         else:
-            raise ValueError('The data parameter must be a uint32-representable value, or a sequence of uint8-representable values with at least one item.')
+            raise ValueError(
+                "The data parameter must be a uint32-representable value, or a sequence of uint8-representable values with at least one item."
+            )
 
     def reset(self, reset_action=ResetAction.RESET_SYSTEM):
         if not isinstance(reset_action, ResetAction):
-            raise TypeError('Parameter reset_action must be of type int, str or ResetAction enumeration.')
+            raise TypeError("Parameter reset_action must be of type int, str or ResetAction enumeration.")
 
         reset_action = ctypes.c_int(decode_enum(reset_action, ResetAction))
 
@@ -500,10 +520,10 @@ class Probe(object):
     def run(self, pc, sp):
 
         if not is_u32(pc):
-            raise ValueError('The pc parameter must be an unsigned 32-bit value.')
+            raise ValueError("The pc parameter must be an unsigned 32-bit value.")
 
         if not is_u32(sp):
-            raise ValueError('The sp parameter must be an unsigned 32-bit value.')
+            raise ValueError("The sp parameter must be an unsigned 32-bit value.")
 
         pc = ctypes.c_uint32(pc)
         sp = ctypes.c_uint32(sp)
@@ -514,7 +534,8 @@ class Probe(object):
 
 
 class MCUBootDFUProbe(Probe):
-    """ Specialization of Probe interface for MCUBoot DFU via serial port connection. """
+    """Specialization of Probe interface for MCUBoot DFU via serial port connection."""
+
     def __init__(self, api, serial_port, baud_rate=115200, timeout=30000, log=True, log_suffix=None):
         """
         :param api:                 The HighLevel.API instance to use as a library backend
@@ -533,18 +554,20 @@ class MCUBootDFUProbe(Probe):
         Probe.__init__(self, api, log, serial_port)
 
         if not is_u32(baud_rate):
-            raise TypeError('The baud_rate parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The baud_rate parameter must fit an unsigned 32-bit value.")
 
         if not is_u32(timeout):
-            raise TypeError('The timeout parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The timeout parameter must fit an unsigned 32-bit value.")
 
         try:
             self._handle = ctypes.c_void_p(None)
-            serial_port = serial_port.encode('utf-8')
+            serial_port = serial_port.encode("utf-8")
             baud_rate = ctypes.c_uint32(baud_rate)
             timeout = ctypes.c_uint32(timeout)
 
-            result = self._api.lib.NRFJPROG_mcuboot_dfu_init_ex(ctypes.byref(self._handle), None, self._logger.log_cb, None, serial_port, baud_rate, timeout)
+            result = self._api.lib.NRFJPROG_mcuboot_dfu_init_ex(
+                ctypes.byref(self._handle), None, self._logger.log_cb, None, serial_port, baud_rate, timeout
+            )
             if result != NrfjprogdllErr.SUCCESS:
                 raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
         except (APIError, TypeError):
@@ -552,12 +575,13 @@ class MCUBootDFUProbe(Probe):
             raise
 
     def verify(self, hex_path, verify_action=VerifyAction.VERIFY_NONE):
-        """ Override base verify implementation to get correct default action """
+        """Override base verify implementation to get correct default action"""
         Probe.verify(self, hex_path, verify_action)
 
 
 class ModemUARTDFUProbe(Probe):
-    """ Specialization of Probe interface for Modem UART DFU via serial port connection. """
+    """Specialization of Probe interface for Modem UART DFU via serial port connection."""
+
     def __init__(self, api, serial_port, baud_rate=1000000, timeout=30000, log=True, log_suffix=None):
         """
         :param api:                 The HighLevel.API instance to use as a library backend
@@ -576,17 +600,19 @@ class ModemUARTDFUProbe(Probe):
         Probe.__init__(self, api, log, serial_port)
 
         if not is_u32(baud_rate):
-            raise TypeError('The baud_rate parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The baud_rate parameter must fit an unsigned 32-bit value.")
 
         if not is_u32(timeout):
-            raise TypeError('The timeout parameter must fit an unsigned 32-bit value.')
+            raise TypeError("The timeout parameter must fit an unsigned 32-bit value.")
         try:
             self._handle = ctypes.c_void_p(None)
-            serial_port = serial_port.encode('utf-8')
+            serial_port = serial_port.encode("utf-8")
             baud_rate = ctypes.c_uint32(baud_rate)
             timeout = ctypes.c_uint32(timeout)
 
-            result = self._api.lib.NRFJPROG_modemdfu_dfu_serial_init_ex(ctypes.byref(self._handle), None, self._logger.log_cb, None, serial_port, baud_rate, timeout)
+            result = self._api.lib.NRFJPROG_modemdfu_dfu_serial_init_ex(
+                ctypes.byref(self._handle), None, self._logger.log_cb, None, serial_port, baud_rate, timeout
+            )
             if result != NrfjprogdllErr.SUCCESS:
                 raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
         except (APIError, TypeError):
@@ -594,12 +620,13 @@ class ModemUARTDFUProbe(Probe):
             raise
 
     def verify(self, hex_path, verify_action=VerifyAction.VERIFY_HASH):
-        """ Override base verify implementation to get correct default action """
+        """Override base verify implementation to get correct default action"""
         Probe.verify(self, hex_path, verify_action)
 
 
 class IPCDFUProbe(Probe):
-    """ Specialization of Probe interface for IPC DFU via SWD debugger connection. """
+    """Specialization of Probe interface for IPC DFU via SWD debugger connection."""
+
     def __init__(self, api, snr, coprocessor, jlink_arm_dll_path=None, log=True, log_suffix=None, clock_speed=None):
         """
         :param api:                 The HighLevel.API instance to use as a library backend
@@ -621,7 +648,7 @@ class IPCDFUProbe(Probe):
         if clock_speed is None:
             clock_speed = 0
         if not is_u32(clock_speed):
-            raise ValueError('The frequency parameter must be an unsigned 32-bit value.')
+            raise ValueError("The frequency parameter must be an unsigned 32-bit value.")
 
         try:
             self._handle = ctypes.c_void_p(None)
@@ -629,13 +656,22 @@ class IPCDFUProbe(Probe):
             clock_speed = ctypes.c_uint32(clock_speed)
 
             if jlink_arm_dll_path is not None:
-                jlink_arm_dll_path = str(jlink_arm_dll_path).encode('utf-8')
+                jlink_arm_dll_path = str(jlink_arm_dll_path).encode("utf-8")
 
             if not is_enum(coprocessor, CoProcessor):
-                raise TypeError('Parameter coprocessor must be of type int, str or CoProcessor enumeration.')
+                raise TypeError("Parameter coprocessor must be of type int, str or CoProcessor enumeration.")
             coprocessor = ctypes.c_int(decode_enum(coprocessor, CoProcessor))
 
-            result = self._api.lib.NRFJPROG_dfu_init_ex(ctypes.byref(self._handle), None, self._logger.log_cb, None, snr, clock_speed, coprocessor, jlink_arm_dll_path)
+            result = self._api.lib.NRFJPROG_dfu_init_ex(
+                ctypes.byref(self._handle),
+                None,
+                self._logger.log_cb,
+                None,
+                snr,
+                clock_speed,
+                coprocessor,
+                jlink_arm_dll_path,
+            )
             if result != NrfjprogdllErr.SUCCESS:
                 raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
         except (APIError, TypeError):
@@ -643,13 +679,16 @@ class IPCDFUProbe(Probe):
             raise
 
     def verify(self, hex_path, verify_action=VerifyAction.VERIFY_HASH):
-        """ Override base verify implementation to get correct default action """
+        """Override base verify implementation to get correct default action"""
         Probe.verify(self, hex_path, verify_action)
 
 
 class DebugProbe(Probe):
-    """ Specialization of Probe interface for SWD debugger connections. """
-    def __init__(self, api, snr, coprocessor=None, jlink_arm_dll_path=None, log=True, log_suffix=None, clock_speed=None):
+    """Specialization of Probe interface for SWD debugger connections."""
+
+    def __init__(
+        self, api, snr, coprocessor=None, jlink_arm_dll_path=None, log=True, log_suffix=None, clock_speed=None
+    ):
         """
         :param api:                 The HighLevel.API instance to use as a library backend
         :type api:                  HighLevel.API
@@ -670,7 +709,7 @@ class DebugProbe(Probe):
         if clock_speed is None:
             clock_speed = 0
         if not is_u32(clock_speed):
-            raise ValueError('The frequency parameter must be an unsigned 32-bit value.')
+            raise ValueError("The frequency parameter must be an unsigned 32-bit value.")
 
         try:
             self._handle = ctypes.c_void_p(None)
@@ -678,9 +717,11 @@ class DebugProbe(Probe):
             clock_speed = ctypes.c_uint32(clock_speed)
 
             if jlink_arm_dll_path is not None:
-                jlink_arm_dll_path = str(jlink_arm_dll_path).encode('utf-8')
+                jlink_arm_dll_path = str(jlink_arm_dll_path).encode("utf-8")
 
-            result = self._api.lib.NRFJPROG_probe_init_ex(ctypes.byref(self._handle), None, self._logger.log_cb, None, snr, clock_speed, jlink_arm_dll_path)
+            result = self._api.lib.NRFJPROG_probe_init_ex(
+                ctypes.byref(self._handle), None, self._logger.log_cb, None, snr, clock_speed, jlink_arm_dll_path
+            )
             if result != NrfjprogdllErr.SUCCESS:
                 raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
         except (APIError, TypeError):
@@ -715,7 +756,7 @@ class DebugProbe(Probe):
         @param int addr: Address of the RTT Control Block in memory.
         """
         if not is_u32(addr):
-            raise ValueError('The address parameter must be an unsigned 32-bit value.')
+            raise ValueError("The address parameter must be an unsigned 32-bit value.")
 
         addr = ctypes.c_uint32(addr)
 
@@ -755,7 +796,7 @@ class DebugProbe(Probe):
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
-    def rtt_read(self, channel_index, length, encoding='utf-8'):
+    def rtt_read(self, channel_index, length, encoding="utf-8"):
         """
         Reads from an RTT channel.
 
@@ -765,26 +806,34 @@ class DebugProbe(Probe):
         @return str or bytearray: Data read. Return type depends on encoding optional parameter. If an encoding is given, the return type will be Python version's native string type. If None is given, a bytearray will be returned.
         """
         if not is_u32(channel_index):
-            raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
+            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
 
         if not is_u32(length):
-            raise ValueError('The length parameter must be an unsigned 32-bit value.')
+            raise ValueError("The length parameter must be an unsigned 32-bit value.")
 
         if encoding is not None and not is_valid_encoding(encoding):
-            raise ValueError('The encoding parameter must be either None or a standard encoding in python.')
+            raise ValueError("The encoding parameter must be either None or a standard encoding in python.")
 
         channel_index = ctypes.c_uint32(channel_index)
         length = ctypes.c_uint32(length)
         data = (ctypes.c_uint8 * length.value)()
         data_read = ctypes.c_uint32()
 
-        result = self._api.lib.NRFJPROG_rtt_read(self._handle, channel_index, ctypes.byref(data), length, ctypes.byref(data_read))
+        result = self._api.lib.NRFJPROG_rtt_read(
+            self._handle, channel_index, ctypes.byref(data), length, ctypes.byref(data_read)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
-        return bytearray(data[0:data_read.value]) if encoding is None else bytearray(data[0:data_read.value]).decode(encoding).encode('utf-8') if sys.version_info[0] == 2 else bytearray(data[0:data_read.value]).decode(encoding)
+        return (
+            bytearray(data[0 : data_read.value])
+            if encoding is None
+            else bytearray(data[0 : data_read.value]).decode(encoding).encode("utf-8")
+            if sys.version_info[0] == 2
+            else bytearray(data[0 : data_read.value]).decode(encoding)
+        )
 
-    def rtt_write(self, channel_index, msg, encoding='utf-8'):
+    def rtt_write(self, channel_index, msg, encoding="utf-8"):
         """
         Writes to an RTT channel.
 
@@ -794,21 +843,23 @@ class DebugProbe(Probe):
         @return int: Number of bytes written.  Note that if non-'latin-1' characters are used, the number of bytes written depends on the encoding parameter given.
         """
         if not is_u32(channel_index):
-            raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
+            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
 
         if encoding is not None and not is_valid_encoding(encoding):
-            raise ValueError('The encoding parameter must be either None or a standard encoding in python.')
+            raise ValueError("The encoding parameter must be either None or a standard encoding in python.")
 
         msg = bytearray(msg.encode(encoding)) if encoding else bytearray(msg)
         if not is_valid_buf(msg):
-            raise ValueError('The msg parameter must be a sequence type with at least one item.')
+            raise ValueError("The msg parameter must be a sequence type with at least one item.")
 
         channel_index = ctypes.c_uint32(channel_index)
         length = ctypes.c_uint32(len(msg))
         data = (ctypes.c_uint8 * length.value)(*msg)
         data_written = ctypes.c_uint32()
 
-        result = self._api.lib.NRFJPROG_rtt_write(self._handle, channel_index, ctypes.byref(data), length, ctypes.byref(data_written))
+        result = self._api.lib.NRFJPROG_rtt_write(
+            self._handle, channel_index, ctypes.byref(data), length, ctypes.byref(data_written)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
@@ -823,7 +874,9 @@ class DebugProbe(Probe):
         down_channel_number = ctypes.c_uint32()
         up_channel_number = ctypes.c_uint32()
 
-        result = self._api.lib.NRFJPROG_rtt_read_channel_count(self._handle, ctypes.byref(down_channel_number), ctypes.byref(up_channel_number))
+        result = self._api.lib.NRFJPROG_rtt_read_channel_count(
+            self._handle, ctypes.byref(down_channel_number), ctypes.byref(up_channel_number)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
@@ -838,14 +891,14 @@ class DebugProbe(Probe):
         @return (str, int): Tuple containing the channel name and the size of channel buffer.
         """
         if not is_u32(channel_index):
-            raise ValueError('The channel_index parameter must be an unsigned 32-bit value.')
+            raise ValueError("The channel_index parameter must be an unsigned 32-bit value.")
 
         if not is_enum(direction, RTTChannelDirection):
-            raise ValueError('Parameter direction must be of type int, str or RTTChannelDirection enumeration.')
+            raise ValueError("Parameter direction must be of type int, str or RTTChannelDirection enumeration.")
 
         direction = decode_enum(direction, RTTChannelDirection)
         if direction is None:
-            raise ValueError('Parameter direction must be of type int, str or RTTChannelDirection enumeration.')
+            raise ValueError("Parameter direction must be of type int, str or RTTChannelDirection enumeration.")
 
         channel_index = ctypes.c_uint32(channel_index)
         direction = ctypes.c_int(direction.value)
@@ -853,8 +906,10 @@ class DebugProbe(Probe):
         name = (ctypes.c_uint8 * 32)()
         size = ctypes.c_uint32()
 
-        result = self._api.lib.NRFJPROG_rtt_read_channel_info(self._handle, channel_index, direction, ctypes.byref(name), name_len, ctypes.byref(size))
+        result = self._api.lib.NRFJPROG_rtt_read_channel_info(
+            self._handle, channel_index, direction, ctypes.byref(name), name_len, ctypes.byref(size)
+        )
         if result != NrfjprogdllErr.SUCCESS:
             raise APIError(result, error_data=self.get_errors(), log=self._logger.error)
 
-        return ''.join(chr(i) for i in name if i != 0), size.value
+        return "".join(chr(i) for i in name if i != 0), size.value

@@ -39,12 +39,17 @@
 #ifndef highlevelnrfjprogdll_FUNC_H
 #define highlevelnrfjprogdll_FUNC_H
 
+/* ================================================================================= *
+ *     This library is deprecated and will not receive feature updates or bugfixes.  *
+ *     Please use nrfjprogdll instead.                                               *
+ * ================================================================================= */
+
 #include <stdint.h>
 
 #include "DllCommonDefinitions.h"
 
 #define major_version (10) 
-#define minor_version (19) 
+#define minor_version (22) 
 #define micro_version (0) 
 
 #define FIRMWARE_STRING_LENGTH NRFJPROG_STRING_LENGTH

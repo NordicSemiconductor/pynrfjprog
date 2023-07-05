@@ -1297,6 +1297,48 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_erase_all(void);
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_erase_page_inst(nrfjprog_inst_t instance, uint32_t addr);
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_erase_page(uint32_t addr);
 
+
+/**
+ * @brief   Erases a range of code memory.
+ *
+ * @details Erase a range of code memory. The range is defined by parameters 'addr' and 'length'.
+ *          After erasing, 'erased_addr' and 'erased_len' is updated to reflect the area that was erased. This function will do a best effort to erase as little as possible,
+ *          but for flash memories this is usually limited to per page erase operations. Typically, if the user defined erase range is not aligned to memory page boundaries
+ *          the erased area will be larger than requested.
+ *
+ *          This function can target both internal and external code memory (f.ex. QSPI).
+ *          
+ *          For nRF51:  The defined range cannot lie within configured region 0, see NRFJPROG_read_region_0_size_and_source() function.
+ *
+ * @pre     The dll must be open. To open the dll, see NRFJPROG_open_dll() function.
+ * @pre     A connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
+ * @pre     Access port protection must be disabled. To disable access port protection, see NRFJPROG_recover() function.
+ *
+ * @post    The device will be in debug interface mode. To exit debug interface mode, see NRFJPROG_pin_reset(), NRFJPROG_disconnect_from_emu() and NRFJPROG_close_dll() functions.
+ * @post    The emulator will be connected to the device. To disconnect from the device, see NRFJPROG_disconnect_from_emu(), NRFJPROG_close_dll() and NRFJPROG_disconnect_from_device() functions.
+ * @post    The device CPU will be halted. To unhalt the device CPU, see NRFJPROG_pin_reset(), NRFJPROG_debug_reset(),  NRFJPROG_go() and NRFJPROG_run() functions.
+ *
+ * @param   instance                            A handle to an open nrfjprog instance.
+ * @param   addr                                Target erase address.
+ * @param   length                              Number of bytes to erase.
+ * @param   erased_addr                         Pointer for storing the start address of the erased range. Can be NULL.
+ * @param   erased_len                          Pointer for storing the number of bytes that was erased. Can be NULL.
+ *
+ * @retval  SUCCESS
+ * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
+ * @retval  INVALID_OPERATION                   The NRFJPROG_connect_to_emu_with_snr() or NRFJPROG_connect_to_emu_without_snr() function has not been called.
+ * @retval  INVALID_PARAMETER                   The range defined by addr and length does not map to an erasable code memory.
+ * @retval  JLINKARM_DLL_ERROR                  The JLinkARM DLL function returned an error.
+ * @retval  JLINKARM_DLL_TIMEOUT_ERROR          Communication with the J-Link probe timed out.
+ * @retval  NVMC_ERROR                          Flash operation failed.
+ * @retval  NOT_AVAILABLE_BECAUSE_BPROT         The page is not erasable because it is configured as write protected a run-tim code protection module. Call NRFJPROG_disable_bprot() to allow the page to be erased.
+ * @retval  NOT_AVAILABLE_BECAUSE_PROTECTION    The operation is not available due to readback or region protection.
+ * @retval  CANNOT_CONNECT                      It is impossible to connect to any nRF device.
+ * @retval  WRONG_FAMILY_FOR_DEVICE             The device connected does not match the configured family.
+ */
+NRFJPROG_API nrfjprogdll_err_t NRFJPROG_erase_range_inst(nrfjprog_inst_t instance, uint32_t addr, uint32_t length, uint32_t * erased_addr, uint32_t * erased_len);
+
+
 /**
  * @brief   Erases UICR info page.
  *
@@ -3067,6 +3109,7 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_is_ram_powered(ram_section_power_status_
                                                        uint32_t ram_sections_power_status_array_size,
                                                        uint32_t * ram_sections_number,
                                                        uint32_t * ram_sections_size);
+
 
 /**
  * @brief   Programs the provided file to the connected device.
