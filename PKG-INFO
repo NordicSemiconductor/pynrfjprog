@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: pynrfjprog
-Version: 10.22.0
+Version: 10.23.0
 Summary: A simple Python interface for the nrfjprog functionality
 Author-email: Nordic Semiconductor ASA <sagtools@nordicsemi.no>
 License: Copyright (c) 2010 - 2023, Nordic Semiconductor ASA
@@ -116,11 +116,11 @@ pynrfjprog
 ```
 
 ## Getting started
-To install latest release from PyPI:
+To install the latest release from PyPI:
 ```
 pip install pynrfjprog
 ```
-To install from source\:
+To install from source:
 ```
 python -m pip install path_to_unzipped_pynrfjprog
 ```

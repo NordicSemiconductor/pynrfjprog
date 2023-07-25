@@ -49,7 +49,7 @@
 #include "DllCommonDefinitions.h"
 
 #define major_version (10) 
-#define minor_version (22) 
+#define minor_version (23) 
 #define micro_version (0) 
 
 #define FIRMWARE_STRING_LENGTH NRFJPROG_STRING_LENGTH

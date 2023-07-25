@@ -54,11 +54,11 @@ pynrfjprog
 ```
 
 ## Getting started
-To install latest release from PyPI:
+To install the latest release from PyPI:
 ```
 pip install pynrfjprog
 ```
-To install from source\:
+To install from source:
 ```
 python -m pip install path_to_unzipped_pynrfjprog
 ```
