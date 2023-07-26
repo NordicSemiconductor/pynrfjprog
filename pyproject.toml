@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pynrfjprog"
+authors = [ 
+    { name="Nordic Semiconductor ASA", email = "sagtools@nordicsemi.no" } 
+]
+description = "A simple Python interface for the nrfjprog functionality"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Debuggers",
+    "Topic :: Software Development :: Embedded Systems",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: Other/Proprietary License"
+]
+keywords = [
+    "nrfjprog",
+    "pynrfjprog"
+]
+dependencies = [
+    "future",
+    "tomli-w"
+]
+requires-python = ">=3.7"
+dynamic = ["version"]
+
+readme = "README.md"
+
+
+[project.license]
+    file  = "LICENSE"
+
+[project.urls]
+    "Homepage" = "https://www.nordicsemi.com/Products/Development-tools/nrf-pynrfjprog/"
+    "Bug Tracker" = "https://github.com/NordicSemiconductor/pynrfjprog/issues"
+
+[tool.setuptools]
+    packages = {find = {}}
+    include-package-data = true
+[tool.setuptools.dynamic]
+    version = {attr = "pynrfjprog.__version__"}

@@ -1,3 +1,64 @@
+Release 10.23.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tar balls to v7.88j
+
+- (nrfjprogdll) Fixed an issue for nRF91 where an invalid write with the debugger triggered a secure fault when closing the DLL. This would in some cases leave the device FW stuck in fault handler.
+
+Release 10.22.1
+Changelog
+--------------------------------------
+- (nrfjprogdll) Added support for nRF9161.
+
+- (nrfjprogexe) Added support for hard and pin resets with --program.
+
+Release 10.22.0
+Changelog
+--------------------------------------
+- (nrfjprogdll) Fixed bug where NRFJPROG_read_memory_descriptors returned memories that did not belong to the selected coprocessor.
+
+- (nrfjprogexe) Added return code InvalidOperationError to nrfjprog.h. This error is returned when the underlying nrfjprog DLL reports UNAVAILABLE_OPERATION.
+
+- (pynrfjprog) Fixed QspiDefault.ini missing from installed pynrfjprog package.
+- (pynrfjprog) qspi_configure_ini() and qspi_init_ini() will now use "config.toml" by default when no arguments are provided.
+- (pynrfjprog) LowLevel.py: configure() will now use "config.toml" by default if no arguments are provided.
+
+- (MacOSRelease) Fixed compatibility issues with OSX 11.
+
+Release 10.21.0
+Changelog
+--------------------------------------
+- (nrfjprogdll) Added function NRFJPROG_erase_range_inst that can erase several contiguous pages in internal or external flash memory. This function is mainly for convenience.
+- (nrfjprogdll) Fix issue where integer parameters parsed from strings (for example in configuration files) with leading 0s could be interpreted as octal numbers.
+- (nrfjprogdll) Added support for programming multiple cores from one binary.
+
+- (nrfjprogexe) Fix issue where parameter parsing could fail due to an ignored errno state.
+- (nrfjprogexe) Fix issue where integer parameters with leading 0s could be interpreted as octal numbers.
+- (nrfjprogexe) Added support for programming multiple cores from one binary.
+
+- (pynrfjprog) Added function erase_range() that can erase several contiguous pages in internal or external flash memory. This function is mainly for convenience.
+
+Release 10.20.2
+Changelog
+--------------------------------------
+- (pynrfjprog) Fix dependencies not always installed when installing pynrfjprog using pyproject.toml.
+
+Release 10.20.0
+Changelog
+--------------------------------------
+- (Release) Distribute J-Link installers  and a note to run the installer in .deb and .rpm installers.
+- (Release) Stop distributing .rpm and .deb J-Link installers in .tgz distribution of nrftools.
+
+- (highlevelnrfjprogdll) Deprecated highlevelnrfjprogdll. Please use nrfjprog library instead.
+
+- (nrfjprogdll) Fix issue where NRFJPROG_rtt_set_control_block_address() needed an active device connection, but didn't automatically call NRFJPROG_connect_to_device(). Introduced in 10.18.0.
+- (nrfjprogdll) Introduced toml config setting "worker_ignore_signals" that controls if the jlinkarm_nrf_worker process should ignore SIGINT signals. The default is to not ignore signals.
+
+- (pynrfjprog) Update to using pyproject.toml install manifests instead of setup.py.
+- (pynrfjprog) Prevent API.open() from being called multiple times on the same API instance.
+- (pynrfjprog) Pynrfjrog now verifies jlinkarm_nrf_worker is executable on import instead of on install.
+- (pynrfjprog) Introduced toml config setting "worker_ignore_signals" that controls if the jlinkarm_nrf_worker process should ignore SIGINT signals. The default is to not ignore signals.
+
 Release 10.19.0
 Changelog
 --------------------------------------
@@ -19,7 +80,7 @@ Changelog
 - (nrfjprog.exe) --deviceversion now prints the version of all connected devices if --snr is not provided.
 - (nrfjprog.exe) Fix issue where error log messages ignored the --quiet / -q flag. 
 
-Release 10.18.2
+Release 10.18.2 
 Changelog
 --------------------------------------
 - (nrfjprogdll) Fixed issue where NRFJPROG_rtt_set_control_block_address caused NRFJPROG_rtt_start to return INVALID_OPERATION. Introduced in 10.18.1.
