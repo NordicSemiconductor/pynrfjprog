@@ -20,19 +20,18 @@ from __future__ import print_function
 # Import pynrfjprog API module
 try:
     from .. import LowLevel
-except Exception:
+except ImportError:
     from pynrfjprog import LowLevel
 
+
 def run():
-    print('# Python help() example started...')
-    
+    print("# Python help() example started...")
+
     # Use the python help() to list the available information regarding the API module
     help(LowLevel)
 
-    print('# Example done...')
-    
- 
-if __name__ == '__main__':
+    print("# Example done...")
+
+
+if __name__ == "__main__":
     run()
-
-
