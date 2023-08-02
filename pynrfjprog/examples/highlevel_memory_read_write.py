@@ -28,7 +28,7 @@ import argparse
 # Import pynrfjprog API module
 try:
     from .. import HighLevel
-except Exception:
+except ImportError:
     from pynrfjprog import HighLevel
 
 
@@ -38,48 +38,36 @@ def run(snr):
 
     @param int snr: Specify serial number of DK to run example on.
     """
-    print('# Memory read and write example using pynrfjprog started...')
-    
-    # Detect the device family of your device. Initialize an API object with UNKNOWN family and read the device's family. This step is performed so this example can be run in all devices without customer input.
-    api = HighLevel.API()            # Using with construction so there is no need to open or close the API class.
+    print("# Memory read and write example using pynrfjprog started...")
 
-    print('# Opening High Level API instance and initializing a probe handle.')
-    # Open the loaded DLL and connect to an emulator probe. If several are connected a pop up will appear.
-    api.open()
-
-    try:
-        probe = HighLevel.DebugProbe(api, snr)
-
-        try:
+    print("# Opening High Level API instance and initializing a probe handle.")
+    # Initialize an API object.
+    # Open the loaded DLL and connect to an emulator probe.
+    with HighLevel.API() as api:
+        # Initialize the probe connection. The device family is automatically detected, and the correct sub dll is loaded.
+        with HighLevel.DebugProbe(api, snr) as probe:
             # Erase all the flash of the device.
-            print('# Erasing all flash in the microcontroller.')
+            print("# Erasing all flash in the microcontroller.")
             # api.erase supports several erase actions, including sector erase, erase all, and qspi erase options.
             probe.erase(HighLevel.EraseAction.ERASE_ALL)
 
             # Write to addresses 0x0 and 0x10. NVMC is used automatically whenever a write to flash is requested.
-            print('# Writing 0xDEADBEEF to memory address 0x0.')
+            print("# Writing 0xDEADBEEF to memory address 0x0.")
             probe.write(0x0, 0xDEADBEEF)
-            print('# Writing 0xBAADF00D to memory address 0x10.')
+            print("# Writing 0xBAADF00D to memory address 0x10.")
             probe.write(0x10, 0xBAADF00D)
 
             # Read from addresses 0x0 and 0x10 and print the result.
-            print('# Reading memory address 0x0 and 0x10, and print to console')
-            print('Address 0x0 contains: ', hex(probe.read(0x0)))
-            print('Address 0x10 contains: ', hex(probe.read(0x10)))
-        finally:
-            probe.close()
+            print("# Reading memory address 0x0 and 0x10, and print to console")
+            print("Address 0x0 contains: ", hex(probe.read(0x0)))
+            print("Address 0x10 contains: ", hex(probe.read(0x10)))
 
-    finally:
-        api.close()
+    print("# Example done...")
 
-    print('# Example done...')
 
- 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-s', '--serial',  type=int, help="Serial number to test.")
+    parser.add_argument("-s", "--serial", type=int, help="Serial number to test.")
     args = parser.parse_args()
 
     run(args.serial)
-
-

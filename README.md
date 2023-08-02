@@ -1,6 +1,6 @@
-![PyPI](https://img.shields.io/static/v1?label=license&message=Nordic%205-Clause%20License&color=brightgreen)
+[![PyPI](https://img.shields.io/static/v1?label=license&message=Nordic%205-Clause%20License&color=brightgreen)](https://github.com/NordicSemiconductor/pynrfjprog/blob/master/LICENSE)
 ![PyPI](https://img.shields.io/static/v1?label=platform&message=windows%20%7C%20linux%20%7C%20osx&color=lightgrey)
-![PyPI](https://img.shields.io/static/v1?label=python&message=python-2.7%20%7C%20>=3.4&color=blue) ![PyPI](https://img.shields.io/pypi/v/pynrfjprog)
+![PyPI](https://img.shields.io/static/v1?label=python&message=>=3.7&color=blue) [![PyPI](https://img.shields.io/pypi/v/pynrfjprog)](https://pypi.org/project/pynrfjprog/)
 
 # pynrfjprog
 Python wrapper around the nrfjprog dynamic link libraries (DLL). Use of this API allows developers to program/debug nRF SOC and SIP devices from the interpreter, write simple scripts for a more efficient development work flow, or write automated test frameworks. It can also be used to create applications in Python (i.e. command-line tools).
@@ -8,7 +8,6 @@ Python wrapper around the nrfjprog dynamic link libraries (DLL). Use of this API
 ## Use-cases
 *  Maximizing development efficiency: i.e. a script to perform various operations every time an application is built and run (could be hooked into a Makefile or automated build system etc...).
 *  Automated testing: [Testing Production Programming tools on nRF5 using pynrfjprog](https://github.com/NordicSemiconductor/nrf52-production-programming/blob/master/tests/example_test_script.py).
-*  PC Tools: [nrfjprog.exe implemented via pynrfjprog and argparse](https://github.com/NordicSemiconductor/nrfjprog.git).
 
 ## Dependencies
 ```python
@@ -35,6 +34,8 @@ pynrfjprog
   │     ├── JLink.py      # Finds the JLinkARM DLL required by pynrfjprog
   │     ├── LowLevel.py   # Wrapper for the nrfjprog DLL, previously API.py
   │     ├── MultiAPI.py   # Allow multiple devices (up to 128) to be programmed simultaneously with a LowLevel API
+  │     ├── lib_armhf
+  │     │   └── # armhf nrfjprog libraries
   │     ├── lib_x64
   │     │   └── # 64-bit nrfjprog libraries
   │     ├── lib_x86
@@ -46,79 +47,71 @@ pynrfjprog
   ├── LICENSE
   ├── README.md
   ├── requirements.txt
-  └── setup.py
+  └── pyproject.toml
   
   
     
 ```
 
 ## Getting started
-To install latest release from PyPI:
+To install the latest release from PyPI:
 ```
 pip install pynrfjprog
 ```
-To install from source navigate to pynrfjprog\:
+To install from source:
 ```
-python setup.py install
+python -m pip install path_to_unzipped_pynrfjprog
 ```
-Open the Python interpreter and connect nRF5 device to PC:
+Open the Python interpreter and connect nRF device to PC:
 ```
-from pynrfjprog import API
+from pynrfjprog import LowLevel
 
-api = API.API('NRF52')
-api.open()
-api.enum_emu_snr()
-api.connect_to_emu_without_snr()
-api.erase_all()
-api.write_u32(ADDRESS, DATA, IS_FLASH)
-api.disconnect_from_emu()
-api.close()
+with LowLevel.API('NRF52') as api:
+    api.enum_emu_snr()
+    api.connect_to_emu_without_snr()
+    api.erase_all()
+    api.write_u32(ADDRESS, DATA, IS_FLASH)
+    api.disconnect_from_emu()
 ```
 
-To work with multiple nRF5 devices at once:
+To work with multiple nRF devices at once:
 ```
-import MultiAPI as API
+import LowLevel
 
-api = API.API('NRF52')
+api = LowLevel.API('NRF52')
 api.open()
 
-api2 = API.API('NRF52')
+api2 = LowLevel.API('NRF52')
 api2.open()
 
-api3 = API.API('NRF51')
+api3 = LowLevel.API('NRF51')
 api3.open()
 
 api.close()
 api2.close()
 api3.close()
 ```
-Note: MultiAPI has the same interface as API, it just allows you to create multiple instances of API.
 
 To program hex files using the HighLevel API:
 ```
 from pynrfjprog import HighLevel
 
-api = HighLevel.API()
-api.open()
+with HighLevel.API() as api:
+    snrs = api.get_connected_probes()
 
-# To program J-Link probe at snr <snr>:
-probe = HighLevel.DebugProbe(api, <snr>)
-probe.program(<hex_file>)
-probe.close()
+    # To program J-Link probe at snr <snr>:
+    with HighLevel.DebugProbe(api, <snr>) as probe:
+        probe.program(<hex_file>)
 
-# To program MCUBoot target at serial port <serial>:
-probe = HighLevel.MCUBootDFUProbe(api, <serial>)
-probe.program(<hex_file>)
-probe.close()
+    # To program MCUBoot target at serial port <serial>:
+    with HighLevel.MCUBootDFUProbe(api, <serial>) as probe:
+        probe.program(<hex_file>)
 
-# To update LTE modem connected to J-Link prbe at snr <snr>:
-probe = HighLevel.IPCDFUProbe(api, <snr>)
-probe.program(<hex_file>)
-probe.close()
-
-api.close()
+    # To update LTE modem connected to J-Link probe at snr <snr>:
+    with HighLevel.IPCDFUProbe(api, <snr>, HighLevel.CoProcessor.CP_MODEM) as probe:
+        probe.program(<zip_file>, HighLevel.ProgramOptions(verify = HighLevel.VerifyAction.VERIFY_HASH))
 ```
-Note: Only one HighLevel API can be instantiated and opened at a time. But, several HighLevel probes can be opened from the same API at the same time, as long as you don't open two probes to the same target.
+Note: Only one HighLevel API can be instantiated and opened at a time. Several HighLevel probes can be opened from the same API at the same time.
 
 ## Contributing
 Contributing is encouraged along with the following coding standards.
