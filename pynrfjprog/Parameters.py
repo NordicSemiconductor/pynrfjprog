@@ -388,6 +388,9 @@ class DeviceVersion(enum.IntEnum):
     NRF5340_xxAA_FUTURE = 0x053400FF
 
 
+    NRF9120_xxAA_REV3 = 0x09120002
+    NRF9120_xxAA_FUTURE = 0x091200FF
+
     NRF9160_xxAA_REV1 = 0x09160000
     NRF9160_xxAA_REV2 = 0x09160001
     NRF9160_xxAA_FUTURE = 0x091600FF
@@ -412,6 +415,8 @@ class DeviceName(enum.IntEnum):
     NRF52840 = 0x05284000
 
     NRF5340 = 0x05340000
+    NRF9120 = 0x09120000
+
     NRF9160 = 0x09160000
 
 
@@ -543,6 +548,7 @@ class CpuRegister(enum.IntEnum):
     CFBP_NS = 33
     MSPLIM = 34
     PSPLIM = 35
+
 
 @enum.unique
 class NrfjrpogdllLogLevel(enum.IntEnum):

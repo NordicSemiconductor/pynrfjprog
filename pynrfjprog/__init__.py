@@ -3,7 +3,7 @@ Package marker file.
 
 """
 
-__version__ = "10.23.0" 
+__version__ = "10.23.1" 
 
 import sys
 from pathlib import Path

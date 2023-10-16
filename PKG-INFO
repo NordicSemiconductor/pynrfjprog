@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: pynrfjprog
-Version: 10.23.0
+Version: 10.23.1
 Summary: A simple Python interface for the nrfjprog functionality
 Author-email: Nordic Semiconductor ASA <sagtools@nordicsemi.no>
 License: Copyright (c) 2010 - 2023, Nordic Semiconductor ASA
@@ -59,6 +59,8 @@ Classifier: License :: Other/Proprietary License
 Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 License-File: LICENSE
+Requires-Dist: future
+Requires-Dist: tomli-w
 
 [![PyPI](https://img.shields.io/static/v1?label=license&message=Nordic%205-Clause%20License&color=brightgreen)](https://github.com/NordicSemiconductor/pynrfjprog/blob/master/LICENSE)
 ![PyPI](https://img.shields.io/static/v1?label=platform&message=windows%20%7C%20linux%20%7C%20osx&color=lightgrey)

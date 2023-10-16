@@ -1,7 +1,11 @@
 """
 This module serves as a Python wrapper around the nrfjprog Highlevel DLL.
 
-Note: Please look at the highlevelnrfjprogdll.h file provided with in the folder "documentation" for a more elaborate description of the API functions and their side effects.
+NB! This library has been deprecated in favor of nrfjprog DLL (libnrfjprogdll.so); new code should
+target that one instead.
+
+Note: Please look at the highlevelnrfjprogdll.h file provided within the folder "documentation" for
+a more elaborate description of the API functions and their side effects.
 """
 
 from __future__ import print_function
