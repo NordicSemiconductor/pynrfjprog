@@ -1,3 +1,6 @@
+/* This library has been deprecated in favor of nrfjprog DLL (libnrfjprogdll.so); new code should
+   target that one instead. */
+
 /*
  * Copyright (c) 2010 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
@@ -50,7 +53,7 @@
 
 #define major_version (10) 
 #define minor_version (23) 
-#define micro_version (0) 
+#define micro_version (1) 
 
 #define FIRMWARE_STRING_LENGTH NRFJPROG_STRING_LENGTH
 
