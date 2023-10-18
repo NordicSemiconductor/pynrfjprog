@@ -1,6 +1,12 @@
+Release 10.23.2
+--------------------------------------
+- (nrfjprogdll) Fixed an issue where worker processes would remain alive if the client process died unexpectedly.
+- (nrfjprogdll) Added pin reset between recover attempts for nRF53.
+
 Release 10.23.1
 --------------------------------------
 - (nrfjprogdll) Added missing define NRF9120_xxAA_REV3 to DllCommonDefinitions.h (needed for nRF9161).
+- (nrfjprogdll) Fix an issue with silently failing to readback-protect devices with TrustZone.
 - (pynrfjprog) Added missing define NRF9120_xxAA_REV3 to Parameters.py (needed for nRF9161).
 - (nrfjprogexe) Fixed issue where parsing of "0x" prefix for hexadecimal arguments was case sensitive. Now both "0X" and "0x" prefixes are accepted.
 

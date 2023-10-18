@@ -40,6 +40,7 @@
     # Define the desired clockspeed in kHz you want nrfjprog.exe use by default when -c or --clockspeed arguments are not used.
     clockspeed = 2000
 
+
 [approtect]
     # Configurations for devices with hardened ap-protection.
 
