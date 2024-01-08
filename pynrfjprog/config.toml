@@ -31,6 +31,12 @@
     # If true, J-Link debug probe fw will be silently updated on NRFJPROG_connect_to_emu_with*().
     auto_update_fw=true
 
+    # Controls for how long to attempt Debug Access Port (DAP) power down procedure before timing out.
+    # nrfjprogdll will loop deassertion of the DAP CTRL/STAT CSYSPWRUPREQ and CDBGPWRUPREQ signals and check for acknowledgment.
+    # See arm's description of the DAP CTRL/STAT register for more information.
+    # Set to 0 to skip check for power down acknowledgment.
+    dap_powerdown_timeout_ms = 1000
+
 [target]
     # Define the desired family of devices to use by default by nrfjprog.exe when -f or --family arguments are not used. 
     # Family identifiers are case insensitive, no suffixes, for example NRF51, nRF52, Nrf53 are all valid. 
