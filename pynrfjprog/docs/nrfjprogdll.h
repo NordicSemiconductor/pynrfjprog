@@ -1982,6 +1982,12 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_write_cpu_register_inst(nrfjprog_inst_t 
                                                                 uint32_t register_value);
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_write_cpu_register(int register_name, uint32_t register_value);
 
+/**
+ * @brief   Reads the device architecture of the target coprocessor.
+ *
+ * @details For further details, see the device family header file.
+ */
+NRFJPROG_API nrfjprogdll_err_t NRFJPROG_read_cpu_architecture_inst(nrfjprog_inst_t instance, cpu_architecture_t * arch);
 
 /**
  * @brief   Reads the version of the device connected to the emulator.

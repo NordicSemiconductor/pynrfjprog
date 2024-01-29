@@ -46,6 +46,29 @@
     # Define the desired clockspeed in kHz you want nrfjprog.exe use by default when -c or --clockspeed arguments are not used.
     clockspeed = 2000
 
+    # ** Subject to change **
+    # Write MPC override rules when enabling coprocessor (only when secure domain AHB-AP is available).
+    # The rules will allow read/write of device memories, and is needed when SDFW is not present.
+    # MPC rule writing is relevant for nRF54H family.
+    # Valid options are:
+    #   "AUTO"      Best effort write rules. Will not disable any active rules.
+    #   "ALWAYS"    Always write if possible. Already enabled/active rules can be overwritten.
+    #   "OFF"       Do not write rules.
+    write_mpc_rules = "AUTO"
+
+    # Write mode specifically for MPC000.
+    # Overrides settings from "write_mpc_rules".
+    write_mpc000_rules = "ALWAYS"
+
+    # Write mode specifically for MPC110 override index 11
+    # Overrides settings from "write_mpc_rules".
+    write_mpc110_override11 = "ALWAYS"
+
+    # How long to wait for a local domain to be started after a system reset.
+    # On nRF54H, a local domain must be restarted by the Secure Domain firmware after a system reset.
+    # Set to a negative value for no timeout.
+    localdomain_started_timeout_ms = 7000
+
 
 [approtect]
     # Configurations for devices with hardened ap-protection.

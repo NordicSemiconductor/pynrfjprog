@@ -315,6 +315,8 @@ class DeviceFamily(enum.IntEnum):
     NRF51 = 0
     NRF52 = 1
     NRF53 = 53
+    NRF54H = 544
+    NRF54L = 541
     NRF91 = 91
     UNKNOWN = 99
     AUTO = 255
@@ -387,6 +389,11 @@ class DeviceVersion(enum.IntEnum):
     NRF5340_xxAA_ENGD = 0x05340003
     NRF5340_xxAA_FUTURE = 0x053400FF
 
+    NRF54L15_xxAA_ENGA = 0x05414000
+    NRF54L15_xxAA_FUTURE = 0x054140FF
+
+    NRF54H20_xxAA_ENGA = 0x05442000
+    NRF54H20_xxAA_FUTURE = 0x054420FF
 
     NRF9120_xxAA_REV3 = 0x09120002
     NRF9120_xxAA_FUTURE = 0x091200FF
@@ -416,6 +423,10 @@ class DeviceName(enum.IntEnum):
 
     NRF5340 = 0x05340000
     NRF9120 = 0x09120000
+
+    NRF54L15 = 0x05411500
+
+    NRF54H20 = 0x05442000
 
     NRF9160 = 0x09160000
 
@@ -449,6 +460,11 @@ class CoProcessor(enum.IntEnum):
     CP_NETWORK = 2
 
 
+    CP_PPR = 6
+    CP_FLPR = 7
+
+
+
 @enum.unique
 class Architecture(enum.IntEnum):
     """
@@ -457,6 +473,7 @@ class Architecture(enum.IntEnum):
     ARM_CM0 = 0x00
     ARM_CM4 = 0x04
     ARM_CM33 = 0x33
+    RISCV_VPR = 0x100
 
 
 @enum.unique
@@ -549,6 +566,34 @@ class CpuRegister(enum.IntEnum):
     MSPLIM = 34
     PSPLIM = 35
 
+
+class RiscVCpuRegister(enum.IntEnum):
+    """
+    Wraps riscv_cpu_registers_t values from DllCommonDefinitions.h
+
+    """
+    # RISC-V CSR registers
+    CSR_FIRST = 0,
+    CSR_LAST  = 0xFFF,
+
+    # RISC-V CPU registers
+    REG_ZERO = 0x1000,
+    REG_RA = 0x1001
+    REG_SP = 0x1002
+    REG_GP = 0x1003
+    REG_TP = 0x1004
+    REG_T0 = 0x1005
+    REG_T1 = 0x1006
+    REG_T2 = 0x1007
+    REG_S0 = 0x1008
+    REG_FP   = REG_S0,
+    REG_S1   = 0x1009,
+    REG_A0   = 0x100A,
+    REG_A1   = 0x100B,
+    REG_A2   = 0x100C,
+    REG_A3   = 0x100D,
+    REG_A4   = 0x100E,
+    REG_A5 = 0x100F
 
 @enum.unique
 class NrfjrpogdllLogLevel(enum.IntEnum):
