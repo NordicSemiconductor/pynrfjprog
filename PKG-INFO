@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: pynrfjprog
-Version: 10.23.5
+Version: 10.24.0
 Summary: A simple Python interface for the nrfjprog functionality
 Author-email: Nordic Semiconductor ASA <sagtools@nordicsemi.no>
 License: Copyright (c) 2010 - 2024, Nordic Semiconductor ASA

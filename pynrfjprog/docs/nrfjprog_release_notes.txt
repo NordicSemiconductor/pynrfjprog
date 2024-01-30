@@ -1,3 +1,8 @@
+Release 10.24.0
+Changelog
+--------------------------------------
+- (Release) Update bundled Segger installers and tarballs to v7.94e
+
 Release 10.23.5
 Changelog
 --------------------------------------
