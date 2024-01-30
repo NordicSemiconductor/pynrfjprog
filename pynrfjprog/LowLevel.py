@@ -1290,9 +1290,11 @@ class API(object):
         if not is_u32(register_name):
             register_enum = decode_enum(register_name, CpuRegister)
             if register_enum is None:
-                raise ValueError(
-                    "Parameter register_name must be of type uint, str, or CpuRegister enumeration."
-                )
+                register_enum = decode_enum(register_name, RiscVCpuRegister)
+                if register_enum is None:
+                    raise ValueError(
+                        "Parameter register_name must be of type uint, str, RiscVCpuRegister or CpuRegister enumeration."
+                    )
             register_name = register_enum.value
 
         register_name = ctypes.c_int(register_name)
@@ -1319,9 +1321,11 @@ class API(object):
         if not is_u32(register_name):
             register_enum = decode_enum(register_name, CpuRegister)
             if register_enum is None:
-                raise ValueError(
-                    "Parameter register_name must be of type uint, str, or CpuRegister enumeration."
-                )
+                register_enum = decode_enum(register_name, RiscVCpuRegister)
+                if register_enum is None:
+                    raise ValueError(
+                        "Parameter register_name must be of type uint, str, RiscVCpuRegister or CpuRegister enumeration."
+                    )
             register_name = register_enum.value
 
         register_name = ctypes.c_int(register_name)

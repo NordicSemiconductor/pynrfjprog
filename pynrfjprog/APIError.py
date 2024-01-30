@@ -30,6 +30,7 @@ class NrfjprogdllErr(enum.IntEnum):
     NVMC_ERROR                                  =  -20
     RECOVER_FAILED                              =  -21
 
+
     NOT_AVAILABLE_BECAUSE_PROTECTION            =  -90
     NOT_AVAILABLE_BECAUSE_MPU_CONFIG            =  -91
     NOT_AVAILABLE_BECAUSE_COPROCESSOR_DISABLED  =  -92
