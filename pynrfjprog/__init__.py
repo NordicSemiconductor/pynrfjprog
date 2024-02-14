@@ -3,9 +3,10 @@ Package marker file.
 
 """
 
-__version__ = "10.23.0" 
+__version__ = "10.23.0.1"
 
 import sys
+import os
 from pathlib import Path
 import stat
 import logging
@@ -30,4 +31,5 @@ def set_worker_executable(on_load=False):
                 )
 
 
-set_worker_executable(True)
+if os.environ.get("PYNRFJPROG_DO_NOT_SET_WORKER_EXECUTABLE", default=True):
+    set_worker_executable(True)
