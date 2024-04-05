@@ -1,7 +1,8 @@
 """
 This module serves as a Python wrapper around the nrfjprog DLL.
 
-Note: Please look at the nrfjprogdll.h file provided with the tools for a more elaborate description of the API functions and their side effects.
+Note: Please look at the nrfjprogdll.h file provided with the tools for a more elaborate description
+of the API functions and their side effects.
 """
 
 from __future__ import print_function
@@ -955,7 +956,7 @@ class API(object):
 
         @param int addr: Address to write.
         @param int data: Value to write.
-        @param boolean control: True for automatic control of NVMC by the function.
+        @param boolean control: Whether to perform additional memory controller operations.
         """
         if not is_u32(addr):
             raise ValueError("The addr parameter must be an unsigned 32-bit value.")

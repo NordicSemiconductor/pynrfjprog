@@ -1,8 +1,7 @@
 """
 This module serves as a Python wrapper around the nrfjprog Highlevel DLL.
 
-NB! This library has been deprecated in favor of nrfjprog DLL (libnrfjprogdll.so); new code should
-target that one instead.
+NB! This module has been deprecated in favor of LowLevel.py; new code should use that instead.
 
 Note: Please look at the highlevelnrfjprogdll.h file provided within the folder "documentation" for
 a more elaborate description of the API functions and their side effects.

@@ -11,5 +11,5 @@ except Exception:
     from Parameters import *
     import JLink
 
-warnings.warn("API module will be deprecated in version 11, use LowLevel module instead.", PendingDeprecationWarning)
+warnings.warn("This module is deprecated; use LowLevel.py instead.", PendingDeprecationWarning)
 
