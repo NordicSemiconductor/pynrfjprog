@@ -1373,8 +1373,10 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_erase_uicr(void);
  * @brief   Writes one uint32_t data into the given address.
  *
  * @details Writes one uint32_t data to the given addr without verifying that the address is accessible or even exists.
- *          If nvmc_control is true, it will control the NVMC in order to write into flash. Writes need to be 32-bit
- *          aligned. Note that if the target address is in unpowered RAM, the operation will fail.
+ *          If mem_control is true, additional memory controller-related operations will be performed as needed by the
+ *          device and target memory. Note, however, that this does *not* include erasing flash memories before writing;
+ *          that needs to be done as a separate operation.
+ *          Writes need to be 32-bit aligned. Note that if the target address is in unpowered RAM, the operation will fail.
  *
  * @pre     The dll must be open. To open the dll, see NRFJPROG_open_dll() function.
  * @pre     A connection to the emulator must be established. To establish a connection, see NRFJPROG_connect_to_emu_with_snr() and NRFJPROG_connect_to_emu_without_snr() functions.
@@ -1387,7 +1389,7 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_erase_uicr(void);
  * @param   instance                            A handle to an open nrfjprog instance.
  * @param   addr                                Address to write to.
  * @param   data                                Value to write.
- * @param   nvmc_control                        If the target address needs NVMC control.
+ * @param   mem_control                         Whether to perform additional memory controller operations.
  *
  * @retval  SUCCESS
  * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
@@ -1404,8 +1406,8 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_erase_uicr(void);
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_write_u32_inst(nrfjprog_inst_t instance,
                                                        uint32_t addr,
                                                        uint32_t data,
-                                                       bool nvmc_control);
-NRFJPROG_API nrfjprogdll_err_t NRFJPROG_write_u32(uint32_t addr, uint32_t data, bool nvmc_control);
+                                                       bool mem_control);
+NRFJPROG_API nrfjprogdll_err_t NRFJPROG_write_u32(uint32_t addr, uint32_t data, bool mem_control);
 
 /**
  * @brief   Reads one uint32_t from the given address.
@@ -1445,9 +1447,11 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_read_u32(uint32_t addr, uint32_t * data)
  * @brief   Writes data from the array into the device starting at the given address.
  *
  * @details Writes data_len bytes from the data array into the device starting at the given addr without verifying that the address is accessible
- *          or even exists. If nvmc_control is true, it will control the NVMC in order to write into flash. Writing addr
- *          does not need to be 32-bit aligned. Writing length data_len does not need to be a multiple of four, but
- *          please note that the number of writes to a flash word between erases is limited (see nWRITE parameter in the
+ *          or even exists. If mem_control is true, additional memory-controller related operations will be performed
+ *          as needed by the device and target memory. Note, however, that this does *not* include erasing flash memories before writing;
+ *          that needs to be done as a separate operation.
+ *          Writing addr does not need to be 32-bit aligned. Writing length data_len does not need to be a multiple of four,
+ *          but please note that the number of writes to a flash word between erases is limited (see nWRITE parameter in the
  *          Product Specification for your device) so data_len less than four bytes should be avoided if possible. Note
  *          that if the target address is in unpowered RAM, the operation will fail.
  *
@@ -1463,7 +1467,7 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_read_u32(uint32_t addr, uint32_t * data)
  * @param   addr                                Start address of the region to write to.
  * @param   data                                Pointer to an array with the data to write.
  * @param   data_len                            Length of the data array.
- * @param   nvmc_control                        If the target address needs NVMC control.
+ * @param   mem_control                         Whether to perform additional memory controller operations.
  *
  * @retval  SUCCESS
  * @retval  INVALID_SESSION                     Instance is not a valid nrfjprog instance, or NRFJPROG_open_dll() function has not been called.
@@ -1484,11 +1488,11 @@ NRFJPROG_API nrfjprogdll_err_t NRFJPROG_write_inst(nrfjprog_inst_t instance,
                                                    uint32_t addr,
                                                    const uint8_t * data,
                                                    uint32_t data_len,
-                                                   bool nvmc_control);
+                                                   bool mem_control);
 NRFJPROG_API nrfjprogdll_err_t NRFJPROG_write(uint32_t addr,
                                               const uint8_t * data,
                                               uint32_t data_len,
-                                              bool nvmc_control);
+                                              bool mem_control);
 
 /**
  * @brief   Reads data_len bytes from the device starting at the given address.

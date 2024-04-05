@@ -1,3 +1,9 @@
+Release 10.24.1
+Changelog
+--------------------------------------
+- (nrfjprogdll) Support new Modem FW bootloader filenames introduced in MFW v2.
+- (nrfjprogdll) Fix memory control parameter for NRFJPROG_write_u32 on nRF54.
+
 Release 10.24.0
 Changelog
 --------------------------------------

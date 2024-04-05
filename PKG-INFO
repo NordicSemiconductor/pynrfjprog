@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: pynrfjprog
-Version: 10.24.0
+Version: 10.24.1
 Summary: A simple Python interface for the nrfjprog functionality
 Author-email: Nordic Semiconductor ASA <sagtools@nordicsemi.no>
 License: Copyright (c) 2010 - 2024, Nordic Semiconductor ASA
@@ -74,28 +74,19 @@ Python wrapper around the nrfjprog dynamic link libraries (DLL). Use of this API
 *  Automated testing: [Testing Production Programming tools on nRF5 using pynrfjprog](https://github.com/NordicSemiconductor/nrf52-production-programming/blob/master/tests/example_test_script.py).
 
 ## Dependencies
-```python
-"""
-Detailed below is how our software is stacked. Each layer depends on the layer below.
-"""
-pynrfjprog  # Imports and wraps the nrfjprog DLL in Python.
-nrfjprogdll # A DLL that wraps SEGGER's JLink API for nRF5 devices.
-JLinkARMDLL # A DLL provided by SEGGER that works with SEGGER debuggers. Performs all low level operations with target device.
-```
-
-* [J-Link Software and Documentation Pack](https://www.segger.com/jlink-software.html) will install the JLink libraries pynrfjprog depends on in the correct installation directory.
-* The nrfjprog libraries are installed with pynrfjprog and are included in pynrfjprog/OPERATING_SYSTEM/.
+* [SEGGER JLink DLL] (https://www.segger.com/jlink-software.html)
+* (Windows-only) [Microsoft Visual C++ Redistributable] (https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist)
 
 ## Structure
 ```pynrfjprog
 pynrfjprog
   ├── pynrfjprog
   │     ├──__init__.py    # Package marker to make pynrfjprog a module. Also defines the version number
-  │     ├── API.py        # Legacy name of LowLevel.py. It's kept for backward support
+  │     ├── API.py        # (Deprecated; included only for backwards compatibility) Alias for LowLevel.py
   │     ├── APIError.py   # Wrapper for the error return codes of the DLL
-  │     ├── Hex.py        # Hex parsing library
-  │     ├── HighLevel.py  # Wrapper for the nrfjprog highlevel DLL
-  │     ├── JLink.py      # Finds the JLinkARM DLL required by pynrfjprog
+  │     ├── Hex.py        # (Deprecated; included only for backwards compatibility) Hex parsing library
+  │     ├── HighLevel.py  # (Deprecated; included only for backwards compatibility) Wrapper for the nrfjprog highlevel DLL
+  │     ├── JLink.py      # (Deprecated; included only for backwards compatibility) Finds the JLinkARM DLL
   │     ├── LowLevel.py   # Wrapper for the nrfjprog DLL, previously API.py
   │     ├── MultiAPI.py   # Allow multiple devices (up to 128) to be programmed simultaneously with a LowLevel API
   │     ├── lib_armhf
@@ -112,15 +103,12 @@ pynrfjprog
   ├── README.md
   ├── requirements.txt
   └── pyproject.toml
-  
-  
-    
 ```
 
 ## Getting started
 To install the latest release from PyPI:
 ```
-pip install pynrfjprog
+python -m pip install pynrfjprog
 ```
 To install from source:
 ```
@@ -148,7 +136,7 @@ api.open()
 api2 = LowLevel.API('NRF52')
 api2.open()
 
-api3 = LowLevel.API('NRF51')
+api3 = LowLevel.API('NRF52')
 api3.open()
 
 api.close()
@@ -156,26 +144,16 @@ api2.close()
 api3.close()
 ```
 
-To program hex files using the HighLevel API:
+To program firmware into the devices:
 ```
-from pynrfjprog import HighLevel
+from pynrfjprog import LowLevel
 
-with HighLevel.API() as api:
-    snrs = api.get_connected_probes()
+with LowLevel.API() as api:
+    api.program_file(<hex_file>)
 
-    # To program J-Link probe at snr <snr>:
-    with HighLevel.DebugProbe(api, <snr>) as probe:
-        probe.program(<hex_file>)
-
-    # To program MCUBoot target at serial port <serial>:
-    with HighLevel.MCUBootDFUProbe(api, <serial>) as probe:
-        probe.program(<hex_file>)
-
-    # To update LTE modem connected to J-Link probe at snr <snr>:
-    with HighLevel.IPCDFUProbe(api, <snr>, HighLevel.CoProcessor.CP_MODEM) as probe:
-        probe.program(<zip_file>, HighLevel.ProgramOptions(verify = HighLevel.VerifyAction.VERIFY_HASH))
+    # Optional
+    api.verify_file(<hex_file>)
 ```
-Note: Only one HighLevel API can be instantiated and opened at a time. Several HighLevel probes can be opened from the same API at the same time.
 
 ## Contributing
 Contributing is encouraged along with the following coding standards.

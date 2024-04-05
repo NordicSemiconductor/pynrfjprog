@@ -1,5 +1,6 @@
 """
-Deprecated: This module will not be supported in the future and should not be used for new projects. We recommend using intelhex instead: https://pypi.python.org/pypi/IntelHex.
+Deprecated: This module will not be supported in the future and should not be used for new projects.
+We recommend using intelhex instead: https://pypi.python.org/pypi/IntelHex.
 """
 
 from builtins import int
