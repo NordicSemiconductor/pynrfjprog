@@ -1,3 +1,8 @@
+Release 10.24.2
+Changelog
+--------------------------------------
+- (nrfjprogexe) Calling '--program --recover' on a protected device would display errors stating it is protected. These errors are no longer displayed.
+
 Release 10.24.1
 Changelog
 --------------------------------------
